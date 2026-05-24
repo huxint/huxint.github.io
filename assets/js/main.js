@@ -95,22 +95,23 @@
   }
 
   function runMaskTransition(originX, originY) {
-    if (!document.startViewTransition && !window.matchMedia('(prefers-reduced-motion: no-preference)').matches) {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       return null;
     }
+    const oldBg = getComputedStyle(document.documentElement)
+      .getPropertyValue('--bg').trim() || '#ffffff';
     const mask = document.createElement('div');
     mask.className = 'theme-mask';
     const radius = Math.hypot(
       Math.max(originX, window.innerWidth - originX),
       Math.max(originY, window.innerHeight - originY)
     );
-    mask.style.background = `radial-gradient(circle at ${originX}px ${originY}px, var(--bg) 0, transparent 0)`;
-    mask.style.transition = 'background 500ms ease';
+    mask.style.background = oldBg;
+    mask.style.clipPath = `circle(${radius}px at ${originX}px ${originY}px)`;
     document.body.appendChild(mask);
-    requestAnimationFrame(() => {
-      mask.style.background = `radial-gradient(circle at ${originX}px ${originY}px, var(--bg) ${radius}px, transparent ${radius}px)`;
-    });
-    setTimeout(() => mask.remove(), 520);
+    void mask.offsetWidth;
+    mask.style.clipPath = `circle(0px at ${originX}px ${originY}px)`;
+    setTimeout(() => mask.remove(), 560);
     return mask;
   }
 
@@ -142,7 +143,8 @@
     if (!drawer) return;
     const open = () => {
       drawer.hidden = false;
-      requestAnimationFrame(() => drawer.classList.add('is-open'));
+      void drawer.offsetWidth;
+      drawer.classList.add('is-open');
       document.body.classList.add('no-scroll');
       const trigger = document.querySelector('.hamburger');
       if (trigger) trigger.setAttribute('aria-expanded', 'true');
@@ -152,7 +154,7 @@
       document.body.classList.remove('no-scroll');
       const trigger = document.querySelector('.hamburger');
       if (trigger) trigger.setAttribute('aria-expanded', 'false');
-      setTimeout(() => { drawer.hidden = true; }, 200);
+      setTimeout(() => { drawer.hidden = true; }, 240);
     };
 
     document.body.addEventListener('click', (ev) => {
