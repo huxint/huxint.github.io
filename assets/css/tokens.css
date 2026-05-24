@@ -54,7 +54,7 @@
 :root[data-theme='dark'] {
   --bg:          #0F172A;
   --bg-elevated: #1E293B;
-  --border:      #1E293B;
+  --border:      #334155;
   --text:        #F1F5F9;
   --text-muted:  #94A3B8;
   --text-faint:  #64748B;
