@@ -1,0 +1,35 @@
+<div class="site-header__inner container">
+  <a class="site-brand" href="/" aria-label="huxint 首页">
+    <span class="logo" aria-hidden="true">H</span>
+    <span class="site-brand__name">huxint</span>
+  </a>
+
+  <nav class="site-nav" aria-label="主导航">
+    <a class="nav-link" href="/" data-nav="home">首页</a>
+    <a class="nav-link" href="/blog.html" data-nav="blog">博客</a>
+    <a class="nav-link" href="/projects.html" data-nav="projects">项目</a>
+    <a class="nav-link" href="/about.html" data-nav="about">关于</a>
+  </nav>
+
+  <div class="site-header__actions">
+    <button class="theme-toggle" type="button" aria-label="切换主题">
+      <svg data-icon="sun" class="icon theme-icon theme-icon--light"></svg>
+      <svg data-icon="moon" class="icon theme-icon theme-icon--dark"></svg>
+    </button>
+    <button class="hamburger" type="button" aria-label="打开菜单" aria-expanded="false" aria-controls="mobile-drawer">
+      <svg data-icon="menu" class="icon"></svg>
+    </button>
+  </div>
+</div>
+
+<div class="mobile-drawer" id="mobile-drawer" hidden>
+  <button class="mobile-drawer__close" type="button" aria-label="关闭菜单">
+    <svg data-icon="close" class="icon"></svg>
+  </button>
+  <nav class="mobile-drawer__nav" aria-label="移动端导航">
+    <a class="mobile-drawer__link" href="/" data-nav="home">首页</a>
+    <a class="mobile-drawer__link" href="/blog.html" data-nav="blog">博客</a>
+    <a class="mobile-drawer__link" href="/projects.html" data-nav="projects">项目</a>
+    <a class="mobile-drawer__link" href="/about.html" data-nav="about">关于</a>
+  </nav>
+</div>
