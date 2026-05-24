@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="huxint 的个人博客 —— 写一点代码、想法和折腾过程。">
+  <title>huxint ✦ 个人博客</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="/assets/css/tokens.css">
+  <link rel="stylesheet" href="/assets/css/base.css">
+  <link rel="stylesheet" href="/assets/css/components.css">
+</head>
+<body>
+  <header class="site-header" data-include="/partials/header.html"></header>
+  <noscript>
+    <nav class="noscript-header">
+      <a href="/"><strong>huxint</strong></a>
+      <a href="/">首页</a>
+      <a href="/blog.html">博客</a>
+      <a href="/projects.html">项目</a>
+      <a href="/about.html">关于</a>
+    </nav>
+  </noscript>
+
+  <main>
+    <section class="hero container">
+      <div class="hero__top">
+        <span class="logo hero__logo" aria-hidden="true">H</span>
+      </div>
+      <h1 class="hero__title">嗨，我是 huxint <span class="sparkle">✦</span></h1>
+      <p class="hero__subtitle">折腾一点工程，写一点想法。在这里记录我学的东西、做的小项目，以及一些不成熟的看法。</p>
+      <div class="hero__stack">
+        <span class="pill pill--yellow">C++</span>
+        <span class="pill pill--pink">Rust</span>
+        <span class="pill pill--blue">Python</span>
+        <span class="pill pill--purple">Go</span>
+      </div>
+      <div class="hero__socials">
+        <a href="https://github.com/huxint" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+          <svg data-icon="github" class="icon"></svg>
+        </a>
+      </div>
+    </section>
+
+    <section class="heatmap-section container">
+      <div class="heatmap-section__header">
+        <h2 class="heatmap-section__title">GitHub 贡献</h2>
+        <span class="heatmap-section__meta" id="heatmap-meta"></span>
+      </div>
+      <div class="heatmap-grid" id="heatmap-grid">
+        <p class="heatmap-fallback" id="heatmap-fallback">加载中 ✦</p>
+      </div>
+      <div class="heatmap-legend" id="heatmap-legend" hidden>
+        <span>少</span>
+        <span class="heatmap-legend__cell" data-level="0"></span>
+        <span class="heatmap-legend__cell" data-level="1"></span>
+        <span class="heatmap-legend__cell" data-level="2"></span>
+        <span class="heatmap-legend__cell" data-level="3"></span>
+        <span class="heatmap-legend__cell" data-level="4"></span>
+        <span>多</span>
+      </div>
+    </section>
+
+    <section class="section container">
+      <div class="section__header">
+        <h2 class="section__title">最新文章 <span class="sparkle">✦</span></h2>
+        <a class="section__cta" href="/blog.html">看全部文章 →</a>
+      </div>
+      <div class="card-grid" id="latest-posts">
+        <p style="color: var(--text-faint);">加载中…</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer" data-include="/partials/footer.html"></footer>
+
+  <script src="/assets/js/main.js" defer></script>
+  <script src="/assets/js/heatmap.js" defer></script>
+  <script defer>
+    (async () => {
+      const mount = document.getElementById('latest-posts');
+      try {
+        const res = await fetch('/data/posts.json', { cache: 'no-cache' });
+        const posts = await res.json();
+        const top = posts
+          .slice()
+          .sort((a, b) => b.date.localeCompare(a.date))
+          .slice(0, 3);
+        if (!top.length) {
+          mount.innerHTML = '<p style="color: var(--text-faint);">还没有文章 ✦</p>';
+          return;
+        }
+        mount.innerHTML = top.map((p) => `
+          <a class="card" data-color="${p.color}" href="/posts/${p.slug}.html">
+            <h3 class="card__title">${p.title}</h3>
+            <div class="card__meta">
+              <span>${p.date}</span>
+              <span>·</span>
+              <span>${p.readingTime} 分钟</span>
+            </div>
+            <p class="card__body">${p.summary}</p>
+            <div class="card__tags">${p.tags.map((t) => `<span class="pill">${t}</span>`).join('')}</div>
+          </a>
+        `).join('');
+      } catch (err) {
+        console.warn(err);
+        mount.innerHTML = '<p style="color: var(--text-faint);">暂时拉不到文章列表 ✦</p>';
+      }
+    })();
+  </script>
+</body>
+</html>
