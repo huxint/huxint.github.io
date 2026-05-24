@@ -160,6 +160,10 @@
 
 /* Prism syntax tokens with workshop palette */
 .prose pre[class*='language-'] { background: var(--bg-elevated); }
+/* Prism's default theme paints operators/entities/url with a translucent white background;
+   force-clear it so our dark-mode pre doesn't get cream squares on punctuation. */
+.prose pre .token,
+.prose pre code .token { background: transparent !important; text-shadow: none; }
 .token.comment, .token.prolog, .token.doctype, .token.cdata { color: var(--text-faint); font-style: italic; }
 .token.punctuation { color: var(--text-muted); }
 .token.property, .token.tag, .token.constant, .token.symbol, .token.deleted { color: var(--sienna); }

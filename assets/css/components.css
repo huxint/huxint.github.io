@@ -160,12 +160,13 @@
 .theme-toggle:hover,
 .hamburger:hover { background: var(--bg-elevated); }
 .theme-icon { font-size: 18px; }
-.theme-icon--dark { display: none; }
-:root[data-theme='dark'] .theme-icon--light { display: none; }
-:root[data-theme='dark'] .theme-icon--dark  { display: block; }
+.theme-toggle .theme-icon--dark { display: none; }
+.theme-toggle .theme-icon--light { display: inline-block; }
+:root[data-theme='dark'] .theme-toggle .theme-icon--light { display: none; }
+:root[data-theme='dark'] .theme-toggle .theme-icon--dark  { display: inline-block; }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']):not([data-theme='dark']) .theme-icon--light { display: none; }
-  :root:not([data-theme='light']):not([data-theme='dark']) .theme-icon--dark  { display: block; }
+  :root:not([data-theme='light']):not([data-theme='dark']) .theme-toggle .theme-icon--light { display: none; }
+  :root:not([data-theme='light']):not([data-theme='dark']) .theme-toggle .theme-icon--dark  { display: inline-block; }
 }
 
 .hamburger { display: none; }
