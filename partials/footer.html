@@ -1,0 +1,32 @@
+<div class="site-footer__inner container">
+  <span class="site-footer__copy">© 2026 huxint</span>
+  <span class="site-footer__sep">·</span>
+  <div class="site-footer__links">
+    <a href="https://github.com/huxint" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+      <svg data-icon="github" class="icon"></svg>
+    </a>
+    <button type="button" class="site-footer__qr-trigger" data-qr="wechat" aria-label="微信二维码">
+      <svg data-icon="wechat" class="icon"></svg>
+    </button>
+    <button type="button" class="site-footer__qr-trigger" data-qr="qq" aria-label="QQ 二维码">
+      <svg data-icon="qq" class="icon"></svg>
+    </button>
+    <button type="button" class="site-footer__sparkle" aria-label="闪光彩蛋">
+      <svg data-icon="sparkle" class="icon"></svg>
+    </button>
+  </div>
+  <span class="site-footer__sep">·</span>
+  <span class="site-footer__version">v0.1</span>
+</div>
+
+<div class="modal" id="qr-modal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="qr-modal-title">
+  <div class="modal__overlay" data-modal-close></div>
+  <div class="modal__panel">
+    <button class="modal__close" type="button" aria-label="关闭" data-modal-close>
+      <svg data-icon="close" class="icon"></svg>
+    </button>
+    <h2 class="modal__title" id="qr-modal-title">扫一扫</h2>
+    <img class="modal__qr" id="qr-modal-img" alt="" />
+    <p class="modal__caption" id="qr-modal-caption"></p>
+  </div>
+</div>
