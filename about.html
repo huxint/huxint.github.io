@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>关于我 ✦ huxint</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="/assets/css/tokens.css">
+  <link rel="stylesheet" href="/assets/css/base.css">
+  <link rel="stylesheet" href="/assets/css/components.css">
+</head>
+<body>
+  <header class="site-header" data-include="/partials/header.html"></header>
+  <noscript>
+    <nav class="noscript-header">
+      <a href="/"><strong>huxint</strong></a>
+      <a href="/">首页</a>
+      <a href="/blog.html">博客</a>
+      <a href="/projects.html">项目</a>
+      <a href="/about.html">关于</a>
+    </nav>
+  </noscript>
+
+  <main class="container">
+    <section class="section">
+      <div class="section__header">
+        <h1 class="section__title">关于我 <span class="sparkle">✦</span></h1>
+      </div>
+
+      <div style="display: flex; gap: var(--space-6); align-items: flex-start; flex-wrap: wrap; margin-top: var(--space-4);">
+        <div class="avatar" aria-hidden="true"></div>
+        <div style="flex: 1; min-width: 280px; max-width: 640px;">
+          <p style="font-size: var(--fs-md); line-height: var(--lh-prose);">嗨，我是 <strong>huxint</strong>。喜欢折腾代码、读源码、写一点自己用得上的小工具。</p>
+          <p style="color: var(--text-muted); line-height: var(--lh-prose); margin-top: var(--space-3);">主语言：C++ / Rust / Go / Python。最近在做的事情：把一些以前丢在 gist 里的零碎东西整理成正式的小项目，顺便练手写一个干净的博客。</p>
+          <p style="color: var(--text-muted); line-height: var(--lh-prose); margin-top: var(--space-3);">爱好：跑步、键盘、电子游戏，偶尔做做菜。</p>
+        </div>
+      </div>
+
+      <div style="margin-top: var(--space-7); max-width: 640px;">
+        <h2 style="font-size: var(--fs-lg); font-weight: 800; letter-spacing: -0.02em;">技术栈 <span style="color: var(--accent-blue);">✦</span></h2>
+        <div class="stack-group">
+          <div class="stack-group__label">主用</div>
+          <div class="stack-group__items">
+            <span class="pill pill--yellow">C++</span>
+            <span class="pill pill--pink">Rust</span>
+            <span class="pill pill--blue">Python</span>
+            <span class="pill pill--purple">Go</span>
+          </div>
+        </div>
+        <div class="stack-group">
+          <div class="stack-group__label">熟悉</div>
+          <div class="stack-group__items">
+            <span class="pill">Linux</span>
+            <span class="pill">Git</span>
+            <span class="pill">SQL</span>
+            <span class="pill">Docker</span>
+            <span class="pill">HTML / CSS / JS</span>
+          </div>
+        </div>
+        <div class="stack-group">
+          <div class="stack-group__label">在学</div>
+          <div class="stack-group__items">
+            <span class="pill">Zig</span>
+            <span class="pill">eBPF</span>
+            <span class="pill">WebGPU</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top: var(--space-7); max-width: 640px;">
+        <h2 style="font-size: var(--fs-lg); font-weight: 800; letter-spacing: -0.02em;">联系 <span style="color: var(--accent-pink);">✦</span></h2>
+        <div class="hero__socials" style="margin-top: var(--space-3);">
+          <a href="https://github.com/huxint" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+            <svg data-icon="github" class="icon"></svg>
+          </a>
+          <button type="button" class="site-footer__qr-trigger" data-qr="wechat" aria-label="微信" style="background: none; border: 0; cursor: pointer; color: inherit;">
+            <svg data-icon="wechat" class="icon"></svg>
+          </button>
+          <button type="button" class="site-footer__qr-trigger" data-qr="qq" aria-label="QQ" style="background: none; border: 0; cursor: pointer; color: inherit;">
+            <svg data-icon="qq" class="icon"></svg>
+          </button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer" data-include="/partials/footer.html"></footer>
+
+  <script src="/assets/js/main.js" defer></script>
+</body>
+</html>
