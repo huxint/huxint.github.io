@@ -137,11 +137,85 @@
     });
   }
 
+  function initMobileDrawer() {
+    const drawer = document.getElementById('mobile-drawer');
+    if (!drawer) return;
+    const open = () => {
+      drawer.hidden = false;
+      requestAnimationFrame(() => drawer.classList.add('is-open'));
+      document.body.classList.add('no-scroll');
+      const trigger = document.querySelector('.hamburger');
+      if (trigger) trigger.setAttribute('aria-expanded', 'true');
+    };
+    const close = () => {
+      drawer.classList.remove('is-open');
+      document.body.classList.remove('no-scroll');
+      const trigger = document.querySelector('.hamburger');
+      if (trigger) trigger.setAttribute('aria-expanded', 'false');
+      setTimeout(() => { drawer.hidden = true; }, 200);
+    };
+
+    document.body.addEventListener('click', (ev) => {
+      if (ev.target.closest('.hamburger')) { open(); return; }
+      if (ev.target.closest('.mobile-drawer__close')) { close(); return; }
+      if (ev.target.closest('.mobile-drawer__link')) { close(); return; }
+    });
+
+    document.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Escape' && !drawer.hidden) close();
+    });
+  }
+
+  const QR_MAP = {
+    wechat: { img: '/assets/images/wechat-qr.png', caption: '微信扫一扫，加我好友' },
+    qq:     { img: '/assets/images/qq-qr.png',     caption: 'QQ 扫一扫' },
+  };
+
+  function initQrModal() {
+    const modal = document.getElementById('qr-modal');
+    if (!modal) return;
+    const img = modal.querySelector('#qr-modal-img');
+    const cap = modal.querySelector('#qr-modal-caption');
+    let lastTrigger = null;
+
+    const open = (trigger) => {
+      const key = trigger.dataset.qr;
+      const data = QR_MAP[key];
+      if (!data) return;
+      img.src = data.img;
+      img.alt = data.caption;
+      cap.textContent = data.caption;
+      modal.hidden = false;
+      modal.setAttribute('aria-hidden', 'false');
+      requestAnimationFrame(() => modal.classList.add('is-open'));
+      document.body.classList.add('no-scroll');
+      lastTrigger = trigger;
+    };
+    const close = () => {
+      modal.classList.remove('is-open');
+      modal.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('no-scroll');
+      setTimeout(() => { modal.hidden = true; }, 200);
+      if (lastTrigger) { lastTrigger.focus(); lastTrigger = null; }
+    };
+
+    document.body.addEventListener('click', (ev) => {
+      const trigger = ev.target.closest('[data-qr]');
+      if (trigger) { open(trigger); return; }
+      if (ev.target.closest('[data-modal-close]')) { close(); return; }
+    });
+    document.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Escape' && !modal.hidden) close();
+    });
+  }
+
   ready(async () => {
     await injectIncludes();
     await injectIcons();
     markCurrentNav();
     initThemeToggle();
+    initMobileDrawer();
+    initQrModal();
     document.dispatchEvent(new CustomEvent('site:ready'));
   });
 
