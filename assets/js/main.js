@@ -1,6 +1,13 @@
 (() => {
   'use strict';
 
+  try {
+    const stored = localStorage.getItem('theme');
+    if (stored === 'light' || stored === 'dark') {
+      document.documentElement.setAttribute('data-theme', stored);
+    }
+  } catch {}
+
   const ready = (fn) =>
     document.readyState !== 'loading'
       ? fn()
@@ -62,10 +69,79 @@
       .forEach((el) => el.setAttribute('aria-current', 'page'));
   }
 
+  const THEME_KEY = 'theme';
+
+  function readStoredTheme() {
+    try {
+      const v = localStorage.getItem(THEME_KEY);
+      return v === 'light' || v === 'dark' ? v : 'system';
+    } catch {
+      return 'system';
+    }
+  }
+
+  function applyTheme(theme) {
+    if (theme === 'system') {
+      document.documentElement.removeAttribute('data-theme');
+    } else {
+      document.documentElement.setAttribute('data-theme', theme);
+    }
+  }
+
+  function nextTheme(current, prefersDark) {
+    const effective =
+      current === 'system' ? (prefersDark ? 'dark' : 'light') : current;
+    return effective === 'dark' ? 'light' : 'dark';
+  }
+
+  function runMaskTransition(originX, originY) {
+    if (!document.startViewTransition && !window.matchMedia('(prefers-reduced-motion: no-preference)').matches) {
+      return null;
+    }
+    const mask = document.createElement('div');
+    mask.className = 'theme-mask';
+    const radius = Math.hypot(
+      Math.max(originX, window.innerWidth - originX),
+      Math.max(originY, window.innerHeight - originY)
+    );
+    mask.style.background = `radial-gradient(circle at ${originX}px ${originY}px, var(--bg) 0, var(--bg) 0)`;
+    mask.style.transition = 'background 500ms ease';
+    document.body.appendChild(mask);
+    requestAnimationFrame(() => {
+      mask.style.background = `radial-gradient(circle at ${originX}px ${originY}px, var(--bg) ${radius}px, transparent ${radius}px)`;
+    });
+    setTimeout(() => mask.remove(), 520);
+    return mask;
+  }
+
+  function initThemeToggle() {
+    applyTheme(readStoredTheme());
+    const mql = window.matchMedia('(prefers-color-scheme: dark)');
+
+    document.body.addEventListener('click', (ev) => {
+      const btn = ev.target.closest('.theme-toggle');
+      if (!btn) return;
+      const stored = readStoredTheme();
+      const target = nextTheme(stored, mql.matches);
+      const rect = btn.getBoundingClientRect();
+      runMaskTransition(rect.left + rect.width / 2, rect.top + rect.height / 2);
+      try { localStorage.setItem(THEME_KEY, target); } catch {}
+      applyTheme(target);
+      document.dispatchEvent(new CustomEvent('site:themechange', { detail: { theme: target } }));
+    });
+
+    mql.addEventListener('change', () => {
+      if (readStoredTheme() === 'system') {
+        document.dispatchEvent(new CustomEvent('site:themechange', { detail: { theme: 'system' } }));
+      }
+    });
+  }
+
   ready(async () => {
     await injectIncludes();
     await injectIcons();
     markCurrentNav();
+    initThemeToggle();
     document.dispatchEvent(new CustomEvent('site:ready'));
   });
 
