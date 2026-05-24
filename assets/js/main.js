@@ -104,7 +104,7 @@
       Math.max(originX, window.innerWidth - originX),
       Math.max(originY, window.innerHeight - originY)
     );
-    mask.style.background = `radial-gradient(circle at ${originX}px ${originY}px, var(--bg) 0, var(--bg) 0)`;
+    mask.style.background = `radial-gradient(circle at ${originX}px ${originY}px, var(--bg) 0, transparent 0)`;
     mask.style.transition = 'background 500ms ease';
     document.body.appendChild(mask);
     requestAnimationFrame(() => {
