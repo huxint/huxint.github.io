@@ -2,12 +2,14 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Hello, World ✦ huxint</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Hello, World · huxint</title>
   <meta name="description" content="博客的第一篇文章，聊聊为什么从零自己写。">
+  <meta name="theme-color" content="#F5EFE3">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..700,30..100,0..1;1,9..144,300..700,30..100,0..1&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.2/css/all.min.css">
   <link rel="stylesheet" href="/assets/css/tokens.css">
   <link rel="stylesheet" href="/assets/css/base.css">
   <link rel="stylesheet" href="/assets/css/components.css">
@@ -31,15 +33,16 @@
 
   <main class="post-shell">
     <div class="post-header container">
-      <h1 class="post-header__title">Hello, World <span style="color: var(--accent-pink);">✦</span></h1>
+      <div class="post-header__kicker">№01 · 杂谈 · Meta</div>
+      <h1 class="post-header__title">Hello, <em>World</em>.</h1>
       <div class="post-header__meta">
-        <time datetime="2026-05-23">2026-05-23</time>
+        <time datetime="2026-05-23">2026 / 05 / 23</time>
         <span>·</span>
-        <span>4 分钟</span>
+        <span>4 min read</span>
         <span>·</span>
-        <span class="pill pill--pink">杂谈</span>
-        <span class="pill pill--pink">Meta</span>
-        <button type="button" class="post-toc-toggle" id="post-toc-toggle" aria-expanded="false" aria-controls="post-toc">目录 ✦</button>
+        <span class="tag tag--sienna">杂谈</span>
+        <span class="tag tag--sienna">Meta</span>
+        <button type="button" class="post-toc-toggle" id="post-toc-toggle" aria-expanded="false" aria-controls="post-toc">⌬ 目录</button>
       </div>
     </div>
 
@@ -97,14 +100,12 @@ console.log(greet('world'));</code></pre>
           <tbody>
             <tr><td>语言</td><td>原生 HTML/CSS/JS</td><td>没有 build 链，部署最简单</td></tr>
             <tr><td>评论</td><td>Giscus</td><td>挂在 GitHub Discussions，不用自托管</td></tr>
-            <tr><td>字体</td><td>Nunito + JetBrains Mono</td><td>圆润，对中英文混排友好</td></tr>
+            <tr><td>字体</td><td>Fraunces + Plus Jakarta + JetBrains Mono</td><td>有性格、对中英文混排友好</td></tr>
           </tbody>
         </table>
-        <p>一张占位图：</p>
-        <p><img src="/assets/images/wechat-qr.png" alt="占位图" width="240" height="240"></p>
 
         <h2>下一步</h2>
-        <p>把热力图调好、把 Giscus 接上、把 404 页画得不那么无聊。慢慢来。</p>
+        <p>把 Codescape 调好、把 Giscus 接上、把 404 页画得不那么无聊。慢慢来。</p>
       </article>
 
       <aside class="post-toc" id="post-toc">
@@ -124,15 +125,9 @@ console.log(greet('world'));</code></pre>
     </nav>
 
     <section class="comments container" id="comments">
-      <h2 style="font-size: var(--fs-lg); font-weight: 800; margin-bottom: var(--space-4);">评论 ✦</h2>
+      <h2 style="font-family: var(--font-display); font-size: var(--fs-lg); font-weight: 500; letter-spacing: -0.02em; margin-bottom: var(--space-4);">评论 <em style="color: var(--sienna); font-style: italic;">/comments</em></h2>
       <noscript>评论需要 JavaScript 才能加载。</noscript>
-      <p class="comments__fallback" id="comments-fallback" style="color: var(--text-muted);">加载评论中…</p>
-      <!--
-        Giscus 配置：
-        - 先在 https://giscus.app 选好仓库，开启 Discussions
-        - 把 data-repo / data-repo-id / data-category / data-category-id 替换为生成的值
-        - 替换后删除 data-disabled 属性即可上线
-      -->
+      <p class="comments__fallback" id="comments-fallback" style="color: var(--text-muted); font-family: var(--font-mono); font-size: 13px;">加载评论中…</p>
       <script src="https://giscus.app/client.js"
               data-repo="huxint/huxint.github.io"
               data-repo-id="REPLACE_ME_REPO_ID"
