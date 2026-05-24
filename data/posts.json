@@ -1,0 +1,11 @@
+[
+  {
+    "slug": "2026-05-23-hello-world",
+    "title": "Hello, World ✦",
+    "date": "2026-05-23",
+    "summary": "博客的第一篇文章，聊聊为什么从零自己写。",
+    "tags": ["杂谈", "Meta"],
+    "readingTime": 4,
+    "color": "pink"
+  }
+]

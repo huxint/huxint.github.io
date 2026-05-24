@@ -1,0 +1,29 @@
+[
+  {
+    "name": "huxint.github.io",
+    "description": "这个博客的源码，纯静态 HTML/CSS/JS，无构建。",
+    "url": "https://github.com/huxint/huxint.github.io",
+    "language": "HTML",
+    "stars": 1,
+    "color": "pink",
+    "featured": true
+  },
+  {
+    "name": "free-code",
+    "description": "一个用来折腾的小工具。",
+    "url": "https://github.com/huxint/free-code",
+    "language": "Go",
+    "stars": 12,
+    "color": "blue",
+    "featured": false
+  },
+  {
+    "name": "rust-playground",
+    "description": "Rust 学习笔记和示例集合。",
+    "url": "https://github.com/huxint/rust-playground",
+    "language": "Rust",
+    "stars": 5,
+    "color": "yellow",
+    "featured": false
+  }
+]
