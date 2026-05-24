@@ -2,12 +2,14 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="huxint 的个人博客 —— 写一点代码、想法和折腾过程。">
-  <title>huxint ✦ 个人博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="huxint 的个人博客 —— 工作坊式的代码、想法与折腾记录。">
+  <meta name="theme-color" content="#F5EFE3">
+  <title>huxint · 工作坊 & 札记</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..700,30..100,0..1;1,9..144,300..700,30..100,0..1&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.2/css/all.min.css">
   <link rel="stylesheet" href="/assets/css/tokens.css">
   <link rel="stylesheet" href="/assets/css/base.css">
   <link rel="stylesheet" href="/assets/css/components.css">
@@ -26,49 +28,103 @@
 
   <main>
     <section class="hero container">
-      <div class="hero__top">
-        <span class="logo hero__logo" aria-hidden="true">H</span>
-      </div>
-      <h1 class="hero__title">嗨，我是 huxint <span class="sparkle">✦</span></h1>
-      <p class="hero__subtitle">折腾一点工程，写一点想法。在这里记录我学的东西、做的小项目，以及一些不成熟的看法。</p>
-      <div class="hero__stack">
-        <span class="pill pill--yellow">C++</span>
-        <span class="pill pill--pink">Rust</span>
-        <span class="pill pill--blue">Python</span>
-        <span class="pill pill--purple">Go</span>
-      </div>
-      <div class="hero__socials">
-        <a href="https://github.com/huxint" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
-          <svg data-icon="github" class="icon"></svg>
-        </a>
+      <div class="hero__grid">
+        <div class="hero__left">
+          <div class="hero__meta reveal reveal-1">
+            <span><span class="dot" aria-hidden="true"></span> Now writing</span>
+            <span class="hero__meta__rule" aria-hidden="true"></span>
+            <span>Issue №01 · MMXXVI</span>
+          </div>
+          <h1 class="hero__title reveal reveal-2">
+            <span class="hero__title__row">嗨，我是 <em>huxint</em><span class="pen" aria-hidden="true">/✍/</span></span>
+            <span class="hero__title__row">一个 <span class="hero__title__sig">折腾</span> 工程</span>
+            <span class="hero__title__row">的 <em>独立开发者</em>.</span>
+          </h1>
+          <p class="hero__lede reveal reveal-3">
+            写一点代码，读一点源码，做一点自己用得上的小工具——并把过程留在这里。
+          </p>
+          <div class="hero__stack reveal reveal-4">
+            <span class="hero__stack__label">/ stack</span>
+            <span class="tag tag--gold">C++</span>
+            <span class="tag tag--sienna">Rust</span>
+            <span class="tag tag--indigo">Python</span>
+            <span class="tag tag--sage">Go</span>
+          </div>
+          <div class="hero__socials reveal reveal-5">
+            <a class="social-chip" href="https://github.com/huxint" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+              <i class="fa-brands fa-github social-chip__icon" aria-hidden="true"></i>
+              <span class="social-chip__label">github</span>
+              <span class="social-chip__arrow" aria-hidden="true">↗</span>
+            </a>
+            <button class="social-chip" type="button" data-qr="wechat" aria-label="微信">
+              <i class="fa-brands fa-weixin social-chip__icon" aria-hidden="true"></i>
+              <span class="social-chip__label">wechat</span>
+            </button>
+            <button class="social-chip" type="button" data-qr="qq" aria-label="QQ">
+              <i class="fa-brands fa-qq social-chip__icon" aria-hidden="true"></i>
+              <span class="social-chip__label">qq</span>
+            </button>
+            <a href="/about.html" class="btn btn--ghost" style="margin-left:auto">关于 <span class="arrow">→</span></a>
+          </div>
+        </div>
+
+        <aside class="hero__cards reveal reveal-3" aria-label="现在的状态">
+          <div class="hero__card">
+            <div class="hero__card__head">
+              <span>~/now.toml</span>
+              <span class="hero__card__head__dots" aria-hidden="true"><span></span><span></span><span></span></span>
+            </div>
+            <div><span class="comment"># where I'm at right now</span></div>
+            <div><span class="key">location</span> <span class="comment">=</span> <span class="val">"shenzhen"</span></div>
+            <div><span class="key">reading</span>  <span class="comment">=</span> <span class="val">"Designing Data-Intensive..."</span></div>
+            <div><span class="key">writing</span>  <span class="comment">=</span> <span class="val">"a tiny key/value store"</span></div>
+            <div><span class="key">listening</span> <span class="comment">=</span> <span class="val">"lofi & post-rock"</span></div>
+            <div><span class="key">mood</span>     <span class="comment">=</span> <span class="val">"curious 🌱"</span></div>
+          </div>
+        </aside>
       </div>
     </section>
 
-    <section class="heatmap-section container">
-      <div class="heatmap-section__header">
-        <h2 class="heatmap-section__title">GitHub 贡献</h2>
-        <span class="heatmap-section__meta" id="heatmap-meta"></span>
+    <div style="height: var(--space-6);"></div>
+
+    <section class="contrib container">
+      <div class="contrib__head">
+        <div>
+          <div class="section__label">// §02 — Codescape</div>
+          <h2 class="section__title">过去一年的 <em>声谱</em></h2>
+        </div>
+        <div class="contrib__meta">
+          <span class="contrib__total" id="contrib-total"><em>—</em></span>
+          <span class="contrib__streak" id="contrib-streak">loading…</span>
+        </div>
       </div>
-      <div class="heatmap-grid" id="heatmap-grid">
-        <p class="heatmap-fallback" id="heatmap-fallback">加载中 ✦</p>
-      </div>
-      <div class="heatmap-legend" id="heatmap-legend" hidden>
-        <span>少</span>
-        <span class="heatmap-legend__cell" data-level="0"></span>
-        <span class="heatmap-legend__cell" data-level="1"></span>
-        <span class="heatmap-legend__cell" data-level="2"></span>
-        <span class="heatmap-legend__cell" data-level="3"></span>
-        <span class="heatmap-legend__cell" data-level="4"></span>
-        <span>多</span>
+      <div class="contrib__panel">
+        <div class="codescape" id="codescape">
+          <p class="contrib__fallback" id="contrib-fallback">正在抓取 ✦ ✦ ✦</p>
+        </div>
+        <div class="contrib__legend" id="contrib-legend" hidden>
+          <span>quieter</span>
+          <span class="contrib__legend__scale">
+            <span class="contrib__legend__cell" data-level="0"></span>
+            <span class="contrib__legend__cell" data-level="1"></span>
+            <span class="contrib__legend__cell" data-level="2"></span>
+            <span class="contrib__legend__cell" data-level="3"></span>
+            <span class="contrib__legend__cell" data-level="4"></span>
+          </span>
+          <span>louder</span>
+        </div>
       </div>
     </section>
 
     <section class="section container">
-      <div class="section__header">
-        <h2 class="section__title">最新文章 <span class="sparkle">✦</span></h2>
-        <a class="section__cta" href="/blog.html">看全部文章 →</a>
+      <div class="section__head">
+        <div>
+          <div class="section__label">// §03 — Latest dispatches</div>
+          <h2 class="section__title">最新 <em>札记</em></h2>
+        </div>
+        <a class="section__cta" href="/blog.html">查看全部 <span class="arrow">→</span></a>
       </div>
-      <div class="card-grid" id="latest-posts">
+      <div class="entry-grid" id="latest-posts">
         <p style="color: var(--text-faint);">加载中…</p>
       </div>
     </section>
@@ -84,29 +140,29 @@
       try {
         const res = await fetch('/data/posts.json', { cache: 'no-cache' });
         const posts = await res.json();
-        const top = posts
-          .slice()
-          .sort((a, b) => b.date.localeCompare(a.date))
-          .slice(0, 3);
+        const top = posts.slice().sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3);
         if (!top.length) {
-          mount.innerHTML = '<p style="color: var(--text-faint);">还没有文章 ✦</p>';
+          mount.innerHTML = '<p style="color: var(--text-faint); font-family: var(--font-mono);">还没有文章 ✦</p>';
           return;
         }
-        mount.innerHTML = top.map((p) => `
-          <a class="card" data-color="${p.color}" href="/posts/${p.slug}.html">
-            <h3 class="card__title">${p.title}</h3>
-            <div class="card__meta">
+        const tagColor = ['sienna', 'sage', 'gold', 'plum', 'indigo'];
+        mount.innerHTML = top.map((p, i) => `
+          <a class="entry-card reveal reveal-${i + 1}" href="/posts/${p.slug}.html">
+            <div class="entry-card__meta">
+              <span class="entry-card__no">№${String(i + 1).padStart(2, '0')}</span>
               <span>${p.date}</span>
-              <span>·</span>
-              <span>${p.readingTime} 分钟</span>
             </div>
-            <p class="card__body">${p.summary}</p>
-            <div class="card__tags">${p.tags.map((t) => `<span class="pill">${t}</span>`).join('')}</div>
+            <h3 class="entry-card__title">${p.title}</h3>
+            <p class="entry-card__excerpt">${p.summary}</p>
+            <div class="entry-card__foot">
+              <span class="entry-card__tags">${p.tags.slice(0, 2).map((t, ti) => `<span class="tag tag--${tagColor[(i + ti) % 5]}">${t}</span>`).join('')}</span>
+              <span class="entry-card__read">${p.readingTime} min · 读 →</span>
+            </div>
           </a>
         `).join('');
       } catch (err) {
         console.warn(err);
-        mount.innerHTML = '<p style="color: var(--text-faint);">暂时拉不到文章列表 ✦</p>';
+        mount.innerHTML = '<p style="color: var(--text-faint); font-family: var(--font-mono);">暂时拉不到文章列表 ✦</p>';
       }
     })();
   </script>
