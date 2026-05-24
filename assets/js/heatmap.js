@@ -72,8 +72,8 @@
   }
 
   function render(target, weeks) {
-    const cellSize = 12;
-    const gap = 3;
+    const cellSize = 14;
+    const gap = 4;
     const w = weeks.length * (cellSize + gap);
     const h = 7 * (cellSize + gap);
     const svgNs = 'http://www.w3.org/2000/svg';
@@ -91,7 +91,7 @@
         rect.setAttribute('y', String(di * (cellSize + gap)));
         rect.setAttribute('width', String(cellSize));
         rect.setAttribute('height', String(cellSize));
-        rect.setAttribute('rx', '2');
+        rect.setAttribute('rx', '4');
         rect.setAttribute('class', 'heatmap-cell');
         rect.setAttribute('data-level', String(cell.level));
         const title = document.createElementNS(svgNs, 'title');
