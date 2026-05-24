@@ -1,11 +1,11 @@
 [
   {
-    "slug": "2026-05-23-hello-world",
-    "title": "Hello, World ✦",
-    "date": "2026-05-23",
-    "summary": "博客的第一篇文章，聊聊为什么从零自己写。",
-    "tags": ["杂谈", "Meta"],
-    "readingTime": 4,
-    "color": "pink"
+    "slug": "2026-05-24-vibe-two-years",
+    "title": "Vibe 两年 · 心流消散记",
+    "date": "2026-05-24",
+    "summary": "从 Cursor 到 Codex 到 DeepSeek V4 Pro，我两年的 AI 使用史；以及它顺手带走的注意力和心流。",
+    "tags": ["AI", "Vibe Coding", "杂谈"],
+    "readingTime": 12,
+    "color": "sienna"
   }
 ]
