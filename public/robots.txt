@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://huxint.github.io/sitemap-index.xml

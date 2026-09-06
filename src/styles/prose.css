@@ -1,0 +1,275 @@
+.prose {
+  font-size: 16px;
+  line-height: 2;
+  overflow-wrap: break-word;
+}
+.prose > :first-child {
+  margin-top: 0;
+}
+.prose p {
+  margin: 1.35em 0;
+}
+.prose h2,
+.prose h3,
+.prose h4 {
+  color: var(--text);
+}
+.prose h2 {
+  margin: 2.7em 0 0.9em;
+  font-size: 24px;
+  letter-spacing: -0.035em;
+  line-height: 1.6;
+  font-weight: 620;
+}
+.prose h3 {
+  margin: 2em 0 0.7em;
+  font-size: 19px;
+  line-height: 1.7;
+  font-weight: 600;
+}
+.prose h4 {
+  margin: 1.6em 0 0.6em;
+  font-size: 16px;
+  font-weight: 600;
+}
+.prose a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+  text-decoration-color: color-mix(in srgb, var(--accent) 40%, transparent);
+}
+.prose a:hover {
+  text-decoration-color: var(--accent);
+}
+.prose strong {
+  font-weight: 620;
+}
+.prose ul,
+.prose ol {
+  margin: 1.3em 0;
+  padding-left: 1.6em;
+}
+.prose li {
+  margin: 0.4em 0;
+  padding-left: 0.2em;
+}
+.prose li::marker {
+  color: var(--muted);
+}
+.prose li > p {
+  margin: 0.5em 0;
+}
+.prose li > ul,
+.prose li > ol {
+  margin: 0.5em 0;
+}
+.prose .contains-task-list {
+  list-style: none;
+  padding-left: 0.2em;
+}
+.prose .task-list-item input {
+  margin-right: 0.55em;
+  accent-color: var(--accent);
+}
+.prose :not(pre) > code {
+  font-family: var(--font-mono);
+  font-size: 0.84em;
+  padding: 0.15em 0.38em;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow-wrap: anywhere;
+}
+.prose blockquote {
+  margin: 1.8em 0;
+  padding: 3px 22px;
+  border-left: 3px solid var(--accent);
+  color: var(--muted);
+  background: var(--accent-soft);
+  border-radius: 0 6px 6px 0;
+  font-size: 0.94em;
+}
+.prose blockquote p {
+  margin: 0.75em 0;
+}
+.prose hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 3em 0;
+}
+.prose table {
+  display: block;
+  max-width: 100%;
+  width: max-content;
+  overflow-x: auto;
+  border-collapse: collapse;
+  margin: 1.7em 0;
+  font-size: 0.87em;
+  line-height: 1.8;
+}
+.prose th,
+.prose td {
+  border: 1px solid var(--border);
+  padding: 10px 15px;
+  vertical-align: top;
+}
+.prose th {
+  text-align: left;
+  font-weight: 550;
+  background: var(--surface);
+}
+.prose .katex {
+  font-size: 1.1em;
+  overflow-wrap: normal;
+}
+.prose .katex-display {
+  padding: 0.7em 0.1em;
+  margin: 1.5em 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.prose .katex-display > .katex {
+  padding: 0 0.2em;
+}
+.prose .expressive-code {
+  margin: 1.8em 0;
+}
+.prose .expressive-code figure {
+  margin: 0;
+}
+.prose .expressive-code pre {
+  max-height: none;
+}
+.prose .article-image {
+  margin: 2em 0;
+}
+.prose .article-image img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+}
+.prose figcaption {
+  text-align: center;
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.8;
+}
+.prose .image-trigger {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  cursor: zoom-in;
+}
+.prose .footnotes {
+  font-size: 13px;
+  line-height: 1.9;
+  color: var(--muted);
+  margin-top: 42px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.prose .footnotes h2 {
+  font-size: 17px;
+  margin-top: 1em;
+}
+.prose sup a {
+  font-size: 0.8em;
+  padding: 0 0.15em;
+  text-decoration: none;
+}
+.prose details {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px 18px;
+  margin: 1.5em 0;
+}
+.prose summary {
+  cursor: pointer;
+  font-size: 0.9em;
+  font-weight: 500;
+}
+.dialog-open {
+  overflow: hidden;
+}
+.image-viewer {
+  width: min(1200px, calc(100% - 32px));
+  max-height: calc(100svh - 40px);
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+}
+.image-viewer::backdrop {
+  background: rgb(0 0 0 / 0.78);
+  backdrop-filter: blur(5px);
+}
+.image-viewer-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 10px 14px 10px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.image-viewer-toolbar p {
+  font-size: 13px;
+  color: var(--muted);
+}
+.image-viewer img {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  max-height: calc(100svh - 135px);
+  object-fit: contain;
+  margin: auto;
+  background: #fff;
+}
+@media (max-width: 600px) {
+  .prose {
+    font-size: 15px;
+    line-height: 1.95;
+  }
+  .prose h2 {
+    font-size: 21px;
+    margin-top: 2.3em;
+  }
+  .prose h3 {
+    font-size: 18px;
+  }
+  .prose blockquote {
+    padding: 2px 16px;
+  }
+  .prose .katex {
+    font-size: 1.05em;
+  }
+  .prose th,
+  .prose td {
+    padding: 9px 12px;
+  }
+}
+@media print {
+  .prose {
+    font-size: 11pt;
+    line-height: 1.7;
+  }
+  .prose h2 {
+    break-after: avoid;
+  }
+  .prose .katex-display,
+  .prose table {
+    overflow: visible;
+  }
+  .prose .expressive-code .copy {
+    display: none;
+  }
+}

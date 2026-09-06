@@ -1,0 +1,70 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PostList from '../components/PostList.astro';
+import Gorilla from '../components/Gorilla.astro';
+import Icon from '../components/Icon.astro';
+import { site } from '../data/site';
+import { projects } from '../data/projects';
+import { getPosts } from '../lib/posts';
+const posts = await getPosts();
+const project = projects[0];
+---
+
+<BaseLayout>
+  <main class="page home-page" id="main">
+    <header class="home-hero">
+      <div class="home-introduction">
+        <p class="eyebrow">
+          <span aria-hidden="true"></span> 个人博客
+        </p>
+        <h1>你好，我是 huxint<span>。</span></h1>
+        <p class="home-description">
+          江西师范大学人工智能专业本科生。<br />记一些学到的东西，也写日常生活。
+        </p>
+        <div class="home-links">
+          <a href="/about/">关于我 <Icon name="arrow" size={16} /></a>
+          <a href={site.github}><Icon name="github" size={16} /> GitHub</a>
+        </div>
+      </div>
+      <Gorilla />
+    </header>
+    <section aria-labelledby="notes-title">
+      <div class="section-bar">
+        <h2 id="notes-title">
+          最近的文章 <span class="section-count"
+            >{String(posts.length).padStart(2, '0')}</span
+          >
+        </h2>
+        <a href="/tags/">按标签浏览 <Icon name="arrow" size={14} /></a>
+      </div>
+      {
+        posts.length ? (
+          <PostList posts={posts} headingLevel="h3" />
+        ) : (
+          <p class="empty-state">文章正在准备中。</p>
+        )
+      }
+    </section>
+    {
+      project && (
+        <aside class="home-project" aria-label="我的项目">
+          <span class="home-project-label">
+            <Icon name="terminal" size={16} /> 我的项目
+          </span>
+          <a href="/projects/">
+            <span>
+              <>
+                <strong>{project.name}</strong>
+                <span class="home-project-description">{project.summary}</span>
+              </>
+            </span>
+            <Icon name="arrow" size={18} />
+          </a>
+        </aside>
+      )
+    }
+    <p class="home-note">
+      通过 <a href="/rss.xml">RSS</a> 订阅更新。
+    </p>
+  </main>
+</BaseLayout>
