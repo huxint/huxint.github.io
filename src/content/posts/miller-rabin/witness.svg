@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="258" viewBox="0 0 920 258" fill="none">
+  <title>561 的 Miller–Rabin 平方链</title>
+  <desc>以 2 为基底，2 的 35 次方模 561 等于 263，继续平方取模依次得到 166、67、1，在到达 1 前没有出现负 1。</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="m1 1 8 4-8 4" fill="none" stroke="#8593aa" stroke-width="1.5"/></marker>
+    <style>text{font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",sans-serif}.number{font-size:31px;font-weight:600;fill:#344159}.label{font-size:13px;fill:#78869d}</style>
+  </defs>
+  <rect width="920" height="258" rx="12" fill="#fbfcfe"/>
+  <text x="42" y="42" font-size="14" fill="#637189">n = 561 · a = 2 · 560 = 35 × 2⁴</text>
+  <g fill="#f0f4fc" stroke="#d4deed">
+    <rect x="42" y="81" width="140" height="84" rx="9"/>
+    <rect x="272" y="81" width="140" height="84" rx="9"/>
+    <rect x="502" y="81" width="140" height="84" rx="9"/>
+  </g>
+  <rect x="732" y="81" width="140" height="84" rx="9" fill="#fff3ef" stroke="#eac4b5"/>
+  <text x="112" y="134" text-anchor="middle" class="number">263</text>
+  <text x="342" y="134" text-anchor="middle" class="number">166</text>
+  <text x="572" y="134" text-anchor="middle" class="number">67</text>
+  <text x="802" y="134" text-anchor="middle" class="number" style="fill:#9a5234">1</text>
+  <g stroke="#8593aa" stroke-width="1.5" marker-end="url(#arrow)"><path d="M190 123h70"/><path d="M420 123h70"/><path d="M650 123h70"/></g>
+  <text x="225" y="105" text-anchor="middle" class="label">平方取模</text>
+  <text x="455" y="105" text-anchor="middle" class="label">平方取模</text>
+  <text x="685" y="105" text-anchor="middle" class="label">平方取模</text>
+  <text x="42" y="219" font-size="16" fill="#637189">67 既不是 1，也不是 560，平方后却得到 1：发现了合数的证据。</text>
+</svg>

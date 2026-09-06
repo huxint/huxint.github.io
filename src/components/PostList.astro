@@ -1,0 +1,42 @@
+---
+import type { Post } from '../lib/posts';
+import { formatDate, readingMinutes } from '../lib/posts';
+import Icon from './Icon.astro';
+interface Props {
+  posts: Post[];
+  headingLevel?: 'h2' | 'h3';
+}
+const { posts, headingLevel: Heading = 'h2' } = Astro.props;
+---
+
+<ol class="post-list">
+  {
+    posts.map((post) => (
+      <li class="post-list-item">
+        <div class="post-list-meta">
+          <time datetime={post.data.pubDate.toISOString()}>
+            {formatDate(post.data.pubDate)}
+          </time>
+          <span>约 {readingMinutes(post.body)} 分钟</span>
+          {post.data.draft && <span>草稿</span>}
+        </div>
+        <div>
+          <Heading class="post-title">
+            <a href={`/posts/${post.id}/`}>
+              {post.data.title}
+              <span class="post-list-arrow">
+                <Icon name="arrow" size={19} />
+              </span>
+            </a>
+          </Heading>
+          <p>{post.data.description}</p>
+          <div class="tag-links">
+            {post.data.tags.map((tag) => (
+              <a href={`/tags/${encodeURIComponent(tag)}/`}>{tag}</a>
+            ))}
+          </div>
+        </div>
+      </li>
+    ))
+  }
+</ol>

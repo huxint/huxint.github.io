@@ -1,0 +1,28 @@
+---
+import type { GetStaticPaths } from 'astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostList from '../../components/PostList.astro';
+import { getPosts, getTags, type Post } from '../../lib/posts';
+export const getStaticPaths = (async () => {
+  const posts = await getPosts();
+  return getTags(posts).map(([tag]) => ({
+    params: { tag },
+    props: { tag, posts: posts.filter((post) => post.data.tags.includes(tag)) },
+  }));
+}) satisfies GetStaticPaths;
+interface Props {
+  tag: string;
+  posts: Post[];
+}
+const { tag, posts } = Astro.props;
+---
+
+<BaseLayout title={tag} description={`标签「${tag}」下的文章。`}>
+  <main class="page" id="main">
+    <a class="back-link" href="/tags/">← 所有标签</a>
+    <header class="page-heading">
+      <h1>{tag}</h1><p>{posts.length} 篇文章</p>
+    </header>
+    <PostList posts={posts} />
+  </main>
+</BaseLayout>

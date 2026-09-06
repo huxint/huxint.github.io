@@ -1,0 +1,241 @@
+---
+import Icon from './Icon.astro';
+interface Props {
+  id?: string;
+}
+const { id = 'gorilla' } = Astro.props;
+---
+
+<gorilla-avatar class="gorilla-avatar" data-state="idle">
+  <div class="gorilla-stage">
+    <div class="gorilla-backdrop" aria-hidden="true"></div>
+    <span class="gorilla-greeting" role="status" data-gorilla-status></span>
+    <img
+      class="gorilla-poster"
+      src="/images/gorilla-portrait.webp"
+      width="640"
+      height="640"
+      alt="拿着笔记本的银背猩猩"
+      fetchpriority="high"
+    />
+    <canvas
+      class="gorilla-canvas"
+      role="img"
+      aria-label="拿着笔记本的 3D 银背猩猩"
+      aria-describedby={`${id}-instructions`}
+      tabindex="-1"
+      hidden></canvas>
+  </div>
+  <div class="gorilla-caption">
+    <div class="gorilla-controls" hidden>
+      <button class="gorilla-greet" type="button" data-gorilla-greet
+        >打个招呼 <span aria-hidden="true">↗</span></button
+      >
+      <button
+        class="gorilla-tool"
+        type="button"
+        data-gorilla-reset
+        aria-label="重置猩猩视角"
+        title="重置视角"><Icon name="rotate" size={14} /></button
+      >
+      <button
+        class="gorilla-tool gorilla-motion"
+        type="button"
+        data-gorilla-motion
+        aria-label="暂停猩猩动画"
+        title="暂停动画"
+        aria-pressed="false"
+        ><span class="gorilla-pause"><Icon name="pause" size={14} /></span><span
+          class="gorilla-play"><Icon name="play" size={14} /></span
+        ></button
+      >
+    </div>
+  </div>
+  <span class="gorilla-hint" aria-hidden="true">拖动转一转，点击打招呼</span>
+  <p class="sr-only" id={`${id}-instructions`}>
+    拖动可以旋转，点击可以打招呼。键盘左右方向键旋转，Home 键恢复视角，Enter
+    键打招呼。
+  </p>
+</gorilla-avatar>
+
+<script>
+  class GorillaAvatar extends HTMLElement {
+    private visibility?: IntersectionObserver;
+    private dispose?: () => void;
+    private generation = 0;
+
+    connectedCallback() {
+      const generation = ++this.generation;
+      this.visibility = new IntersectionObserver(
+        (entries) => {
+          if (!entries.some((entry) => entry.isIntersecting)) return;
+          this.visibility?.disconnect();
+          void this.load(generation);
+        },
+        { rootMargin: '120px' },
+      );
+      this.visibility.observe(this);
+    }
+
+    private async load(generation: number) {
+      try {
+        const { mountGorilla } = await import('../scripts/gorilla-scene');
+        if (!this.isConnected || generation !== this.generation) return;
+        this.dispose = mountGorilla(this);
+      } catch {
+        this.dataset.state = 'fallback';
+      }
+    }
+
+    disconnectedCallback() {
+      this.generation++;
+      this.visibility?.disconnect();
+      this.dispose?.();
+      this.dispose = undefined;
+    }
+  }
+
+  customElements.define('gorilla-avatar', GorillaAvatar);
+</script>
+
+<style>
+  .gorilla-avatar {
+    display: block;
+    width: 100%;
+    max-width: 350px;
+    justify-self: end;
+  }
+  .gorilla-stage {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    isolation: isolate;
+  }
+  .gorilla-backdrop {
+    position: absolute;
+    z-index: -1;
+    inset: 12% 4% 0;
+    border-radius: 50%;
+    background: var(--portrait-bg);
+    border: 1px solid var(--portrait-border);
+  }
+  .gorilla-canvas,
+  .gorilla-poster {
+    display: block;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  .gorilla-canvas {
+    cursor: grab;
+    touch-action: pan-y;
+    border-radius: 50%;
+  }
+  .gorilla-canvas:active {
+    cursor: grabbing;
+  }
+  .gorilla-greeting {
+    position: absolute;
+    top: 4%;
+    right: 0;
+    z-index: 1;
+    padding: 7px 12px;
+    border: 1px solid var(--border);
+    border-radius: 12px 12px 12px 2px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 12px;
+    pointer-events: none;
+    opacity: 1;
+    transition:
+      opacity 160ms ease,
+      transform 160ms ease;
+  }
+  .gorilla-greeting:empty {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  .gorilla-caption {
+    min-height: 40px;
+    margin-top: 4px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0 10px;
+  }
+  .gorilla-hint {
+    display: block;
+    text-align: center;
+    font-size: 10px;
+    color: var(--faint);
+    opacity: 0;
+  }
+  [data-state='ready'] .gorilla-hint {
+    opacity: 1;
+  }
+  .gorilla-controls {
+    display: flex;
+    align-items: center;
+    gap: 0;
+  }
+  .gorilla-controls button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 36px;
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    border-radius: 5px;
+  }
+  .gorilla-controls button:hover {
+    color: var(--accent);
+    background: var(--accent-soft);
+  }
+  .gorilla-greet {
+    font-size: 11px;
+    padding: 0 7px;
+    gap: 3px;
+  }
+  .gorilla-tool {
+    width: 32px;
+    padding: 0;
+  }
+  .gorilla-play,
+  [aria-pressed='true'] .gorilla-pause {
+    display: none;
+  }
+  [aria-pressed='true'] .gorilla-play {
+    display: block;
+  }
+  @media (max-width: 600px) {
+    .gorilla-avatar {
+      max-width: 228px;
+      justify-self: center;
+    }
+    .gorilla-caption {
+      gap: 0 4px;
+      margin-top: 0;
+    }
+    .gorilla-controls button {
+      min-height: 40px;
+    }
+    .gorilla-tool {
+      width: 36px;
+    }
+  }
+  @media print {
+    .gorilla-canvas,
+    .gorilla-controls,
+    .gorilla-hint,
+    .gorilla-greeting {
+      display: none !important;
+    }
+    .gorilla-poster {
+      display: block !important;
+    }
+  }
+</style>
