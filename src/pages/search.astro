@@ -1,0 +1,41 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Icon from '../components/Icon.astro';
+---
+
+<BaseLayout title="搜索" description="搜索博客文章。" noindex>
+  <main class="page" id="main">
+    <header class="page-heading">
+      <h1>搜索</h1>
+    </header>
+    <form class="search-form" role="search" action="/search/">
+      <label class="sr-only" for="search-input">搜索文章</label><Icon
+        name="search"
+      />
+      <input
+        class="search-input"
+        id="search-input"
+        name="q"
+        type="search"
+        placeholder="输入关键词"
+        autocomplete="off"
+      />
+    </form>
+    <a class="text-link search-browse" href="/tags/">按标签浏览 →</a>
+    <p class="search-status" role="status" aria-live="polite">
+      输入关键词开始搜索。
+    </p>
+    <ol class="search-results"></ol>
+    <button class="more-results" type="button" hidden>显示更多</button>
+    <noscript
+      ><p class="empty-state">
+        全文搜索需要启用 JavaScript，也可以<a class="text-link" href="/tags/"
+          >按标签浏览文章</a
+        >。
+      </p></noscript
+    >
+  </main>
+</BaseLayout>
+<script>
+  import '../scripts/search';
+</script>

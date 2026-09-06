@@ -1,0 +1,48 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Icon from '../components/Icon.astro';
+import { projects } from '../data/projects';
+---
+
+<BaseLayout title="项目" description="huxint 的项目介绍和源码链接。">
+  <main class="page" id="main">
+    <header class="page-heading">
+      <h1>项目</h1>
+    </header>
+    {
+      projects.map((project) => (
+        <article class="project-card">
+          <div class="project-heading">
+            <>
+              <span class="project-symbol">
+                <Icon name="terminal" size={25} />
+              </span>
+              <div>
+                <>
+                  <h2>{project.name}</h2>
+                  <a class="project-path" href={project.url}>
+                    {new URL(project.url).pathname.slice(1)}
+                  </a>
+                </>
+              </div>
+            </>
+          </div>
+          <p>{project.description}</p>
+          <p class="project-details">{project.details}</p>
+          <div class="project-footer">
+            <>
+              <div class="project-tags">
+                {project.tags.map((tag) => (
+                  <span>{tag}</span>
+                ))}
+              </div>
+              <a class="text-link" href={project.url}>
+                查看源码 <Icon name="external" size={17} />
+              </a>
+            </>
+          </div>
+        </article>
+      ))
+    }
+  </main>
+</BaseLayout>

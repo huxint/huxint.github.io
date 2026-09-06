@@ -1,0 +1,14 @@
+---
+import Icon from './Icon.astro';
+import { site } from '../data/site';
+---
+
+<footer class="site-footer" data-pagefind-ignore>
+  <span>© {new Date().getUTCFullYear()} {site.name}</span>
+  <div>
+    <a href={site.github} aria-label="huxint 的 GitHub"
+      ><Icon name="github" size={15} /><span>GitHub</span></a
+    >
+    <a href="/rss.xml"><Icon name="rss" size={15} /><span>RSS</span></a>
+  </div>
+</footer>

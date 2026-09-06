@@ -1,0 +1,64 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Icon from '../components/Icon.astro';
+import { site } from '../data/site';
+import { projects } from '../data/projects';
+const project = projects[0];
+---
+
+<BaseLayout
+  title="关于我"
+  description="huxint，江西师范大学人工智能专业本科生。"
+>
+  <main class="page" id="main">
+    <header class="page-heading about-heading">
+      <div><h1>关于我</h1><p>我是 huxint。</p></div>
+      <a href="/" class="about-avatar" aria-label="回到首页，和猩猩打个招呼"
+        ><img
+          src="/images/gorilla.webp"
+          width="112"
+          height="112"
+          alt="戴着墨镜、抱着双臂的猩猩"
+        /></a
+      >
+    </header>
+    <div class="about-body">
+      <dl class="about-details">
+        <div><dt>学校</dt><dd>江西师范大学</dd></div>
+        <div><dt>专业</dt><dd>人工智能（本科在读）</dd></div>
+      </dl>
+      <h2>这个博客</h2>
+      <p>主要记一些学到的东西，也写日常生活。</p>
+      {
+        project && (
+          <>
+            <h2>在做的项目</h2>
+            <p>
+              我在做{' '}
+              <a class="text-link" href={project.url}>
+                {project.name} <Icon name="external" size={17} />
+              </a>
+              ，{project.description} 具体介绍在
+              <a class="text-link" href="/projects/">
+                项目页
+              </a>
+              。
+            </p>
+          </>
+        )
+      }
+      <h2>联系我</h2>
+      <p>
+        邮箱：<a class="text-link" href={`mailto:${site.email}`}>{site.email}</a
+        >
+      </p>
+      <div class="about-links">
+        <a class="text-link" href={site.github}
+          ><Icon name="github" size={17} /> GitHub</a
+        ><a class="text-link" href="/rss.xml"
+          ><Icon name="rss" size={17} /> RSS 订阅</a
+        >
+      </div>
+    </div>
+  </main>
+</BaseLayout>

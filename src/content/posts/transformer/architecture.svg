@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="680" viewBox="0 0 960 680" fill="none">
+  <title>Transformer 编码器与解码器</title>
+  <desc>源序列经过六层编码器，输出供六层解码器的交叉注意力读取。右移后的目标序列经过因果自注意力、交叉注意力和前馈网络，生成词表上的概率。</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="m1 1 8 4-8 4" fill="none" stroke="#79849b" stroke-width="1.6"/></marker>
+    <style>text{font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",sans-serif;fill:#263247} .label{font-size:18px;font-weight:600}.detail{font-size:14px;fill:#66738b}.small{font-size:13px;fill:#718097}.wire{stroke:#79849b;stroke-width:1.7;marker-end:url(#arrow)} .box{fill:#fff;stroke:#d4ddeb;stroke-width:1.2}</style>
+  </defs>
+  <rect width="960" height="680" rx="12" fill="#fbfcfe"/>
+  <text x="76" y="45" font-size="13" letter-spacing="2" fill="#6a7791">THE TRANSFORMER</text>
+  <text x="226" y="98" text-anchor="middle" class="label">源序列</text>
+  <text x="726" y="98" text-anchor="middle" class="label">右移的目标序列</text>
+  <text x="226" y="125" text-anchor="middle" class="detail">词嵌入 + 位置编码</text>
+  <text x="726" y="125" text-anchor="middle" class="detail">词嵌入 + 位置编码</text>
+  <rect x="66" y="160" width="320" height="377" rx="14" stroke="#cfd9e9" stroke-dasharray="5 5" fill="#f1f5fb"/>
+  <rect x="556" y="160" width="340" height="377" rx="14" stroke="#cfd9e9" stroke-dasharray="5 5" fill="#f1f5fb"/>
+  <path class="wire" d="M226 140v57"/><path class="wire" d="M726 140v57"/>
+  <text x="83" y="184" class="small">ENCODER</text><text x="367" y="184" text-anchor="end" class="small">× 6</text>
+  <text x="574" y="184" class="small">DECODER</text><text x="878" y="184" text-anchor="end" class="small">× 6</text>
+  <rect x="94" y="201" width="264" height="94" rx="8" class="box"/>
+  <text x="226" y="232" text-anchor="middle" class="label">多头自注意力</text><text x="226" y="257" text-anchor="middle" class="detail">Q、K、V 来自源序列表示</text><text x="226" y="279" text-anchor="middle" class="small">残差连接 + LayerNorm</text>
+  <path class="wire" d="M226 296v51"/>
+  <rect x="94" y="352" width="264" height="84" rx="8" class="box"/>
+  <text x="226" y="384" text-anchor="middle" class="label">逐位置前馈网络</text><text x="226" y="414" text-anchor="middle" class="small">残差连接 + LayerNorm</text>
+  <path class="wire" d="M226 437v57"/>
+  <text x="226" y="518" text-anchor="middle" class="detail">编码器最终输出 H</text>
+  <rect x="585" y="201" width="282" height="83" rx="8" class="box"/>
+  <text x="726" y="232" text-anchor="middle" class="label">带掩码的多头自注意力</text><text x="726" y="263" text-anchor="middle" class="small">残差连接 + LayerNorm</text>
+  <path class="wire" d="M726 285v27"/>
+  <rect x="585" y="317" width="282" height="87" rx="8" fill="#eaf0fd" stroke="#a6bce7" stroke-width="1.2"/>
+  <text x="726" y="348" text-anchor="middle" class="label">多头交叉注意力</text><text x="726" y="380" text-anchor="middle" class="small">残差连接 + LayerNorm</text>
+  <path class="wire" d="M726 405v27"/>
+  <rect x="585" y="437" width="282" height="74" rx="8" class="box"/>
+  <text x="726" y="466" text-anchor="middle" class="label">逐位置前馈网络</text><text x="726" y="491" text-anchor="middle" class="small">残差连接 + LayerNorm</text>
+  <path class="wire" d="M326 506h118a14 14 0 0 0 14-14V375a14 14 0 0 1 14-14h107"/>
+  <rect x="430" y="404" width="56" height="29" rx="5" fill="#fbfcfe"/><text x="458" y="424" text-anchor="middle" class="detail">K, V</text>
+  <text x="744" y="305" class="small">Q</text>
+  <path class="wire" d="M726 512v49"/>
+  <rect x="605" y="567" width="242" height="47" rx="7" class="box"/>
+  <text x="726" y="597" text-anchor="middle" class="detail">线性投影 → Softmax</text>
+  <text x="726" y="646" text-anchor="middle" class="label">下一个词的概率</text>
+  <text x="78" y="612" class="small">每个子层保留残差路径</text>
+  <text x="78" y="635" class="small">原论文采用 Post-LN 结构</text>
+</svg>

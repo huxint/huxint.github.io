@@ -1,0 +1,58 @@
+---
+import Icon from './Icon.astro';
+import { site } from '../data/site';
+const path = Astro.url.pathname;
+const links = [
+  {
+    href: '/',
+    label: '文章',
+    active:
+      path === '/' || path.startsWith('/posts/') || path.startsWith('/tags/'),
+  },
+  { href: '/projects/', label: '项目', active: path.startsWith('/projects/') },
+  { href: '/about/', label: '关于', active: path.startsWith('/about/') },
+];
+---
+
+<a class="skip-link" href="#main">跳到正文</a>
+<header class="site-header" data-pagefind-ignore>
+  <div class="header-inner">
+    <a class="wordmark" href="/" aria-label={`${site.name} 首页`}
+      >{site.name}<span>.</span></a
+    >
+    <nav class="site-nav" aria-label="主导航">
+      {
+        links.map((link) => (
+          <a
+            href={link.href}
+            class:list={{ active: link.active }}
+            aria-current={path === link.href ? 'page' : undefined}
+          >
+            {link.label}
+          </a>
+        ))
+      }
+    </nav>
+    <div class="header-tools">
+      <a
+        class="icon-button"
+        href="/search/"
+        aria-label="搜索文章"
+        title="搜索文章"><Icon name="search" size={18} /></a
+      >
+      <button
+        class="icon-button theme-toggle"
+        type="button"
+        aria-label="切换主题"
+        title="切换主题"
+        data-theme-toggle
+      >
+        <span class="theme-moon"><Icon name="moon" size={18} /></span>
+        <span class="theme-sun"><Icon name="sun" size={18} /></span>
+      </button>
+    </div>
+  </div>
+</header>
+<script>
+  import '../scripts/theme';
+</script>
