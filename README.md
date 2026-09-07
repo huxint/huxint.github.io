@@ -74,22 +74,21 @@ int square(int value) {
 
 修改域名时，同时更新 `astro.config.mjs` 的 `site` 和 `public/robots.txt` 中的 Sitemap 地址。
 
-## 验证
+## 检查与测试
 
 ```bash
 pnpm check
-pnpm test:articles
 pnpm exec playwright install chromium
 pnpm test
 ```
 
-`test:articles` 需要支持 C++20 和 `__uint128_t` 的 GCC。它直接提取文章中的 C++ 程序编译运行，与 `0…50000` 的筛法结果及大整数边界样例比较。
+`pnpm check` 执行 Astro 与 TypeScript 静态检查。`pnpm test` 先构建站点，再检查导航、搜索、主题切换、移动布局和 404 等基础行为，用例不依赖固定的文章标题、地址或正文。
 
-`pnpm test` 先构建站点，再通过 Chromium 检查公式、手机溢出、代码复制、中文搜索、主题持久化、图片键盘操作和草稿隔离。`pnpm format` 整理源码格式，文章 Markdown 保持作者排版。
+`pnpm format` 整理源码格式，文章 Markdown 保持作者排版。临时验证脚本、截图和运行状态放在临时目录，不提交到仓库。
 
 ## 部署
 
-[GitHub Actions](.github/workflows/pages.yml) 在推送和 Pull Request 时执行检查、文章程序验证与浏览器测试。`main` 分支检查通过后，把 `dist/` 部署到 GitHub Pages。
+[GitHub Actions](.github/workflows/pages.yml) 在推送和 Pull Request 时执行静态检查、站点构建与基础测试。`main` 分支检查通过后，把 `dist/` 部署到 GitHub Pages。
 
 仓库 Settings → Pages → Source 需要设置为 **GitHub Actions**。
 

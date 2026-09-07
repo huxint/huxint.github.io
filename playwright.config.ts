@@ -1,9 +1,12 @@
 import { defineConfig, devices } from '@playwright/test';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 const port = Number(process.env.BLOG_TEST_PORT ?? 4321);
 
 export default defineConfig({
   testDir: './tests',
+  outputDir: join(tmpdir(), 'huxint-blog-test-results'),
   fullyParallel: true,
   workers: 2,
   retries: 0,
