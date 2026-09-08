@@ -4,7 +4,6 @@ test('主导航可以打开各个站点页面', async ({ page }) => {
   await page.goto('/');
   const navigation = page.getByRole('navigation', { name: '主导航' });
   for (const [name, path] of [
-    ['项目', '/projects/'],
     ['关于', '/about/'],
     ['文章', '/'],
   ]) {

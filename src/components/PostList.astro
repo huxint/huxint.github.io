@@ -7,35 +7,58 @@ interface Props {
   headingLevel?: 'h2' | 'h3';
 }
 const { posts, headingLevel: Heading = 'h2' } = Astro.props;
+const groups = posts.reduce<{ year: number; posts: Post[] }[]>(
+  (result, post) => {
+    const year = post.data.pubDate.getUTCFullYear();
+    const group = result.at(-1);
+    if (group?.year === year) {
+      group.posts.push(post);
+    } else {
+      result.push({ year, posts: [post] });
+    }
+    return result;
+  },
+  [],
+);
 ---
 
 <ol class="post-list">
   {
-    posts.map((post) => (
-      <li class="post-list-item">
-        <div class="post-list-meta">
-          <time datetime={post.data.pubDate.toISOString()}>
-            {formatDate(post.data.pubDate)}
-          </time>
-          <span>约 {readingMinutes(post.body)} 分钟</span>
-          {post.data.draft && <span>草稿</span>}
+    groups.map((group) => (
+      <li class="post-year-group">
+        <div class="post-year-heading" role="heading" aria-level="3">
+          <span>{group.year}</span>
+          <span>{group.posts.length} 篇</span>
         </div>
-        <div>
-          <Heading class="post-title">
-            <a href={`/posts/${post.id}/`}>
-              {post.data.title}
-              <span class="post-list-arrow">
-                <Icon name="arrow" size={19} />
-              </span>
-            </a>
-          </Heading>
-          <p>{post.data.description}</p>
-          <div class="tag-links">
-            {post.data.tags.map((tag) => (
-              <a href={`/tags/${encodeURIComponent(tag)}/`}>{tag}</a>
-            ))}
-          </div>
-        </div>
+        <ol class="post-year-list">
+          {group.posts.map((post) => (
+            <li class="post-list-item">
+              <div class="post-list-meta">
+                <time datetime={post.data.pubDate.toISOString()}>
+                  {formatDate(post.data.pubDate)}
+                </time>
+                <span>约 {readingMinutes(post.body)} 分钟</span>
+                {post.data.draft && <span>草稿</span>}
+              </div>
+              <div>
+                <Heading class="post-title">
+                  <a href={`/posts/${post.id}/`}>
+                    {post.data.title}
+                    <span class="post-list-arrow">
+                      <Icon name="arrow" size={19} />
+                    </span>
+                  </a>
+                </Heading>
+                <p>{post.data.description}</p>
+                <div class="tag-links">
+                  {post.data.tags.map((tag) => (
+                    <a href={`/tags/${encodeURIComponent(tag)}/`}>{tag}</a>
+                  ))}
+                </div>
+              </div>
+            </li>
+          ))}
+        </ol>
       </li>
     ))
   }
