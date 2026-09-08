@@ -2,8 +2,6 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Icon from '../components/Icon.astro';
 import { site } from '../data/site';
-import { projects } from '../data/projects';
-const project = projects[0];
 ---
 
 <BaseLayout
@@ -29,24 +27,6 @@ const project = projects[0];
       </dl>
       <h2>这个博客</h2>
       <p>主要记一些学到的东西，也写日常生活。</p>
-      {
-        project && (
-          <>
-            <h2>在做的项目</h2>
-            <p>
-              我在做{' '}
-              <a class="text-link" href={project.url}>
-                {project.name} <Icon name="external" size={17} />
-              </a>
-              ，{project.description} 具体介绍在
-              <a class="text-link" href="/projects/">
-                项目页
-              </a>
-              。
-            </p>
-          </>
-        )
-      }
       <h2>联系我</h2>
       <p>
         邮箱：<a class="text-link" href={`mailto:${site.email}`}>{site.email}</a
