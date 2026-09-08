@@ -68,7 +68,6 @@ int square(int value) {
 ## 配置
 
 - [站点信息](src/data/site.ts)：名称、简介、邮箱与 GitHub 链接。
-- [项目列表](src/data/projects.ts)：手动维护项目名称、简介、标签和仓库地址。
 - [Astro 配置](astro.config.mjs)：站点 URL、Markdown 渲染与代码主题。
 - [全局样式](src/styles/global.css) 与 [正文样式](src/styles/prose.css)：配色、布局和文章排版。
 
