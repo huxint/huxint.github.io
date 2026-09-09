@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="1056" viewBox="0 0 960 1056" role="img" aria-labelledby="title description">
+  <title id="title">一种 Linux 用户态虚拟地址空间布局</title>
+  <desc id="description">从高地址到低地址示意主线程栈、保护区域、共享库和匿名映射、空洞、传统堆、BSS、可写数据、只读数据和代码。实际布局由平台、装载器和分配器决定，节与映射并非一一对应。</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 1 9 5 1 9" fill="none" stroke="#69788e" stroke-width="1.6"/></marker>
+    <pattern id="guard" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M-2 2 2-2 M0 10 10 0 M8 12 12 8" stroke="#cdd5e1" stroke-width="1.4"/></pattern>
+    <style>
+      text{font-family:"Noto Sans CJK SC","Microsoft YaHei",sans-serif;fill:#243247}
+      .title{font-size:30px;font-weight:700}.label{font-size:24px;font-weight:600}.body{font-size:21px}.note{font-size:19px;fill:#596980}.mono{font-family:"JetBrains Mono","Noto Sans CJK SC",monospace;font-size:20px}.line{fill:none;stroke:#69788e;stroke-width:2;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <rect width="960" height="1056" rx="16" fill="#fbfcfe"/>
+  <text x="44" y="58" class="title">进程地址空间：看映射与权限</text>
+  <text x="44" y="96" class="note">一种可能的布局 · 不按比例 · 实际顺序与间隔会变化</text>
+  <path d="M81 948V159" class="line"/>
+  <text x="81" y="140" text-anchor="middle" class="body">高地址</text>
+  <text x="81" y="988" text-anchor="middle" class="body">低地址</text>
+
+  <rect x="160" y="140" width="448" height="124" rx="10" fill="#e9f1ff" stroke="#a9c3ea"/>
+  <text x="184" y="178" class="label">主线程栈</text>
+  <text x="184" y="214" class="body">自动对象 · 调用状态</text>
+  <text x="184" y="246" class="mono">rw-</text>
+  <path d="M579 167v67" class="line"/>
+  <text x="648" y="172" class="body">常见向低地址增长</text>
+  <text x="648" y="207" class="note">每个线程管理自己的栈</text>
+  <text x="648" y="239" class="note">容量和保护机制由平台决定</text>
+
+  <rect x="160" y="276" width="448" height="34" rx="4" fill="url(#guard)" stroke="#cdd5e1"/>
+  <text x="384" y="301" text-anchor="middle" class="note">不可访问的保护区域（示意）</text>
+
+  <rect x="160" y="334" width="448" height="166" rx="10" fill="#f0f3f8" stroke="#c7d1df"/>
+  <text x="184" y="373" class="label">其他映射</text>
+  <text x="184" y="412" class="body">共享库：代码、只读与可写数据</text>
+  <text x="184" y="447" class="body">匿名内存 · 文件映射</text>
+  <text x="184" y="482" class="body">其他线程栈 · TLS 等运行时存储</text>
+  <text x="648" y="373" class="body">new 的结果也可能在这里</text>
+  <text x="648" y="409" class="note">并非所有动态分配</text>
+  <text x="648" y="440" class="note">都来自标为 [heap] 的区域</text>
+  <text x="648" y="479" class="note">映射之间还可能存在空洞</text>
+
+  <path d="M160 527h448 M160 553h448" stroke="#c7d1df" stroke-dasharray="5 6"/>
+  <text x="384" y="548" text-anchor="middle" class="note">未映射空间 / 映射间空洞</text>
+
+  <rect x="160" y="576" width="448" height="92" rx="10" fill="#e5f5ee" stroke="#9ccbb7"/>
+  <text x="184" y="613" class="label">传统堆映射</text>
+  <text x="184" y="649" class="mono">[heap] · rw-</text>
+  <path d="M579 648v-52" class="line"/>
+  <text x="648" y="610" class="body">分配器的一部分存储来源</text>
+  <text x="648" y="646" class="note">可通过 program break 调整</text>
+
+  <rect x="160" y="688" width="448" height="64" rx="6" fill="#eeeafa" stroke="#beb0dc"/>
+  <text x="184" y="729" class="label">.bss</text>
+  <text x="322" y="729" class="body">零初值存储</text>
+  <text x="578" y="729" text-anchor="end" class="mono">rw-</text>
+  <rect x="160" y="752" width="448" height="64" rx="6" fill="#eeeafa" stroke="#beb0dc"/>
+  <text x="184" y="793" class="label">.data</text>
+  <text x="322" y="793" class="body">可写初值数据</text>
+  <text x="578" y="793" text-anchor="end" class="mono">rw-</text>
+  <text x="648" y="719" class="body">节名用于说明内容</text>
+  <text x="648" y="754" class="note">同权限的节可以共同装载</text>
+  <text x="648" y="788" class="note">不必各占一条 maps 记录</text>
+
+  <rect x="160" y="816" width="448" height="64" rx="6" fill="#fff3da" stroke="#ddc48f"/>
+  <text x="184" y="857" class="label">.rodata</text>
+  <text x="322" y="857" class="body">只读数据</text>
+  <text x="578" y="857" text-anchor="end" class="mono">r--</text>
+  <text x="648" y="857" class="note">常含字符串字面量等</text>
+
+  <rect x="160" y="880" width="448" height="64" rx="6" fill="#e8edf4" stroke="#adbacb"/>
+  <text x="184" y="921" class="label">.text</text>
+  <text x="322" y="921" class="body">机器指令</text>
+  <text x="578" y="921" text-anchor="end" class="mono">r-x</text>
+  <text x="648" y="921" class="note">通常限制写入，允许执行</text>
+
+  <rect x="160" y="960" width="448" height="34" rx="4" fill="url(#guard)" stroke="#cdd5e1"/>
+  <text x="384" y="985" text-anchor="middle" class="note">低地址通常保留部分未映射空间</text>
+  <text x="44" y="1032" class="note">r = 可读　w = 可写　x = 可执行；这些是页的权限，不是 C++ 类型规则。</text>
+</svg>

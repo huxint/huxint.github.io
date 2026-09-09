@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="856" viewBox="0 0 960 856" role="img" aria-labelledby="title description">
+  <title id="title">容器对象、内嵌元素与所拥有的动态存储</title>
+  <desc id="description">左侧是自动存储期的 fixed、values、owned 和 text 对象。fixed 的四个 int 直接内嵌；values 管理右侧另外分配的一千个 int；owned 拥有右侧动态创建的 array。短 string 的字符可能使用内嵌缓冲，长内容可能另外分配。</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="m1 1 8 4-8 4" fill="none" stroke="#37896c" stroke-width="1.6"/></marker>
+    <style>
+      text{font-family:"Noto Sans CJK SC","Microsoft YaHei",sans-serif;fill:#243247}.title{font-size:30px;font-weight:700}.label{font-size:24px;font-weight:600}.body{font-size:21px}.note{font-size:19px;fill:#596980}.code{font-family:"JetBrains Mono","Noto Sans CJK SC",monospace;font-size:20px}.line{fill:none;stroke:#37896c;stroke-width:2.3;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <rect width="960" height="856" rx="16" fill="#fbfcfe"/>
+  <text x="44" y="58" class="title">“vector 在栈上”只描述了管理对象</text>
+  <text x="44" y="97" class="note">沿着所有权关系继续找：元素是内嵌的，还是另外取得的存储？</text>
+  <rect x="44" y="146" width="368" height="646" rx="12" fill="#f2f6fd" stroke="#bacde8"/>
+  <rect x="530" y="146" width="386" height="646" rx="12" fill="#f1f8f5" stroke="#bbd9ca"/>
+  <text x="68" y="187" class="label">自动存储期的局部对象</text>
+  <text x="554" y="187" class="label">另外分配的存储</text>
+
+  <rect x="66" y="225" width="324" height="122" rx="8" fill="#fff" stroke="#b2bfd2"/>
+  <text x="82" y="262" class="code">fixed: array&lt;int, 4&gt;</text>
+  <rect x="82" y="284" width="70" height="42" rx="4" fill="#eeeafa" stroke="#beb0dc"/>
+  <rect x="156" y="284" width="70" height="42" rx="4" fill="#eeeafa" stroke="#beb0dc"/>
+  <rect x="230" y="284" width="70" height="42" rx="4" fill="#eeeafa" stroke="#beb0dc"/>
+  <rect x="304" y="284" width="70" height="42" rx="4" fill="#eeeafa" stroke="#beb0dc"/>
+  <text x="117" y="313" text-anchor="middle" class="body">1</text>
+  <text x="191" y="313" text-anchor="middle" class="body">2</text>
+  <text x="265" y="313" text-anchor="middle" class="body">3</text>
+  <text x="339" y="313" text-anchor="middle" class="body">4</text>
+  <text x="554" y="265" class="body">fixed 的元素直接内嵌，</text>
+  <text x="554" y="301" class="body">不需要另行分配。</text>
+
+  <rect x="66" y="379" width="324" height="90" rx="8" fill="#fff" stroke="#b2bfd2"/>
+  <text x="82" y="416" class="code">values: vector&lt;int&gt;</text>
+  <text x="82" y="450" class="note">指针、大小 / 容量等管理信息</text>
+  <path d="M394 423h150" class="line"/>
+  <text x="469" y="409" text-anchor="middle" class="note">管理</text>
+  <rect x="550" y="379" width="346" height="90" rx="8" fill="#e5f5ee" stroke="#9ccbb7"/>
+  <text x="568" y="416" class="body">1000 个连续的 int</text>
+  <text x="568" y="450" class="code">7 | 7 | 7 | … | 7</text>
+
+  <rect x="66" y="511" width="324" height="90" rx="8" fill="#fff" stroke="#b2bfd2"/>
+  <text x="82" y="548" class="code">owned: unique_ptr&lt;…&gt;</text>
+  <text x="82" y="582" class="note">拥有指针</text>
+  <path d="M394 555h150" class="line"/>
+  <text x="469" y="541" text-anchor="middle" class="note">拥有</text>
+  <rect x="550" y="511" width="346" height="122" rx="8" fill="#e5f5ee" stroke="#9ccbb7"/>
+  <text x="568" y="548" class="body">被拥有的 array&lt;int, 4&gt;</text>
+  <rect x="568" y="571" width="72" height="42" rx="4" fill="#fff" stroke="#9ccbb7"/>
+  <rect x="646" y="571" width="72" height="42" rx="4" fill="#fff" stroke="#9ccbb7"/>
+  <rect x="724" y="571" width="72" height="42" rx="4" fill="#fff" stroke="#9ccbb7"/>
+  <rect x="802" y="571" width="72" height="42" rx="4" fill="#fff" stroke="#9ccbb7"/>
+  <text x="604" y="600" text-anchor="middle" class="body">0</text>
+  <text x="682" y="600" text-anchor="middle" class="body">0</text>
+  <text x="760" y="600" text-anchor="middle" class="body">0</text>
+  <text x="838" y="600" text-anchor="middle" class="body">0</text>
+
+  <rect x="66" y="645" width="324" height="122" rx="8" fill="#fff" stroke="#b2bfd2"/>
+  <text x="82" y="681" class="code">text: string</text>
+  <text x="82" y="715" class="note">常见 SSO：短内容内嵌</text>
+  <text x="82" y="748" class="code">'h'  'i'  '\0'</text>
+  <path d="M394 713h150" class="line" stroke-dasharray="5 5"/>
+  <text x="469" y="697" text-anchor="middle" class="note">长度增加</text>
+  <text x="554" y="707" class="body">更长的 string 内容</text>
+  <text x="554" y="742" class="body">可能由额外的分配承载</text>
+
+  <text x="44" y="832" class="note">管理字段布局和 SSO 均依赖实现；此图使用默认分配器与常见容器实现示意。</text>
+</svg>

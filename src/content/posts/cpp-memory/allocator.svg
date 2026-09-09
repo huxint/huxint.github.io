@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="800" viewBox="0 0 960 800" role="img" aria-labelledby="title description">
+  <title id="title">对象、分配器和操作系统的三层内存管理</title>
+  <desc id="description">new 与 delete 负责对象初始化、销毁并调用分配器。分配器从操作系统批量取得存储，为小请求复用空闲块。释放 B 后，B 的块可被复用，而 A 和 C 仍然存活，承载它们的映射可能继续保留。</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="m1 1 8 4-8 4" fill="none" stroke="#69788e" stroke-width="1.6"/></marker>
+    <style>
+      text{font-family:"Noto Sans CJK SC","Microsoft YaHei",sans-serif;fill:#243247}.title{font-size:30px;font-weight:700}.label{font-size:24px;font-weight:600}.body{font-size:21px}.note{font-size:19px;fill:#596980}.small{font-size:17px;fill:#596980}.line{fill:none;stroke:#69788e;stroke-width:2;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <rect width="960" height="800" rx="16" fill="#fbfcfe"/>
+  <text x="44" y="58" class="title">delete 之后，内存可能留在分配器手里</text>
+  <text x="44" y="97" class="note">对象是否存活、存储能否复用、页面是否归还系统，需要分别判断。</text>
+
+  <rect x="44" y="146" width="236" height="120" rx="10" fill="#e9f1ff" stroke="#a9c3ea"/>
+  <text x="162" y="185" text-anchor="middle" class="label">new / delete</text>
+  <text x="162" y="222" text-anchor="middle" class="body">初始化 / 销毁对象</text>
+  <text x="162" y="249" text-anchor="middle" class="small">调用相应分配 / 释放函数</text>
+  <path d="M285 185h71" class="line"/>
+  <path d="M356 233h-71" class="line"/>
+  <text x="320" y="169" text-anchor="middle" class="small">存储</text>
+  <rect x="362" y="146" width="236" height="120" rx="10" fill="#e5f5ee" stroke="#9ccbb7"/>
+  <text x="480" y="185" text-anchor="middle" class="label">用户态分配器</text>
+  <text x="480" y="222" text-anchor="middle" class="body">缓存 · 空闲块</text>
+  <text x="480" y="249" text-anchor="middle" class="small">大小类别 / arena 等策略</text>
+  <path d="M603 185h71" class="line"/>
+  <path d="M674 233h-71" class="line"/>
+  <text x="638" y="169" text-anchor="middle" class="small">按需</text>
+  <rect x="680" y="146" width="236" height="120" rx="10" fill="#eeeafa" stroke="#beb0dc"/>
+  <text x="798" y="185" text-anchor="middle" class="label">操作系统</text>
+  <text x="798" y="222" text-anchor="middle" class="body">映射 / 页面</text>
+  <text x="798" y="249" text-anchor="middle" class="small">brk / mmap 等底层机制</text>
+  <text x="44" y="305" class="note">小请求常可直接复用空闲块，不必每次进行系统调用。</text>
+
+  <rect x="44" y="332" width="872" height="278" rx="12" fill="#fff" stroke="#c7d1df"/>
+  <text x="68" y="370" class="label">分配器持有的一大块存储（示意）</text>
+  <text x="68" y="403" class="note">释放前</text>
+  <rect x="68" y="415" width="112" height="56" rx="5" fill="#e9f1ff" stroke="#a9c3ea"/>
+  <rect x="180" y="415" width="230" height="56" rx="5" fill="#e5f5ee" stroke="#9ccbb7"/>
+  <rect x="410" y="415" width="144" height="56" rx="5" fill="#eeeafa" stroke="#beb0dc"/>
+  <rect x="554" y="415" width="338" height="56" rx="5" fill="#f0f3f8" stroke="#c7d1df"/>
+  <text x="124" y="451" text-anchor="middle" class="body">A 在用</text>
+  <text x="295" y="451" text-anchor="middle" class="body">B 在用</text>
+  <text x="482" y="451" text-anchor="middle" class="body">C 在用</text>
+  <text x="723" y="451" text-anchor="middle" class="body">空闲</text>
+  <text x="68" y="504" class="note">释放 B 后</text>
+  <rect x="68" y="516" width="112" height="56" rx="5" fill="#e9f1ff" stroke="#a9c3ea"/>
+  <rect x="180" y="516" width="230" height="56" rx="5" fill="#f0f3f8" stroke="#8fac9f" stroke-dasharray="5 4"/>
+  <rect x="410" y="516" width="144" height="56" rx="5" fill="#eeeafa" stroke="#beb0dc"/>
+  <rect x="554" y="516" width="338" height="56" rx="5" fill="#f0f3f8" stroke="#c7d1df"/>
+  <text x="124" y="552" text-anchor="middle" class="body">A 在用</text>
+  <text x="295" y="552" text-anchor="middle" class="body">空闲，可复用</text>
+  <text x="482" y="552" text-anchor="middle" class="body">C 在用</text>
+  <text x="723" y="552" text-anchor="middle" class="body">空闲</text>
+  <text x="68" y="595" class="small">B 对象已销毁。空闲块被存活分配隔开，整块映射不一定能够立即归还。</text>
+
+  <rect x="44" y="642" width="872" height="126" rx="10" fill="#fff3da" stroke="#ddc48f"/>
+  <text x="68" y="680" class="label">对象销毁 ≠ 页面立刻归还操作系统</text>
+  <text x="68" y="716" class="body">保留空闲块：减少后续分配的系统调用与管理成本。</text>
+  <text x="68" y="751" class="note">RSS 还受页面驻留、共享、碎片与分配器策略影响，不等于存活对象的总大小。</text>
+</svg>

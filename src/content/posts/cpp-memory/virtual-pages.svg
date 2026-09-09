@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="688" viewBox="0 0 960 688" role="img" aria-labelledby="title description">
+  <title id="title">虚拟页通过页表映射到物理页框</title>
+  <desc id="description">相邻的虚拟页 V0 和 V1 分别映射到物理页框 F9 和 F2，访问的页内偏移保持不变。V2 属于合法映射但尚未驻留，访问时需要操作系统处理缺页。页号和页框号仅为示意。</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="m1 1 8 4-8 4" fill="none" stroke="#69788e" stroke-width="1.6"/></marker>
+    <marker id="blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="m1 1 8 4-8 4" fill="none" stroke="#547fb9" stroke-width="1.6"/></marker>
+    <marker id="green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="m1 1 8 4-8 4" fill="none" stroke="#37896c" stroke-width="1.6"/></marker>
+    <style>
+      text{font-family:"Noto Sans CJK SC","Microsoft YaHei",sans-serif;fill:#243247}.title{font-size:30px;font-weight:700}.label{font-size:24px;font-weight:600}.body{font-size:21px}.note{font-size:19px;fill:#596980}.line{fill:none;stroke:#69788e;stroke-width:2;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <rect width="960" height="688" rx="16" fill="#fbfcfe"/>
+  <text x="44" y="58" class="title">连续的虚拟地址，不要求物理页连续</text>
+  <text x="44" y="97" class="note">MMU 负责地址翻译与权限检查；TLB 缓存常用的翻译结果。</text>
+  <text x="157" y="155" text-anchor="middle" class="label">虚拟页</text>
+  <text x="466" y="155" text-anchor="middle" class="label">页表项（简化）</text>
+  <text x="803" y="155" text-anchor="middle" class="label">物理页框</text>
+
+  <rect x="44" y="184" width="226" height="76" rx="9" fill="#e9f1ff" stroke="#a9c3ea"/>
+  <text x="66" y="216" class="label">V0</text>
+  <text x="66" y="245" class="note">例如访问页内偏移 24</text>
+  <rect x="44" y="280" width="226" height="76" rx="9" fill="#e5f5ee" stroke="#9ccbb7"/>
+  <text x="66" y="312" class="label">V1</text>
+  <text x="66" y="341" class="note">虚拟地址紧接 V0</text>
+  <rect x="44" y="376" width="226" height="76" rx="9" fill="#fff3da" stroke="#ddc48f"/>
+  <text x="66" y="408" class="label">V2</text>
+  <text x="66" y="437" class="note">合法映射，尚未驻留</text>
+
+  <path d="M274 222h68" class="line"/>
+  <path d="M274 318h68" class="line"/>
+  <path d="M274 414h68" class="line"/>
+  <rect x="348" y="184" width="244" height="76" rx="9" fill="#e9f1ff" stroke="#a9c3ea"/>
+  <text x="370" y="216" class="label">V0 → F9</text>
+  <text x="370" y="245" class="note">页内偏移仍是 24</text>
+  <rect x="348" y="280" width="244" height="76" rx="9" fill="#e5f5ee" stroke="#9ccbb7"/>
+  <text x="370" y="312" class="label">V1 → F2</text>
+  <text x="370" y="341" class="note">物理页框不必相邻</text>
+  <rect x="348" y="376" width="244" height="76" rx="9" fill="#fff3da" stroke="#ddc48f"/>
+  <text x="370" y="408" class="label">当前页不驻留</text>
+  <text x="370" y="437" class="note">缺页后交给操作系统</text>
+
+  <path d="M596 222C640 222 638 414 684 414" fill="none" stroke="#547fb9" stroke-width="2.5" marker-end="url(#blue)"/>
+  <path d="M596 318C650 318 637 222 684 222" fill="none" stroke="#37896c" stroke-width="2.5" marker-end="url(#green)"/>
+  <rect x="690" y="184" width="226" height="76" rx="9" fill="#e5f5ee" stroke="#9ccbb7"/>
+  <text x="712" y="216" class="label">F2</text>
+  <text x="712" y="245" class="note">提供 V1 的内容</text>
+  <rect x="690" y="280" width="226" height="76" rx="9" fill="#f0f3f8" stroke="#c7d1df"/>
+  <text x="712" y="312" class="label">F7</text>
+  <text x="712" y="341" class="note">可能被用于其他用途</text>
+  <rect x="690" y="376" width="226" height="76" rx="9" fill="#e9f1ff" stroke="#a9c3ea"/>
+  <text x="712" y="408" class="label">F9</text>
+  <text x="712" y="437" class="note">读取同一页内偏移</text>
+  <text x="803" y="486" text-anchor="middle" class="note">中间省略其他页框</text>
+
+  <path d="M470 455v63" class="line"/>
+  <rect x="44" y="524" width="872" height="110" rx="10" fill="#fff8e9" stroke="#ddc48f"/>
+  <text x="68" y="566" class="body">访问 V2 → 缺页异常 → 操作系统准备页面 → 指令重试</text>
+  <text x="68" y="604" class="note">没有合法映射或访问违反权限时，则可能报告错误，而不是补充页面。</text>
+  <text x="44" y="667" class="note">页号仅示意。若页大小为 4 KiB：物理地址 = 页框号 × 4096 + 页内偏移。</text>
+</svg>

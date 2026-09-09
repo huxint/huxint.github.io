@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="750" viewBox="0 0 960 750" role="img" aria-labelledby="title description">
+  <title id="title">嵌套调用与栈空间复用</title>
+  <desc id="description">左图显示 main 调用 f、f 调用 g 时的三层栈帧，栈指针指向 g 的栈帧底部。右图显示 g 返回后，栈指针恢复到 f 的位置，原 g 栈帧所用空间可被后续调用复用，但不要求立即清零。</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="m1 1 8 4-8 4" fill="none" stroke="#69788e" stroke-width="1.6"/></marker>
+    <style>
+      text{font-family:"Noto Sans CJK SC","Microsoft YaHei",sans-serif;fill:#243247}.title{font-size:30px;font-weight:700}.label{font-size:24px;font-weight:600}.body{font-size:21px}.note{font-size:19px;fill:#596980}.line{fill:none;stroke:#69788e;stroke-width:2;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <rect width="960" height="750" rx="16" fill="#fbfcfe"/>
+  <text x="44" y="58" class="title">调用嵌套 → 后进先出 → 成批复用栈空间</text>
+  <text x="44" y="97" class="note">本图采用常见 x86-64 方向：向下表示地址降低；帧内细节不按真实偏移绘制。</text>
+  <text x="88" y="151" class="label">① g 正在执行</text>
+  <text x="564" y="151" class="label">② g 返回到 f</text>
+  <path d="M360 143h150" class="line"/>
+
+  <rect x="70" y="181" width="340" height="99" rx="8" fill="#f0f3f8" stroke="#c7d1df"/>
+  <text x="94" y="220" class="label">main 帧</text>
+  <text x="94" y="255" class="body">main 的调用相关状态</text>
+  <rect x="70" y="281" width="340" height="147" rx="8" fill="#e9f1ff" stroke="#a9c3ea"/>
+  <text x="94" y="322" class="label">f 帧</text>
+  <text x="94" y="364" class="body">返回 main 的位置</text>
+  <text x="94" y="399" class="body">f 的局部状态</text>
+  <rect x="70" y="429" width="340" height="167" rx="8" fill="#dee9fa" stroke="#8cabd7"/>
+  <text x="94" y="472" class="label">g 帧</text>
+  <text x="94" y="516" class="body">返回 f 的位置</text>
+  <text x="94" y="554" class="body">g 的局部对象等</text>
+  <path d="M18 596h46" class="line"/>
+  <text x="18" y="580" class="note">rsp</text>
+
+  <rect x="550" y="181" width="340" height="99" rx="8" fill="#f0f3f8" stroke="#c7d1df"/>
+  <text x="574" y="220" class="label">main 帧</text>
+  <text x="574" y="255" class="body">仍需保留</text>
+  <rect x="550" y="281" width="340" height="147" rx="8" fill="#e9f1ff" stroke="#a9c3ea"/>
+  <text x="574" y="322" class="label">f 帧</text>
+  <text x="574" y="364" class="body">继续执行 g 调用之后的代码</text>
+  <text x="574" y="399" class="body">f 自己的状态还在</text>
+  <rect x="550" y="429" width="340" height="167" rx="8" fill="#f8fafc" stroke="#aebacb" stroke-dasharray="6 6"/>
+  <text x="574" y="476" class="label">空间可复用</text>
+  <text x="574" y="518" class="body">g 中对象的生命周期已结束</text>
+  <text x="574" y="556" class="body">旧字节不必立即被清零</text>
+  <path d="M943 428h-47" class="line"/>
+  <text x="907" y="411" class="note">rsp</text>
+
+  <rect x="44" y="636" width="872" height="84" rx="10" fill="#fff3da" stroke="#ddc48f"/>
+  <text x="68" y="671" class="body">调整栈指针解决存储管理；局部对象的析构仍需按语言规则执行。</text>
+  <text x="68" y="703" class="note">返回后继续访问 g 的局部对象是生命周期错误，与旧字节是否仍在无关。</text>
+</svg>
