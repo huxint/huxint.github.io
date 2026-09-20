@@ -55,25 +55,26 @@ function furGrain(): DataTexture {
 export function createGorilla() {
   const body = new Group();
   const head = new Group();
-  head.position.set(0, 0.81, 0.02);
+  head.position.set(0, 0.84, 0.02);
+  head.scale.setScalar(1.06);
   body.add(head);
   const grain = furGrain();
   const fur = new MeshPhysicalMaterial({
-    color: '#30383b',
-    roughness: 0.9,
-    sheen: 0.65,
-    sheenColor: '#9ba59b',
-    sheenRoughness: 0.85,
+    color: '#363f42',
+    roughness: 0.86,
+    sheen: 0.5,
+    sheenColor: '#aab0a0',
+    sheenRoughness: 0.8,
     bumpMap: grain,
-    bumpScale: 0.022,
+    bumpScale: 0.018,
   });
   const silverback = fur.clone();
   silverback.color.set('#ffffff');
   silverback.vertexColors = true;
-  const skin = new MeshStandardMaterial({ color: '#625d55', roughness: 0.82 });
+  const skin = new MeshStandardMaterial({ color: '#6d665a', roughness: 0.8 });
   const skinLight = new MeshStandardMaterial({
-    color: '#736b5f',
-    roughness: 0.8,
+    color: '#7f7666',
+    roughness: 0.78,
   });
   const skinDark = new MeshStandardMaterial({
     color: '#41423e',
@@ -86,8 +87,8 @@ export function createGorilla() {
   });
   const crease = new MeshStandardMaterial({ color: '#242825', roughness: 0.9 });
   const eyeWhite = new MeshStandardMaterial({
-    color: '#bbb39e',
-    roughness: 0.4,
+    color: '#c6bfab',
+    roughness: 0.36,
   });
   const iris = new MeshPhysicalMaterial({
     color: '#8d693b',
@@ -100,9 +101,9 @@ export function createGorilla() {
     clearcoat: 1,
   });
   const catchlight = new MeshStandardMaterial({
-    color: '#fff4d5',
-    emissive: '#bdbba5',
-    emissiveIntensity: 0.3,
+    color: '#fff6dc',
+    emissive: '#cfcdb4',
+    emissiveIntensity: 0.42,
   });
   const cover = new MeshStandardMaterial({ color: '#a95b38', roughness: 0.78 });
   const paper = new MeshStandardMaterial({ color: '#d2c5aa', roughness: 0.95 });
@@ -199,19 +200,19 @@ export function createGorilla() {
   const positions = torso.geometry.getAttribute('position');
   const colors = new Float32Array(positions.count * 3);
   const charcoal = new Color('#30383b');
-  const silver = new Color('#798177');
-  const chestColor = new Color('#53554d');
+  const silver = new Color('#8b9288');
+  const chestColor = new Color('#5d5f56');
   const shade = new Color();
   for (let vertex = 0; vertex < positions.count; vertex++) {
     const saddle =
-      MathUtils.smoothstep(-positions.getZ(vertex), 0.17, 0.66) *
+      MathUtils.smoothstep(-positions.getZ(vertex), 0.12, 0.72) *
       (1 -
         MathUtils.smoothstep(
           Math.abs(positions.getY(vertex) + 0.33),
           0.45,
           1.05,
         ));
-    shade.copy(charcoal).lerp(silver, saddle * 0.85);
+    shade.copy(charcoal).lerp(silver, saddle);
     const chest =
       MathUtils.smoothstep(positions.getZ(vertex), 0.3, 0.54) *
       (1 - MathUtils.smoothstep(Math.abs(positions.getX(vertex)), 0.46, 0.77)) *
@@ -221,7 +222,7 @@ export function createGorilla() {
           0.3,
           0.63,
         ));
-    shade.lerp(chestColor, chest * 0.4);
+    shade.lerp(chestColor, chest * 0.5);
     shade.toArray(colors, vertex * 3);
   }
   torso.geometry.setAttribute('color', new Float32BufferAttribute(colors, 3));
@@ -334,9 +335,9 @@ export function createGorilla() {
     const eye = new Group();
     eye.position.set(side * 0.315, 0.205, 0.688);
     head.add(eye);
-    oval(eye, eyeWhite, [0, 0, 0], [0.132, 0.085, 0.096]);
-    oval(eye, iris, [-side * 0.013, -0.007, 0.076], [0.071, 0.073, 0.03]);
-    oval(eye, pupil, [-side * 0.013, -0.005, 0.1], [0.036, 0.042, 0.013]);
+    oval(eye, eyeWhite, [0, 0, 0], [0.142, 0.093, 0.103]);
+    oval(eye, iris, [-side * 0.013, -0.007, 0.082], [0.078, 0.08, 0.032]);
+    oval(eye, pupil, [-side * 0.013, -0.005, 0.107], [0.039, 0.046, 0.014]);
     oval(
       eye,
       catchlight,
@@ -354,7 +355,7 @@ export function createGorilla() {
     eyelid.visible = false;
     head.add(eyelid);
     eyes.push({ globe: eye, lid: eyelid });
-    oval(eyelid, skinDark, [0, 0, 0.09], [0.163, 0.106, 0.044]);
+    oval(eyelid, skin, [0, 0, 0.096], [0.172, 0.112, 0.046]);
     stroke(
       eyelid,
       crease,
@@ -367,14 +368,14 @@ export function createGorilla() {
     );
     stroke(
       head,
-      skinDark,
+      skinLight,
       [
-        [side * 0.315 - 0.155, 0.205, 0.707],
-        [side * 0.315 - 0.087, 0.292, 0.767],
-        [side * 0.315 + 0.07, 0.294, 0.775],
-        [side * 0.315 + 0.155, 0.205, 0.707],
+        [side * 0.315 - 0.152, 0.208, 0.709],
+        [side * 0.315 - 0.087, 0.286, 0.766],
+        [side * 0.315 + 0.07, 0.288, 0.774],
+        [side * 0.315 + 0.152, 0.208, 0.709],
       ],
-      0.018,
+      0.015,
     );
 
     const ear = new Group();

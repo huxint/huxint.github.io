@@ -68,7 +68,7 @@ const structuredArticle = {
               <time datetime={post.data.pubDate.toISOString()}
                 >{formatDate(post.data.pubDate)}</time
               ><span>约 {readingMinutes(post.body)} 分钟</span>{
-                post.data.draft && <span>草稿</span>
+                post.data.draft && <span class="draft-badge">草稿</span>
               }{
                 post.data.updatedDate && (
                   <span>更新于 {formatDate(post.data.updatedDate)}</span>
@@ -90,18 +90,16 @@ const structuredArticle = {
           {
             toc.length > 0 && (
               <details class="mobile-toc" data-pagefind-ignore>
-                <>
-                  <summary>本页目录</summary>
-                  <ol>
-                    {toc.map((heading) => (
-                      <li class:list={{ 'toc-nested': heading.depth === 3 }}>
-                        <a href={`#${heading.slug}`} data-toc-link>
-                          {heading.text}
-                        </a>
-                      </li>
-                    ))}
-                  </ol>
-                </>
+                <summary>本页目录</summary>
+                <ol>
+                  {toc.map((heading) => (
+                    <li class:list={{ 'toc-nested': heading.depth === 3 }}>
+                      <a href={`#${heading.slug}`} data-toc-link>
+                        {heading.text}
+                      </a>
+                    </li>
+                  ))}
+                </ol>
               </details>
             )
           }
@@ -110,13 +108,11 @@ const structuredArticle = {
         {
           next && (
             <aside class="related-post">
-              <>
-                <p>继续阅读</p>
-                <a href={`/posts/${next.id}/`}>
-                  {next.data.title}
-                  <Icon name="arrow" size={18} />
-                </a>
-              </>
+              <p>继续阅读</p>
+              <a href={`/posts/${next.id}/`}>
+                {next.data.title}
+                <Icon name="arrow" size={18} />
+              </a>
             </aside>
           )
         }
@@ -128,18 +124,16 @@ const structuredArticle = {
         toc.length > 0 && (
           <aside class="toc-sidebar" data-pagefind-ignore>
             <nav class="toc" aria-label="文章目录">
-              <>
-                <p class="toc-title">本页目录</p>
-                <ol>
-                  {toc.map((heading) => (
-                    <li class:list={{ 'toc-nested': heading.depth === 3 }}>
-                      <a href={`#${heading.slug}`} data-toc-link>
-                        {heading.text}
-                      </a>
-                    </li>
-                  ))}
-                </ol>
-              </>
+              <p class="toc-title">本页目录</p>
+              <ol>
+                {toc.map((heading) => (
+                  <li class:list={{ 'toc-nested': heading.depth === 3 }}>
+                    <a href={`#${heading.slug}`} data-toc-link>
+                      {heading.text}
+                    </a>
+                  </li>
+                ))}
+              </ol>
             </nav>
           </aside>
         )

@@ -21,7 +21,9 @@ const { tag, posts } = Astro.props;
   <main class="page" id="main">
     <a class="back-link" href="/tags/">← 所有标签</a>
     <header class="page-heading">
-      <h1>{tag}</h1><p>{posts.length} 篇文章</p>
+      <p class="eyebrow">标签</p>
+      <h1>{tag}</h1>
+      <p>{posts.length} 篇文章</p>
     </header>
     <PostList posts={posts} />
   </main>
