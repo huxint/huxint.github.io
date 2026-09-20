@@ -60,18 +60,12 @@ export function mountGorilla(element: HTMLElement): () => void {
   camera.position.set(0, 0.65, 8);
   camera.lookAt(0, -0.04, 0);
 
-  let renderer: WebGLRenderer;
-  try {
-    renderer = new WebGLRenderer({
-      canvas,
-      alpha: true,
-      antialias: true,
-      powerPreference: 'low-power',
-    });
-  } catch {
-    element.dataset.state = 'fallback';
-    return () => {};
-  }
+  const renderer = new WebGLRenderer({
+    canvas,
+    alpha: true,
+    antialias: true,
+    powerPreference: 'low-power',
+  });
   renderer.setClearColor(0x000000, 0);
   renderer.toneMapping = ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.14;
@@ -151,7 +145,7 @@ export function mountGorilla(element: HTMLElement): () => void {
   }
 
   function draw(time = performance.now()) {
-    if (!hasContext || !inView || document.hidden) return;
+    if (!canRender()) return;
     const delta = MathUtils.clamp((time - lastPoseTime) / 1000, 0, 0.1);
     lastPoseTime = time;
     const elapsed = (time - greetingStart) / 1900;
@@ -200,11 +194,23 @@ export function mountGorilla(element: HTMLElement): () => void {
     draw(time);
   }
 
+  function canRender(): boolean {
+    return hasContext && inView && !document.hidden;
+  }
+
+  function applyMotion(enabled: boolean): void {
+    motionEnabled = enabled;
+    greetingPose = 0;
+    greetingStart = -Infinity;
+    updateMotionButton();
+    syncAnimation();
+  }
+
   function syncAnimation() {
     cancelAnimationFrame(frame);
     frame = 0;
     draw();
-    if (motionEnabled && inView && hasContext && !document.hidden) {
+    if (motionEnabled && canRender()) {
       frame = requestAnimationFrame(animate);
     }
   }
@@ -232,7 +238,8 @@ export function mountGorilla(element: HTMLElement): () => void {
   function greet() {
     clearTimeout(greetingTimeout);
     greetingStart = performance.now();
-    greetingPose = motionEnabled ? 0 : greetingPose ? 0 : 1;
+    if (motionEnabled) greetingPose = 0;
+    else greetingPose = greetingPose ? 0 : 1;
     greetingStatus.textContent = '嗨，欢迎来逛逛。';
     greetingTimeout = setTimeout(() => {
       greetingStatus.textContent = '';
@@ -352,22 +359,14 @@ export function mountGorilla(element: HTMLElement): () => void {
   motionButton.addEventListener(
     'click',
     () => {
-      motionEnabled = !motionEnabled;
-      greetingPose = 0;
-      greetingStart = -Infinity;
-      updateMotionButton();
-      syncAnimation();
+      applyMotion(!motionEnabled);
     },
     { signal },
   );
   reducedMotion.addEventListener(
     'change',
     () => {
-      motionEnabled = !reducedMotion.matches;
-      greetingPose = 0;
-      greetingStart = -Infinity;
-      updateMotionButton();
-      syncAnimation();
+      applyMotion(!reducedMotion.matches);
     },
     { signal },
   );

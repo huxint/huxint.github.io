@@ -227,8 +227,12 @@ export function createGorilla() {
   }
   torso.geometry.setAttribute('color', new Float32BufferAttribute(colors, 3));
 
+  const eyeAnchor: Point = [0.315, 0.205, 0.685];
   const sockets = [-1, 1].map((side) =>
-    ellipsoid([side * 0.315, 0.205, 0.685], [0.215, 0.146, 0.25]),
+    ellipsoid(
+      [side * eyeAnchor[0], eyeAnchor[1], eyeAnchor[2]],
+      [0.215, 0.146, 0.25],
+    ),
   );
   sculpture(
     head,
@@ -333,7 +337,7 @@ export function createGorilla() {
   const eyes: { globe: Group; lid: Group }[] = [];
   for (const side of [-1, 1]) {
     const eye = new Group();
-    eye.position.set(side * 0.315, 0.205, 0.688);
+    eye.position.set(side * eyeAnchor[0], eyeAnchor[1], eyeAnchor[2] + 0.003);
     head.add(eye);
     oval(eye, eyeWhite, [0, 0, 0], [0.142, 0.093, 0.103]);
     oval(eye, iris, [-side * 0.013, -0.007, 0.082], [0.078, 0.08, 0.032]);
@@ -398,6 +402,7 @@ export function createGorilla() {
     );
   }
 
+  const elbowAnchor: Point = [0.2, -0.65, 0.06];
   const rightArm = new Group();
   rightArm.position.set(0.99, -0.18, 0);
   body.add(rightArm);
@@ -408,14 +413,14 @@ export function createGorilla() {
       0.19,
       ellipsoid([0, -0.03, 0], [0.475, 0.535, 0.5]),
       ellipsoid([0.15, -0.34, 0.025], [0.35, 0.56, 0.36], 0.16),
-      ellipsoid([0.2, -0.65, 0.06], [0.3, 0.32, 0.3]),
+      ellipsoid(elbowAnchor, [0.3, 0.32, 0.3]),
     ),
     [-0.7, -1.1, -0.7],
     [0.79, 0.74, 0.72],
     36,
   );
   const rightForearm = new Group();
-  rightForearm.position.set(0.2, -0.65, 0.06);
+  rightForearm.position.set(...elbowAnchor);
   rightArm.add(rightForearm);
   sculpture(
     rightForearm,
@@ -430,7 +435,7 @@ export function createGorilla() {
     36,
   );
 
-  function hand(parent: Group, position: Point, side: number, roll = 0) {
+  function hand(parent: Group, position: Point, side: number, roll: number) {
     const palm = new Group();
     palm.position.set(...position);
     palm.rotation.z = roll;

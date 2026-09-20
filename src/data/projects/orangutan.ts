@@ -1,7 +1,6 @@
 // Facts verified against ~/Projects/orangutan at fc351f0 (2026-09-04).
 // See public/images/projects/orangutan/SOURCES.md for the correction log.
 export const orangutan = {
-  slug: 'orangutan',
   name: 'Orangutan',
   tagline: '用 C++23 构建的本地 AI Agent 运行时',
   description:
@@ -13,8 +12,6 @@ export const orangutan = {
       'https://github.com/huxint/orangutan/blob/main/docs/architecture.md',
   },
   license: 'Proprietary，保留所有权利',
-  language: 'C++23',
-  build: 'xmake',
   verifiedAt: '2026-09-04 · fc351f0',
   facts: [
     { label: '语言', value: 'C++23' },

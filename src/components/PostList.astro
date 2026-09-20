@@ -26,11 +26,11 @@ const groups = posts.reduce<{ year: number; posts: Post[] }[]>(
   {
     groups.map((group) => (
       <li class="post-year-group">
-        <div class="post-year-heading" role="heading" aria-level="3">
+        <div class="post-year-heading">
           <span>{group.year}</span>
           <span>{group.posts.length} 篇</span>
         </div>
-        <ol class="post-year-list">
+        <ol aria-label={`${group.year} 年的文章`}>
           {group.posts.map((post) => (
             <li class="post-list-item">
               <div class="post-list-meta">

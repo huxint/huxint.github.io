@@ -1,0 +1,73 @@
+---
+import { site } from '../data/site';
+
+interface Props {
+  title: string;
+  description: string;
+  image: { src: string; width: number; height: number; alt: string };
+  siteName?: string;
+  article?: boolean;
+  rss?: boolean;
+  noindex?: boolean;
+}
+const {
+  title,
+  description,
+  image,
+  siteName = site.name,
+  article = false,
+  rss = false,
+  noindex = false,
+} = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
+<meta name="description" content={description} />
+<meta name="generator" content={Astro.generator} />
+{noindex && <meta name="robots" content="noindex" />}
+<link rel="canonical" href={canonical} />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+{
+  rss && (
+    <link
+      rel="alternate"
+      type="application/rss+xml"
+      title={site.title}
+      href="/rss.xml"
+    />
+  )
+}
+<meta property="og:locale" content="zh_CN" />
+<meta property="og:site_name" content={siteName} />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:type" content={article ? 'article' : 'website'} />
+<meta property="og:url" content={canonical} />
+<meta property="og:image" content={new URL(image.src, Astro.site)} />
+<meta property="og:image:width" content={String(image.width)} />
+<meta property="og:image:height" content={String(image.height)} />
+<meta property="og:image:alt" content={image.alt} />
+<meta
+  name="twitter:card"
+  content={image.width > image.height ? 'summary_large_image' : 'summary'}
+/>
+<title>{title}</title>
+<script is:inline>
+  (() => {
+    let preference;
+    try {
+      preference = localStorage.getItem('theme');
+    } catch {}
+    const theme =
+      preference === 'light' || preference === 'dark'
+        ? preference
+        : matchMedia('(prefers-color-scheme: dark)').matches
+          ? 'dark'
+          : 'light';
+    document.documentElement.dataset.theme = theme;
+    document.documentElement.classList.add('js');
+  })();
+</script>

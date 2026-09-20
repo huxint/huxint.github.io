@@ -48,7 +48,7 @@ async function showMore(id: number): Promise<void> {
     const batch = await Promise.all(
       results.slice(start, start + pageSize).map((result) => result.data()),
     );
-    if (id !== requestId || start !== renderedCount) return;
+    if (id !== requestId) return;
     list.append(...batch.map(renderResult));
     renderedCount += batch.length;
     moreButton.hidden = renderedCount >= results.length;

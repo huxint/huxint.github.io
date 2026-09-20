@@ -45,8 +45,18 @@ test('博客页面没有通向项目页的链接，站点地图包含项目页',
 });
 
 test('搜索索引只包含文章', async ({ page }) => {
-  await page.goto('/search/?q=Orangutan');
-  await expect(page.getByRole('status')).not.toHaveText('正在查找…');
+  await page.goto('/');
+  const title = (
+    await page.locator('.post-title a').first().innerText()
+  ).trim();
+  await page.getByRole('link', { name: '搜索文章', exact: true }).click();
+  const input = page.getByRole('searchbox');
+  await input.fill(title);
+  await expect(
+    page.locator('.search-results a[href^="/posts/"]').first(),
+  ).toBeVisible();
+  await input.fill('Orangutan');
+  await expect(page.getByRole('status')).toHaveText(/找到/);
   await expect(
     page.locator('.search-results a[href^="/projects/"]'),
   ).toHaveCount(0);
