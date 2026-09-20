@@ -15,7 +15,9 @@ export async function getPosts(): Promise<Post[]> {
 }
 
 export function formatDate(date: Date): string {
-  return date.toISOString().slice(0, 10).replaceAll('-', '.');
+  return date
+    .toLocaleDateString('sv-SE', { timeZone: 'Asia/Shanghai' })
+    .replaceAll('-', '.');
 }
 
 export function readingMinutes(body: string = ''): number {
@@ -24,14 +26,16 @@ export function readingMinutes(body: string = ''): number {
   return Math.max(1, Math.ceil(chineseCharacters / 400 + words / 200));
 }
 
-export function getTags(posts: Post[]): [string, number][] {
-  const counts = new Map<string, number>();
+export function getTags(posts: Post[]): [string, Post[]][] {
+  const tagged = new Map<string, Post[]>();
   for (const post of posts) {
     for (const tag of new Set(post.data.tags)) {
-      counts.set(tag, (counts.get(tag) ?? 0) + 1);
+      const group = tagged.get(tag);
+      if (group) group.push(post);
+      else tagged.set(tag, [post]);
     }
   }
-  return [...counts].sort(([left], [right]) =>
+  return [...tagged].sort(([left], [right]) =>
     left.localeCompare(right, 'zh-CN'),
   );
 }

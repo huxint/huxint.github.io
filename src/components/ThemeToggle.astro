@@ -1,0 +1,14 @@
+---
+import Icon from './Icon.astro';
+---
+
+<button
+  class="icon-button theme-toggle"
+  type="button"
+  aria-label="切换主题"
+  title="切换主题"
+  data-theme-toggle
+>
+  <span class="theme-moon"><Icon name="moon" size={19} /></span>
+  <span class="theme-sun"><Icon name="sun" size={19} /></span>
+</button>

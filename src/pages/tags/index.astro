@@ -14,11 +14,11 @@ const tags = getTags(await getPosts());
     {
       tags.length ? (
         <ul class="tag-index">
-          {tags.map(([tag, count]) => (
+          {tags.map(([tag, tagPosts]) => (
             <li>
               <a href={`/tags/${encodeURIComponent(tag)}/`}>
                 {tag}
-                <span>{count} 篇</span>
+                <span>{tagPosts.length} 篇</span>
               </a>
             </li>
           ))}

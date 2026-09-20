@@ -71,6 +71,9 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
+strong {
+  font-weight: 650;
+}
 a {
   color: inherit;
   text-decoration: none;
@@ -209,7 +212,7 @@ ol {
 }
 
 /* Header */
-.site-header {
+:is(.site-header, .project-header) {
   position: sticky;
   top: 0;
   z-index: 20;
@@ -217,12 +220,14 @@ ol {
   backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--rule);
 }
-.header-inner {
-  width: min(100% - 48px, var(--wide));
-  height: var(--header-height);
+:is(.header-inner, .project-header-inner) {
   margin: auto;
   display: flex;
   align-items: center;
+}
+.header-inner {
+  width: min(100% - 48px, var(--wide));
+  height: var(--header-height);
   gap: 36px;
 }
 .wordmark {
@@ -336,13 +341,6 @@ ol {
   font-size: 17px;
   line-height: 1.8;
 }
-.page-heading-row {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 24px;
-}
-
 /* Home */
 .home-page {
   width: min(100% - 48px, var(--wide));
@@ -676,17 +674,19 @@ ol {
 }
 
 /* Footer */
-.site-footer {
-  width: min(100% - 48px, var(--wide));
+:is(.site-footer, .project-footer) {
   margin: auto auto 0;
   padding: 28px 0 32px;
   display: flex;
   justify-content: space-between;
-  align-items: center;
   gap: 24px;
   border-top: 1px solid var(--rule);
   font-size: 14px;
   color: var(--faint);
+}
+.site-footer {
+  width: min(100% - 48px, var(--wide));
+  align-items: center;
 }
 .site-footer > div {
   display: flex;
@@ -804,6 +804,7 @@ ol {
   color: var(--muted);
   font-size: 14px;
   line-height: 1.6;
+  /* Keep a focused TOC link clear of the viewport edge when tabbing scrolls it into view. */
   scroll-margin: 24px;
   transition:
     color 150ms ease,

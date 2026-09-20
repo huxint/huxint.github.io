@@ -1,7 +1,11 @@
 ---
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import ProjectLayout from '../../layouts/ProjectLayout.astro';
 import Icon from '../../components/Icon.astro';
+import ImageDialog from '../../components/ImageDialog.astro';
+import ProjectFigure from '../../components/ProjectFigure.astro';
+import ThemeToggle from '../../components/ThemeToggle.astro';
 import '../../styles/project.css';
+import { site } from '../../data/site';
 import { orangutan as project } from '../../data/projects/orangutan';
 const sections = [
   { id: 'overview', label: '简介' },
@@ -13,14 +17,13 @@ const sections = [
 const figures = [project.figures.architecture, project.figures.multiAgent];
 ---
 
-<BaseLayout
-  standalone
+<ProjectLayout
   title={`${project.name} · ${project.tagline}`}
   siteName={project.name}
   description={project.description}
   image={project.share}
 >
-  <div class="project-shell" data-pagefind-ignore>
+  <div class="project-shell">
     <a class="skip-link" href="#main">跳到正文</a>
     <header class="project-header">
       <div class="project-header-inner">
@@ -32,16 +35,7 @@ const figures = [project.figures.architecture, project.figures.multiAgent];
             ))
           }
         </nav>
-        <button
-          class="icon-button theme-toggle"
-          type="button"
-          aria-label="切换主题"
-          title="切换主题"
-          data-theme-toggle
-        >
-          <span class="theme-moon"><Icon name="moon" size={19} /></span>
-          <span class="theme-sun"><Icon name="sun" size={19} /></span>
-        </button>
+        <ThemeToggle />
       </div>
     </header>
 
@@ -127,7 +121,7 @@ const figures = [project.figures.architecture, project.figures.multiAgent];
             ))
           }
         </ul>
-        <div class="project-prose" style="margin-top: 40px">
+        <div class="project-prose">
           <p>
             两个实现上的取舍值得一提。<strong>记忆只在循环前召回一次</strong
             >：长期记忆按运行时作用域隔离，检索只用本次用户输入做一次，最相关 8
@@ -154,30 +148,8 @@ const figures = [project.figures.architecture, project.figures.multiAgent];
             <p>图解是关系示意，截图是实际会话。点击图片可以放大查看。</p>
           </div>
         </div>
-        {
-          figures.map((figure) => (
-            <figure class="project-figure" data-figure>
-              <button
-                class="figure-frame"
-                type="button"
-                data-figure-open
-                aria-label={`放大图片：${figure.alt}`}
-              >
-                <img
-                  src={figure.src}
-                  width={figure.width}
-                  height={figure.height}
-                  alt={figure.alt}
-                  loading="lazy"
-                  decoding="async"
-                />
-              </button>
-              <p class="figure-missing">图片暂时无法加载。{figure.alt}。</p>
-              <figcaption>{figure.caption}</figcaption>
-            </figure>
-          ))
-        }
-        <div class="example-row" style="margin-top: 48px">
+        {figures.map((figure) => <ProjectFigure figure={figure} />)}
+        <div class="example-row">
           <div class="project-prose">
             <p>
               右侧是 QQ 会话中的一次实际记录：主 Agent 依次派出
@@ -189,27 +161,7 @@ const figures = [project.figures.architecture, project.figures.multiAgent];
               时的运行结果；队友数量与名称由配置决定，图中的三个只是这次会话的实例。
             </p>
           </div>
-          <figure class="project-figure" data-figure>
-            <button
-              class="figure-frame"
-              type="button"
-              data-figure-open
-              aria-label={`放大图片：${project.figures.qq.alt}`}
-            >
-              <img
-                src={project.figures.qq.src}
-                width={project.figures.qq.width}
-                height={project.figures.qq.height}
-                alt={project.figures.qq.alt}
-                loading="lazy"
-                decoding="async"
-              />
-            </button>
-            <p class="figure-missing">
-              图片暂时无法加载。{project.figures.qq.alt}。
-            </p>
-            <figcaption>{project.figures.qq.caption}</figcaption>
-          </figure>
+          <ProjectFigure figure={project.figures.qq} />
         </div>
       </section>
 
@@ -254,22 +206,13 @@ const figures = [project.figures.architecture, project.figures.multiAgent];
     </main>
 
     <footer class="project-footer">
-      <span>© {new Date().getUTCFullYear()} huxint</span>
-      <a href={project.repo}>github.com/huxint/orangutan</a>
+      <span>© {new Date().getUTCFullYear()} {site.name}</span>
+      <a href={project.repo}>{project.repo.replace(/^https?:\/\//, '')}</a>
     </footer>
 
-    <dialog class="image-viewer" id="image-viewer" aria-label="图片预览">
-      <div class="image-viewer-toolbar">
-        <p id="image-caption"></p><button
-          class="icon-button"
-          type="button"
-          aria-label="关闭图片"><Icon name="close" /></button
-        >
-      </div>
-      <img id="image-preview" alt="" />
-    </dialog>
+    <ImageDialog />
   </div>
-</BaseLayout>
+</ProjectLayout>
 <script>
   import '../../scripts/theme';
   import '../../scripts/figure-viewer';

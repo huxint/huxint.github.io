@@ -1,12 +1,8 @@
 ---
 import Icon from './Icon.astro';
-interface Props {
-  id?: string;
-}
-const { id = 'gorilla' } = Astro.props;
 ---
 
-<gorilla-avatar class="gorilla-avatar" data-state="idle">
+<gorilla-avatar class="gorilla-avatar">
   <div class="gorilla-stage">
     <div class="gorilla-backdrop" aria-hidden="true"></div>
     <span class="gorilla-greeting" role="status" data-gorilla-status></span>
@@ -22,7 +18,7 @@ const { id = 'gorilla' } = Astro.props;
       class="gorilla-canvas"
       role="img"
       aria-label="拿着橙色笔记本的 3D 银背猩猩"
-      aria-describedby={`${id}-instructions`}
+      aria-describedby="gorilla-instructions"
       tabindex="-1"
       hidden></canvas>
   </div>
@@ -52,7 +48,7 @@ const { id = 'gorilla' } = Astro.props;
     </div>
   </div>
   <span class="gorilla-hint" aria-hidden="true">拖动转一转，点击打招呼</span>
-  <p class="sr-only" id={`${id}-instructions`}>
+  <p class="sr-only" id="gorilla-instructions">
     拖动可以旋转，点击可以打招呼。键盘左右方向键旋转，Home 键恢复视角，Enter
     键打招呼。
   </p>
@@ -80,7 +76,7 @@ const { id = 'gorilla' } = Astro.props;
     private async load(generation: number) {
       try {
         const { mountGorilla } = await import('../scripts/gorilla-scene');
-        if (!this.isConnected || generation !== this.generation) return;
+        if (generation !== this.generation) return;
         this.dispose = mountGorilla(this);
       } catch {
         this.dataset.state = 'fallback';

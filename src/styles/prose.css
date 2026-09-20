@@ -48,9 +48,6 @@
 .prose a:hover {
   text-decoration-color: var(--accent);
 }
-.prose strong {
-  font-weight: 650;
-}
 .prose ul,
 .prose ol {
   margin: 1.3em 0;
@@ -179,9 +176,6 @@
 }
 .prose .expressive-code figure {
   margin: 0;
-}
-.prose .expressive-code pre {
-  max-height: none;
 }
 
 /* Images */

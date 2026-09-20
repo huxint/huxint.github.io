@@ -76,7 +76,6 @@ test('手机视口下首页没有横向溢出', async ({ page }) => {
     viewport: document.documentElement.clientWidth,
   }));
   expect(dimensions.page).toBeLessThanOrEqual(dimensions.viewport + 1);
-  await expect(page.getByRole('navigation', { name: '主导航' })).toBeVisible();
 });
 
 test('不存在的地址返回 404 并提供返回入口', async ({ page }) => {

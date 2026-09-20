@@ -25,6 +25,10 @@ const result = spawnSync(
   ['exec', 'pagefind', '--site', site, '--glob', 'posts/*/index.html'],
   { stdio: 'inherit' },
 );
+if (result.error) {
+  console.error('[search] failed to run pagefind:', result.error);
+  process.exit(1);
+}
 if (!existsSync(`${output}/pagefind.js`)) {
   console.error('[search] pagefind did not produce an index');
   process.exit(1);

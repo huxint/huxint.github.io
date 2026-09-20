@@ -5,9 +5,9 @@ import PostList from '../../components/PostList.astro';
 import { getPosts, getTags, type Post } from '../../lib/posts';
 export const getStaticPaths = (async () => {
   const posts = await getPosts();
-  return getTags(posts).map(([tag]) => ({
+  return getTags(posts).map(([tag, tagged]) => ({
     params: { tag },
-    props: { tag, posts: posts.filter((post) => post.data.tags.includes(tag)) },
+    props: { tag, posts: tagged },
   }));
 }) satisfies GetStaticPaths;
 interface Props {

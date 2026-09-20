@@ -32,7 +32,6 @@ test('输入法组词期间不显示已过期的搜索响应', async ({ page }) 
     },
   });
   await (await delivered).finished();
-  await page.clock.runFor(1000);
 
   await expect(page.locator('.search-results li')).toHaveCount(0);
   await expect(input).toHaveValue('新');

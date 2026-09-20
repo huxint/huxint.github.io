@@ -16,7 +16,9 @@ await page.waitForSelector('gorilla-avatar[data-state="ready"] canvas', {
   timeout: 30000,
 });
 // Pause the idle animation so the bake is deterministic, then let it settle.
-await page.locator('[data-gorilla-motion]').click();
+const motionButton = page.locator('[data-gorilla-motion]');
+if ((await motionButton.getAttribute('aria-pressed')) === 'false')
+  await motionButton.click();
 // The CSS backdrop sits behind the transparent canvas; hide it so the bake
 // stays transparent and the page keeps drawing the circle itself.
 await page.evaluate(() => {

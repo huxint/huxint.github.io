@@ -4,7 +4,7 @@
 
 ## 本地开发
 
-需要 Node.js 24 和 pnpm 11。项目在 `package.json` 中固定 pnpm 版本。
+需要 Node.js ≥ 22.12（CI 使用 24）和 pnpm 11。项目在 `package.json` 中固定 pnpm 版本。
 
 ```bash
 pnpm install --frozen-lockfile
@@ -65,19 +65,13 @@ int square(int value) {
 
 本地 PNG、JPEG、WebP 和 SVG 图片由构建管线处理，输出尺寸信息。独立段落中的图片支持点击放大，以及 Enter / Escape 键盘操作。正文也支持表格、脚注、任务列表和引用。
 
-## 项目介绍页
-
-`/projects/orangutan/` 是独立的项目介绍页：它有自己的页面外壳、标题、描述与分享图，不出现在博客导航、文章列表、标签、RSS 和站内搜索中，但可以被搜索引擎收录。页面内容维护在 [src/data/projects/orangutan.ts](src/data/projects/orangutan.ts)，版式在 [src/styles/project.css](src/styles/project.css)。图解的静态衍生版与事实校正记录在 `public/images/projects/orangutan/`。
-
-搜索索引由 [scripts/build-search.mjs](scripts/build-search.mjs) 生成，只收录 `/posts/` 下的可发布文章；一篇文章都没有时写入一个空索引，搜索页显示空态而不是报错。
-
 ## 配置
 
 - [站点信息](src/data/site.ts)：名称、简介、邮箱与 GitHub 链接。
 - [Astro 配置](astro.config.mjs)：站点 URL、Markdown 渲染与代码主题。
 - [全局样式](src/styles/global.css) 与 [正文样式](src/styles/prose.css)：配色、布局和文章排版。
 
-修改域名时，同时更新 `astro.config.mjs` 的 `site` 和 `public/robots.txt` 中的 Sitemap 地址。
+修改域名时，同时更新 `astro.config.mjs` 的 `site`、`public/robots.txt` 中的 Sitemap 地址和 `tests/project.spec.ts` 断言的项目页 URL。
 
 ## 生成猩猩图片
 

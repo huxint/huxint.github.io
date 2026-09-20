@@ -18,10 +18,7 @@ function applyTheme(theme: string): void {
   themeButton?.setAttribute('title', label);
 }
 
-applyTheme(
-  document.documentElement.dataset.theme ??
-    (systemTheme.matches ? 'dark' : 'light'),
-);
+applyTheme(document.documentElement.dataset.theme!);
 
 themeButton?.addEventListener('click', () => {
   const theme =
