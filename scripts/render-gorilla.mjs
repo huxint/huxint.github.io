@@ -24,6 +24,11 @@ if ((await motionButton.getAttribute('aria-pressed')) === 'false')
 await page.evaluate(() => {
   for (const element of document.querySelectorAll('.gorilla-backdrop'))
     element.style.display = 'none';
+  // omitBackground only clears the browser's default backdrop; the page's own
+  // painted background would otherwise be baked into the images and show up as
+  // a light square in dark mode.
+  document.documentElement.style.background = 'none';
+  document.body.style.background = 'none';
 });
 await page.waitForTimeout(600);
 
@@ -41,10 +46,11 @@ await sharp(png)
   .webp({ quality: 92 })
   .toFile('public/images/gorilla-portrait.webp');
 
-// The about-page avatar and share image reuse the same character, cropped to
-// the head so the face stays readable at small sizes.
+// The about-page avatar reuses the same character, cropped to the head so the
+// face stays readable at small sizes. It stays transparent as well, so the page
+// keeps drawing the circle behind it in either theme.
 const cropSize = Math.round(height * 0.62);
-await sharp(png)
+const head = await sharp(png)
   .extract({
     left: Math.round(width * 0.5 - cropSize / 2),
     top: Math.round(height * 0.02),
@@ -52,6 +58,15 @@ await sharp(png)
     height: cropSize,
   })
   .resize(640, 640)
+  .png()
+  .toBuffer();
+await sharp(head).webp({ quality: 92 }).toFile('public/images/gorilla.webp');
+// Link previews are shown on whatever background the platform uses, so they
+// get the page's own colour baked in.
+await sharp(head)
+  .flatten({ background: '#f7f4ee' })
   .webp({ quality: 92 })
-  .toFile('public/images/gorilla.webp');
-console.log('wrote public/images/gorilla-portrait.webp and gorilla.webp');
+  .toFile('public/images/gorilla-share.webp');
+console.log(
+  'wrote gorilla-portrait.webp, gorilla.webp and gorilla-share.webp',
+);
