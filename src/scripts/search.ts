@@ -16,12 +16,14 @@ const searchStatus = document.querySelector<HTMLElement>('.search-status')!;
 const list = document.querySelector<HTMLOListElement>('.search-results')!;
 const moreButton = document.querySelector<HTMLButtonElement>('.more-results')!;
 const indexPath = '/pagefind/pagefind.js';
+const pageSize = 10;
 let indexPromise: Promise<SearchIndex> | undefined;
 let requestId = 0;
 let debounceTimer: ReturnType<typeof setTimeout>;
 let composing = false;
 let results: SearchResult[] = [];
 let renderedCount = 0;
+let loadingMore = false;
 
 function renderResult(result: ResultContent): HTMLLIElement {
   const item = document.createElement('li');
@@ -38,17 +40,22 @@ function renderResult(result: ResultContent): HTMLLIElement {
 }
 
 async function showMore(id: number): Promise<void> {
+  if (loadingMore) return;
+  loadingMore = true;
   moreButton.disabled = true;
-  const batch = await Promise.all(
-    results
-      .slice(renderedCount, renderedCount + 10)
-      .map((result) => result.data()),
-  );
-  if (id !== requestId) return;
-  list.append(...batch.map(renderResult));
-  renderedCount += batch.length;
-  moreButton.hidden = renderedCount >= results.length;
-  moreButton.disabled = false;
+  const start = renderedCount;
+  try {
+    const batch = await Promise.all(
+      results.slice(start, start + pageSize).map((result) => result.data()),
+    );
+    if (id !== requestId || start !== renderedCount) return;
+    list.append(...batch.map(renderResult));
+    renderedCount += batch.length;
+    moreButton.hidden = renderedCount >= results.length;
+  } finally {
+    if (id === requestId) moreButton.disabled = false;
+    loadingMore = false;
+  }
 }
 
 function clearResults(): void {
@@ -57,6 +64,7 @@ function clearResults(): void {
   moreButton.disabled = false;
   results = [];
   renderedCount = 0;
+  loadingMore = false;
 }
 
 async function search(): Promise<void> {
@@ -130,8 +138,7 @@ moreButton.addEventListener('click', () => {
   const id = requestId;
   void showMore(id).catch(() => {
     if (id !== requestId) return;
-    searchStatus.textContent = '加载结果失败，请重试。';
-    moreButton.disabled = false;
+    searchStatus.textContent = '加载更多结果失败，请重试。';
   });
 });
 

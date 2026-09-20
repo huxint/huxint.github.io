@@ -65,6 +65,12 @@ int square(int value) {
 
 本地 PNG、JPEG、WebP 和 SVG 图片由构建管线处理，输出尺寸信息。独立段落中的图片支持点击放大，以及 Enter / Escape 键盘操作。正文也支持表格、脚注、任务列表和引用。
 
+## 项目介绍页
+
+`/projects/orangutan/` 是独立的项目介绍页：它有自己的页面外壳、标题、描述与分享图，不出现在博客导航、文章列表、标签、RSS 和站内搜索中，但可以被搜索引擎收录。页面内容维护在 [src/data/projects/orangutan.ts](src/data/projects/orangutan.ts)，版式在 [src/styles/project.css](src/styles/project.css)。图解的静态衍生版与事实校正记录在 `public/images/projects/orangutan/`。
+
+搜索索引由 [scripts/build-search.mjs](scripts/build-search.mjs) 生成，只收录 `/posts/` 下的可发布文章；一篇文章都没有时写入一个空索引，搜索页显示空态而不是报错。
+
 ## 配置
 
 - [站点信息](src/data/site.ts)：名称、简介、邮箱与 GitHub 链接。
@@ -72,6 +78,17 @@ int square(int value) {
 - [全局样式](src/styles/global.css) 与 [正文样式](src/styles/prose.css)：配色、布局和文章排版。
 
 修改域名时，同时更新 `astro.config.mjs` 的 `site` 和 `public/robots.txt` 中的 Sitemap 地址。
+
+## 生成猩猩图片
+
+首页的静态后备图、关于页头像和分享图都由同一个 3D 模型烘焙。改完 [模型](src/lib/gorilla-model.ts) 或 [场景](src/scripts/gorilla-scene.ts) 后：
+
+```bash
+pnpm dev
+node scripts/render-gorilla.mjs   # 可用 GORILLA_BASE_URL 指向其他地址
+```
+
+脚本会用 Playwright 打开首页、暂停动画，把画布渲染成 `public/images/gorilla-portrait.webp`（全身）和 `public/images/gorilla.webp`（头像）。
 
 ## 检查与测试
 

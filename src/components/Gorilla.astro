@@ -15,13 +15,13 @@ const { id = 'gorilla' } = Astro.props;
       src="/images/gorilla-portrait.webp"
       width="640"
       height="640"
-      alt="拿着笔记本的银背猩猩"
+      alt="拿着橙色笔记本的银背猩猩"
       fetchpriority="high"
     />
     <canvas
       class="gorilla-canvas"
       role="img"
-      aria-label="拿着笔记本的 3D 银背猩猩"
+      aria-label="拿着橙色笔记本的 3D 银背猩猩"
       aria-describedby={`${id}-instructions`}
       tabindex="-1"
       hidden></canvas>
@@ -102,7 +102,7 @@ const { id = 'gorilla' } = Astro.props;
   .gorilla-avatar {
     display: block;
     width: 100%;
-    max-width: 350px;
+    max-width: 360px;
     justify-self: end;
   }
   .gorilla-stage {
@@ -114,9 +114,13 @@ const { id = 'gorilla' } = Astro.props;
   .gorilla-backdrop {
     position: absolute;
     z-index: -1;
-    inset: 12% 4% 0;
+    inset: 10% 3% 0;
     border-radius: 50%;
-    background: var(--portrait-bg);
+    background: radial-gradient(
+      circle at 50% 40%,
+      color-mix(in srgb, var(--portrait-bg) 70%, var(--bg-raised)),
+      var(--portrait-bg) 70%
+    );
     border: 1px solid var(--portrait-border);
   }
   .gorilla-canvas,
@@ -138,15 +142,16 @@ const { id = 'gorilla' } = Astro.props;
   }
   .gorilla-greeting {
     position: absolute;
-    top: 4%;
+    top: 3%;
     right: 0;
     z-index: 1;
-    padding: 7px 12px;
-    border: 1px solid var(--border);
-    border-radius: 12px 12px 12px 2px;
-    background: var(--bg);
+    padding: 8px 14px;
+    border: 1px solid var(--rule-strong);
+    border-radius: 14px 14px 14px 3px;
+    background: var(--bg-raised);
     color: var(--text);
-    font-size: 12px;
+    font-size: 13px;
+    box-shadow: var(--shadow);
     pointer-events: none;
     opacity: 1;
     transition:
@@ -159,17 +164,19 @@ const { id = 'gorilla' } = Astro.props;
   }
   .gorilla-caption {
     min-height: 40px;
-    margin-top: 4px;
+    margin-top: 6px;
     display: flex;
     justify-content: center;
     align-items: center;
     flex-wrap: wrap;
-    gap: 0 10px;
+    gap: 0 8px;
   }
   .gorilla-hint {
     display: block;
     text-align: center;
-    font-size: 10px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
     color: var(--faint);
     opacity: 0;
   }
@@ -179,7 +186,7 @@ const { id = 'gorilla' } = Astro.props;
   .gorilla-controls {
     display: flex;
     align-items: center;
-    gap: 0;
+    gap: 2px;
   }
   .gorilla-controls button {
     display: inline-flex;
@@ -189,19 +196,19 @@ const { id = 'gorilla' } = Astro.props;
     border: 0;
     background: transparent;
     color: var(--muted);
-    border-radius: 5px;
+    border-radius: 6px;
   }
   .gorilla-controls button:hover {
-    color: var(--accent);
+    color: var(--accent-ink);
     background: var(--accent-soft);
   }
   .gorilla-greet {
-    font-size: 11px;
-    padding: 0 7px;
-    gap: 3px;
+    font-size: 13px;
+    padding: 0 10px;
+    gap: 4px;
   }
   .gorilla-tool {
-    width: 32px;
+    width: 34px;
     padding: 0;
   }
   .gorilla-play,
@@ -211,20 +218,19 @@ const { id = 'gorilla' } = Astro.props;
   [aria-pressed='true'] .gorilla-play {
     display: block;
   }
-  @media (max-width: 600px) {
+  @media (max-width: 640px) {
     .gorilla-avatar {
-      max-width: 228px;
+      max-width: 240px;
       justify-self: center;
     }
     .gorilla-caption {
-      gap: 0 4px;
       margin-top: 0;
     }
     .gorilla-controls button {
       min-height: 40px;
     }
     .gorilla-tool {
-      width: 36px;
+      width: 38px;
     }
   }
   @media print {

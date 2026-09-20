@@ -1,0 +1,276 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Icon from '../../components/Icon.astro';
+import '../../styles/project.css';
+import { orangutan as project } from '../../data/projects/orangutan';
+const sections = [
+  { id: 'overview', label: '简介' },
+  { id: 'capabilities', label: '能力' },
+  { id: 'how', label: '工作方式' },
+  { id: 'examples', label: '图解与实例' },
+  { id: 'resources', label: '资料' },
+];
+const figures = [project.figures.architecture, project.figures.multiAgent];
+---
+
+<BaseLayout
+  standalone
+  title={`${project.name} · ${project.tagline}`}
+  siteName={project.name}
+  description={project.description}
+  image={project.share}
+>
+  <div class="project-shell" data-pagefind-ignore>
+    <a class="skip-link" href="#main">跳到正文</a>
+    <header class="project-header">
+      <div class="project-header-inner">
+        <a class="project-brand" href="#top">{project.name}</a>
+        <nav class="project-nav" aria-label="页内导航">
+          {
+            sections.map((section) => (
+              <a href={`#${section.id}`}>{section.label}</a>
+            ))
+          }
+        </nav>
+        <button
+          class="icon-button theme-toggle"
+          type="button"
+          aria-label="切换主题"
+          title="切换主题"
+          data-theme-toggle
+        >
+          <span class="theme-moon"><Icon name="moon" size={19} /></span>
+          <span class="theme-sun"><Icon name="sun" size={19} /></span>
+        </button>
+      </div>
+    </header>
+
+    <main class="project-main" id="main">
+      <header class="project-hero" id="overview">
+        <div>
+          <p class="eyebrow">项目介绍</p>
+          <h1>{project.name}</h1>
+          <p class="project-tagline">{project.tagline}</p>
+          <p class="project-lede">{project.description}</p>
+          <div class="project-actions">
+            <a class="project-button primary" href={project.repo}
+              ><Icon name="github" size={17} /> GitHub 仓库</a
+            >
+            <a class="project-button" href={project.docs.architecture}
+              >架构文档 <Icon name="external" size={15} /></a
+            >
+          </div>
+        </div>
+        <dl class="project-facts">
+          {
+            project.facts.map((fact) => (
+              <div>
+                <dt>{fact.label}</dt>
+                <dd>{fact.value}</dd>
+              </div>
+            ))
+          }
+          <div><dt>许可</dt><dd>{project.license}</dd></div>
+        </dl>
+      </header>
+
+      <section
+        class="project-section"
+        id="capabilities"
+        aria-labelledby="capabilities-title"
+      >
+        <div class="project-section-head">
+          <p class="eyebrow">能力</p>
+          <div>
+            <h2 id="capabilities-title">它能做什么</h2>
+            <p>
+              下面的能力都已在当前源码中实现；描述范围以仓库代码为准，不包含尚在设计阶段的部分。
+            </p>
+          </div>
+        </div>
+        <ol class="capability-grid">
+          {
+            project.capabilities.map((item, index) => (
+              <li>
+                <h3>
+                  <span>{String(index + 1).padStart(2, '0')}</span>
+                  {item.title}
+                </h3>
+                <p>{item.body}</p>
+              </li>
+            ))
+          }
+        </ol>
+      </section>
+
+      <section class="project-section" id="how" aria-labelledby="how-title">
+        <div class="project-section-head">
+          <p class="eyebrow">工作方式</p>
+          <div>
+            <h2 id="how-title">一个二进制，三类入口</h2>
+            <p>
+              程序入口只做一件事：调用
+              bootstrap。真正的装配集中在一处：解析命令行、加载并解密配置、初始化
+              SQLite、派生运行时身份，再把模型、工具、记忆、钩子、入口适配器、自动化与编排组装成一个可运行的
+              Agent。
+            </p>
+          </div>
+        </div>
+        <ul class="entry-list">
+          {
+            project.entries.map((entry) => (
+              <li>
+                <h3>{entry.name}</h3>
+                <p>{entry.body}</p>
+                <code>{entry.command}</code>
+              </li>
+            ))
+          }
+        </ul>
+        <div class="project-prose" style="margin-top: 40px">
+          <p>
+            两个实现上的取舍值得一提。<strong>记忆只在循环前召回一次</strong
+            >：长期记忆按运行时作用域隔离，检索只用本次用户输入做一次，最相关 8
+            条、4 KB 上限，之后每轮复用，而不是为同一份检索每轮付一次钱。
+          </p>
+          <p>
+            <strong>完成不等于销毁</strong>：常规 subagent
+            跑完即销毁；这里干完活的队友转入待命、保留会话与记忆作用域，任务以通知落进主
+            Agent 的对话，平级队友通过中心信箱横向协作。信箱与团队元数据持久化在
+            SQLite，活跃运行保存在内存。
+          </p>
+        </div>
+      </section>
+
+      <section
+        class="project-section"
+        id="examples"
+        aria-labelledby="examples-title"
+      >
+        <div class="project-section-head">
+          <p class="eyebrow">图解与实例</p>
+          <div>
+            <h2 id="examples-title">结构与一次真实会话</h2>
+            <p>图解是关系示意，截图是实际会话。点击图片可以放大查看。</p>
+          </div>
+        </div>
+        {
+          figures.map((figure) => (
+            <figure class="project-figure" data-figure>
+              <button
+                class="figure-frame"
+                type="button"
+                data-figure-open
+                aria-label={`放大图片：${figure.alt}`}
+              >
+                <img
+                  src={figure.src}
+                  width={figure.width}
+                  height={figure.height}
+                  alt={figure.alt}
+                  loading="lazy"
+                  decoding="async"
+                />
+              </button>
+              <p class="figure-missing">图片暂时无法加载。{figure.alt}。</p>
+              <figcaption>{figure.caption}</figcaption>
+            </figure>
+          ))
+        }
+        <div class="example-row" style="margin-top: 48px">
+          <div class="project-prose">
+            <p>
+              右侧是 QQ 会话中的一次实际记录：主 Agent 依次派出
+              planner、coder、tester
+              三名队友，队友报到后转入待命，随时可以接下一条指令。
+            </p>
+            <p>
+              截图来自 fc351f0
+              时的运行结果；队友数量与名称由配置决定，图中的三个只是这次会话的实例。
+            </p>
+          </div>
+          <figure class="project-figure" data-figure>
+            <button
+              class="figure-frame"
+              type="button"
+              data-figure-open
+              aria-label={`放大图片：${project.figures.qq.alt}`}
+            >
+              <img
+                src={project.figures.qq.src}
+                width={project.figures.qq.width}
+                height={project.figures.qq.height}
+                alt={project.figures.qq.alt}
+                loading="lazy"
+                decoding="async"
+              />
+            </button>
+            <p class="figure-missing">
+              图片暂时无法加载。{project.figures.qq.alt}。
+            </p>
+            <figcaption>{project.figures.qq.caption}</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section
+        class="project-section"
+        id="resources"
+        aria-labelledby="resources-title"
+      >
+        <div class="project-section-head">
+          <p class="eyebrow">资料</p>
+          <div>
+            <h2 id="resources-title">继续阅读</h2>
+          </div>
+        </div>
+        <ul class="project-links">
+          <li>
+            <a href={project.repo}
+              ><strong><Icon name="github" size={16} /> 仓库</strong><span
+                >源码、构建说明与测试。</span
+              ></a
+            >
+          </li>
+          <li>
+            <a href={project.docs.readme}
+              ><strong>README <Icon name="external" size={14} /></strong><span
+                >快速开始、配置与启动方式。</span
+              ></a
+            >
+          </li>
+          <li>
+            <a href={project.docs.architecture}
+              ><strong>架构文档 <Icon name="external" size={14} /></strong><span
+                >模块划分、数据流与关键实现取舍。</span
+              ></a
+            >
+          </li>
+        </ul>
+        <p class="project-note">
+          本页内容按 {project.verifiedAt} 的源码核对；许可为 {project.license}。
+        </p>
+      </section>
+    </main>
+
+    <footer class="project-footer">
+      <span>© {new Date().getUTCFullYear()} huxint</span>
+      <a href={project.repo}>github.com/huxint/orangutan</a>
+    </footer>
+
+    <dialog class="image-viewer" id="image-viewer" aria-label="图片预览">
+      <div class="image-viewer-toolbar">
+        <p id="image-caption"></p><button
+          class="icon-button"
+          type="button"
+          aria-label="关闭图片"><Icon name="close" /></button
+        >
+      </div>
+      <img id="image-preview" alt="" />
+    </dialog>
+  </div>
+</BaseLayout>
+<script>
+  import '../../scripts/theme';
+  import '../../scripts/figure-viewer';
+</script>

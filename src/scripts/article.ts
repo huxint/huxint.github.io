@@ -85,11 +85,20 @@ window.addEventListener('resize', scheduleReadingPosition);
 window.addEventListener('pageshow', scheduleReadingPosition);
 new ResizeObserver(scheduleReadingPosition).observe(article);
 
+// Collapse the mobile table of contents after choosing an entry and move focus
+// to the heading so keyboard users do not stay inside the hidden list.
 document
   .querySelectorAll<HTMLAnchorElement>('.mobile-toc a')
   .forEach((link) => {
     link.addEventListener('click', () => {
       const details = link.closest('details');
+      const heading = document.getElementById(
+        decodeURIComponent(link.hash.slice(1)),
+      );
       if (details) details.open = false;
+      if (heading) {
+        if (!heading.hasAttribute('tabindex')) heading.tabIndex = -1;
+        heading.focus({ preventScroll: true });
+      }
     });
   });

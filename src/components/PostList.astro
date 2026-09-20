@@ -38,14 +38,14 @@ const groups = posts.reduce<{ year: number; posts: Post[] }[]>(
                   {formatDate(post.data.pubDate)}
                 </time>
                 <span>约 {readingMinutes(post.body)} 分钟</span>
-                {post.data.draft && <span>草稿</span>}
+                {post.data.draft && <span class="draft-badge">草稿</span>}
               </div>
               <div>
                 <Heading class="post-title">
                   <a href={`/posts/${post.id}/`}>
                     {post.data.title}
                     <span class="post-list-arrow">
-                      <Icon name="arrow" size={19} />
+                      <Icon name="arrow" size={18} />
                     </span>
                   </a>
                 </Heading>

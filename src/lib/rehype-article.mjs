@@ -7,7 +7,27 @@ export function rehypeArticle() {
     );
     if (mathError) file.fail(mathError.reason, mathError.place);
 
-    visit(tree, 'element', (node) => {
+    visit(tree, 'element', (node, index, parent) => {
+      if (
+        node.tagName === 'span' &&
+        Array.isArray(node.properties?.className) &&
+        node.properties.className.includes('katex') &&
+        parent &&
+        !(
+          parent.type === 'element' &&
+          Array.isArray(parent.properties?.className) &&
+          parent.properties.className.includes('katex-display')
+        )
+      ) {
+        parent.children[index] = {
+          type: 'element',
+          tagName: 'span',
+          properties: { className: ['math-inline'] },
+          children: [node],
+        };
+        return;
+      }
+
       if (node.tagName !== 'p' || node.children.length !== 1) return;
 
       const image = node.children[0];

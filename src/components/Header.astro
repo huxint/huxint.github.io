@@ -6,9 +6,9 @@ const links = [
   {
     href: '/',
     label: '文章',
-    active:
-      path === '/' || path.startsWith('/posts/') || path.startsWith('/tags/'),
+    active: path === '/' || path.startsWith('/posts/'),
   },
+  { href: '/tags/', label: '标签', active: path.startsWith('/tags/') },
   { href: '/about/', label: '关于', active: path.startsWith('/about/') },
 ];
 ---
@@ -37,7 +37,7 @@ const links = [
         class="icon-button"
         href="/search/"
         aria-label="搜索文章"
-        title="搜索文章"><Icon name="search" size={18} /></a
+        title="搜索文章"><Icon name="search" size={19} /></a
       >
       <button
         class="icon-button theme-toggle"
@@ -46,8 +46,8 @@ const links = [
         title="切换主题"
         data-theme-toggle
       >
-        <span class="theme-moon"><Icon name="moon" size={18} /></span>
-        <span class="theme-sun"><Icon name="sun" size={18} /></span>
+        <span class="theme-moon"><Icon name="moon" size={19} /></span>
+        <span class="theme-sun"><Icon name="sun" size={19} /></span>
       </button>
     </div>
   </div>

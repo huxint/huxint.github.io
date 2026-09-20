@@ -74,7 +74,7 @@ export function mountGorilla(element: HTMLElement): () => void {
   }
   renderer.setClearColor(0x000000, 0);
   renderer.toneMapping = ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
+  renderer.toneMappingExposure = 1.14;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = PCFShadowMap;
 
@@ -105,9 +105,9 @@ export function mountGorilla(element: HTMLElement): () => void {
   const groundY = -2.085;
   floor.position.y = groundY;
   scene.add(floor);
-  const ambient = new HemisphereLight('#f7f3e9', '#666575', 1.8);
-  const key = new DirectionalLight('#fff5e4', 2.7);
-  key.position.set(-3, 5, 5);
+  const ambient = new HemisphereLight('#fbf3e2', '#6b6b79', 1.92);
+  const key = new DirectionalLight('#ffeacd', 3.05);
+  key.position.set(-3.2, 5.2, 4.6);
   key.castShadow = true;
   key.shadow.mapSize.set(1024, 1024);
   key.shadow.camera.left = -3;
@@ -119,9 +119,9 @@ export function mountGorilla(element: HTMLElement): () => void {
   key.shadow.normalBias = 0.025;
   key.shadow.bias = -0.0001;
   key.shadow.radius = 3;
-  const fill = new DirectionalLight('#dfeaff', 1.2);
+  const fill = new DirectionalLight('#e6ecff', 1.05);
   fill.position.set(4, 1, 3);
-  const rim = new DirectionalLight('#dfe4db', 2.7);
+  const rim = new DirectionalLight('#eef0e2', 3.4);
   rim.position.set(1, 3, -4);
   scene.add(ambient, key, fill, rim);
 
@@ -403,8 +403,8 @@ export function mountGorilla(element: HTMLElement): () => void {
   dimensions.observe(canvas.parentElement!);
   function updateLighting() {
     const dark = document.documentElement.dataset.theme === 'dark';
-    ambient.intensity = dark ? 1.6 : 1.8;
-    rim.intensity = dark ? 3.2 : 2.7;
+    ambient.intensity = dark ? 1.7 : 1.92;
+    rim.intensity = dark ? 3.8 : 3.4;
     floorMaterial.opacity = dark ? 0.55 : 0.32;
     draw();
   }
