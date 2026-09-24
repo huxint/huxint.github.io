@@ -4,6 +4,7 @@ test('主导航可以打开各个站点页面', async ({ page }) => {
   await page.goto('/');
   const navigation = page.getByRole('navigation', { name: '主导航' });
   for (const [name, path] of [
+    ['生活', '/life/'],
     ['关于', '/about/'],
     ['文章', '/'],
   ]) {
@@ -67,15 +68,17 @@ test('搜索能找到当前文章，并能清空结果', async ({ page }) => {
   await expect(page).toHaveURL('/search/');
 });
 
-test('手机视口下首页没有横向溢出', async ({ page }) => {
+test('手机视口下页面没有横向溢出', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
-  await page.goto('/');
-  await page.evaluate(() => document.fonts.ready);
-  const dimensions = await page.evaluate(() => ({
-    page: document.documentElement.scrollWidth,
-    viewport: document.documentElement.clientWidth,
-  }));
-  expect(dimensions.page).toBeLessThanOrEqual(dimensions.viewport + 1);
+  for (const path of ['/', '/life/']) {
+    await page.goto(path);
+    await page.evaluate(() => document.fonts.ready);
+    const dimensions = await page.evaluate(() => ({
+      page: document.documentElement.scrollWidth,
+      viewport: document.documentElement.clientWidth,
+    }));
+    expect(dimensions.page, path).toBeLessThanOrEqual(dimensions.viewport + 1);
+  }
 });
 
 test('不存在的地址返回 404 并提供返回入口', async ({ page }) => {

@@ -1,0 +1,64 @@
+---
+import Icon from './Icon.astro';
+---
+
+<dialog class="life-viewer" id="life-viewer" aria-label="照片">
+  <div class="life-viewer-bar">
+    <p class="life-viewer-meta"></p>
+    <p class="life-viewer-count" aria-live="polite"></p>
+    <button
+      class="life-viewer-button"
+      type="button"
+      data-viewer-close
+      aria-label="关闭"><Icon name="close" /></button
+    >
+  </div>
+  <div class="life-viewer-stage">
+    <button
+      class="life-viewer-button life-viewer-step is-previous"
+      type="button"
+      data-viewer-step="-1"
+      aria-label="上一张"><Icon name="chevron" size={22} /></button
+    >
+    <figure class="life-viewer-frame">
+      <img alt="" />
+      <video muted playsinline preload="none" aria-hidden="true" tabindex="-1"
+      ></video>
+      <button
+        class="live-badge"
+        type="button"
+        data-viewer-live
+        aria-pressed="false"
+        aria-label="播放实况"
+        hidden
+        ><svg viewBox="0 0 24 24" aria-hidden="true"
+          ><circle
+            cx="12"
+            cy="12"
+            r="9.5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.7"
+            stroke-dasharray="2.6 2.4"></circle><circle
+            cx="12"
+            cy="12"
+            r="5.6"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.7"></circle><circle
+            cx="12"
+            cy="12"
+            r="2.2"
+            fill="currentColor"></circle></svg
+        ><span>实况</span></button
+      >
+    </figure>
+    <button
+      class="life-viewer-button life-viewer-step is-next"
+      type="button"
+      data-viewer-step="1"
+      aria-label="下一张"><Icon name="chevron" size={22} /></button
+    >
+  </div>
+  <p class="life-viewer-caption"></p>
+</dialog>

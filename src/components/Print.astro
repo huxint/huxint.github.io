@@ -1,0 +1,43 @@
+---
+import type { ImageMetadata } from 'astro';
+import { Image } from 'astro:assets';
+
+// A photo as a print: a square crop on paper, the date written underneath.
+interface Props {
+  still: ImageMetadata;
+  href: string;
+  label: string;
+  note: string;
+  sizes: string;
+  eager?: boolean;
+  class?: string;
+  style?: string;
+}
+const {
+  still,
+  href,
+  label,
+  note,
+  sizes,
+  eager = false,
+  class: className,
+  style,
+} = Astro.props;
+---
+
+<a
+  class:list={['print', className]}
+  href={href}
+  aria-label={label}
+  style={style}
+>
+  <Image
+    src={still}
+    alt=""
+    widths={[240, 400, 640]}
+    sizes={sizes}
+    format="webp"
+    loading={eager ? 'eager' : 'lazy'}
+  />
+  <span class="print-note" aria-hidden="true">{note}</span>
+</a>
