@@ -5,6 +5,8 @@ import expressiveCode, { pluginFramesTexts } from 'astro-expressive-code';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import { rehypeArticle } from './src/lib/rehype-article.mjs';
+import { remarkMoment } from './src/lib/remark-moment.mjs';
+import { lifeMedia } from './src/integrations/life-media.mjs';
 
 pluginFramesTexts.addLocale('zh', {
   terminalWindowFallbackTitle: '终端',
@@ -24,6 +26,7 @@ export default defineConfig({
   },
   integrations: [
     sitemap({ filter: (url) => !url.endsWith('/search/') }),
+    lifeMedia(),
     expressiveCode({
       defaultLocale: 'zh',
       getBlockLocale: () => 'zh',
@@ -41,7 +44,7 @@ export default defineConfig({
   markdown: {
     processor: unified({
       remarkRehype: { footnoteLabel: '注释', footnoteBackLabel: '返回正文' },
-      remarkPlugins: [remarkMath],
+      remarkPlugins: [remarkMath, remarkMoment],
       rehypePlugins: [[rehypeKatex, { strict: 'error' }], rehypeArticle],
     }),
   },

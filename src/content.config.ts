@@ -18,4 +18,17 @@ const posts = defineCollection({
   }),
 });
 
-export const collections = { posts };
+const life = defineCollection({
+  loader: glob({
+    pattern: '*/index.md',
+    base: './src/content/life',
+    generateId: ({ entry }) => entry.split('/')[0],
+  }),
+  schema: z.object({
+    date: z.coerce.date(),
+    location: z.string().optional(),
+    draft: z.boolean().default(false),
+  }),
+});
+
+export const collections = { posts, life };

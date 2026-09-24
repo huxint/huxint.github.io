@@ -1,0 +1,95 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { Image, getImage } from 'astro:assets';
+import 'katex/dist/katex.min.css';
+import '../../styles/prose.css';
+import '../../styles/life.css';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Moment from '../../components/Moment.astro';
+import LifeViewer from '../../components/LifeViewer.astro';
+import Icon from '../../components/Icon.astro';
+import { formatDate } from '../../lib/posts';
+import {
+  getMoments,
+  momentExcerpt,
+  momentStills,
+  type Moment as MomentEntry,
+} from '../../lib/life';
+export const getStaticPaths = (async () => {
+  const moments = await getMoments();
+  return moments.map((moment, index) => ({
+    params: { slug: moment.id },
+    props: { moment, newer: moments[index - 1], older: moments[index + 1] },
+  }));
+}) satisfies GetStaticPaths;
+interface Props {
+  moment: MomentEntry;
+  newer?: MomentEntry;
+  older?: MomentEntry;
+}
+const { moment, newer, older } = Astro.props;
+const excerpt = momentExcerpt(moment);
+const [cover] = momentStills(moment);
+const share = cover
+  ? await getImage({ src: cover, width: 1200, format: 'jpeg' })
+  : undefined;
+const image = share && {
+  src: share.src,
+  width: Number(share.attributes.width),
+  height: Number(share.attributes.height),
+  alt: excerpt,
+};
+const neighbours = [
+  newer && { moment: newer, rel: 'prev', label: '较新' },
+  older && { moment: older, rel: 'next', label: '较早' },
+].filter(Boolean) as { moment: MomentEntry; rel: string; label: string }[];
+---
+
+<BaseLayout
+  title={`${formatDate(moment.data.date)} · 生活`}
+  description={excerpt}
+  image={image}
+  article
+>
+  <main class="page life-page is-record" id="main">
+    <a class="back-link" href="/life/">← 所有记录</a>
+    <Moment moment={moment} standalone />
+    {
+      neighbours.length > 0 && (
+        <nav class="moment-pager" aria-label="前后记录">
+          {neighbours.map(({ moment: neighbour, rel, label }) => {
+            const [thumbnail] = momentStills(neighbour);
+            return (
+              <a href={`/life/${neighbour.id}/`} rel={rel} class={`is-${rel}`}>
+                {thumbnail ? (
+                  <Image
+                    src={thumbnail}
+                    alt=""
+                    width={112}
+                    height={112}
+                    format="webp"
+                    class="pager-thumbnail"
+                  />
+                ) : (
+                  <span class="pager-thumbnail">
+                    <Icon name="arrow" size={16} />
+                  </span>
+                )}
+                <span class="pager-text">
+                  <small>
+                    {label} · {formatDate(neighbour.data.date)}
+                  </small>
+                  {momentExcerpt(neighbour, 28)}
+                </span>
+              </a>
+            );
+          })}
+        </nav>
+      )
+    }
+  </main>
+  <LifeViewer />
+</BaseLayout>
+<script>
+  import '../../scripts/life';
+</script>

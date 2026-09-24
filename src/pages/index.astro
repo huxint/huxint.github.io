@@ -3,9 +3,18 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import PostList from '../components/PostList.astro';
 import Gorilla from '../components/Gorilla.astro';
 import Icon from '../components/Icon.astro';
+import Print from '../components/Print.astro';
 import { site } from '../data/site';
-import { getPosts } from '../lib/posts';
+import { formatDate, getPosts } from '../lib/posts';
+import { getMoments, momentStills, printNote } from '../lib/life';
 const posts = await getPosts();
+const prints = (await getMoments())
+  .flatMap((moment) =>
+    momentStills(moment)
+      .slice(0, 2)
+      .map((still) => ({ still, moment })),
+  )
+  .slice(0, 4);
 ---
 
 <BaseLayout>
@@ -24,6 +33,29 @@ const posts = await getPosts();
       </div>
       <Gorilla />
     </header>
+    {
+      prints.length > 0 && (
+        <section aria-labelledby="life-title">
+          <div class="section-bar">
+            <h2 id="life-title">最近的生活</h2>
+            <a href="/life/">
+              全部记录 <Icon name="arrow" size={14} />
+            </a>
+          </div>
+          <div class="print-row">
+            {prints.map(({ still, moment }) => (
+              <Print
+                still={still}
+                href={`/life/${moment.id}/`}
+                label={`${formatDate(moment.data.date)} 的记录`}
+                note={printNote(moment)}
+                sizes="(max-width: 640px) 42vw, 220px"
+              />
+            ))}
+          </div>
+        </section>
+      )
+    }
     <section aria-labelledby="notes-title">
       <div class="section-bar">
         <h2 id="notes-title">

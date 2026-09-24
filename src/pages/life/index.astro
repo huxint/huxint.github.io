@@ -1,0 +1,154 @@
+---
+import 'katex/dist/katex.min.css';
+import '../../styles/prose.css';
+import '../../styles/life.css';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Moment from '../../components/Moment.astro';
+import Print from '../../components/Print.astro';
+import LifeViewer from '../../components/LifeViewer.astro';
+import { formatDate } from '../../lib/posts';
+import {
+  getMoments,
+  momentCounts,
+  momentDate,
+  momentStills,
+  monthStarts,
+  printNote,
+  yearFraction,
+  type Moment as MomentEntry,
+} from '../../lib/life';
+const moments = await getMoments();
+const groups = moments.reduce<{ year: number; moments: MomentEntry[] }[]>(
+  (result, moment) => {
+    const { year } = momentDate(moment);
+    const group = result.at(-1);
+    if (group?.year === year) group.moments.push(moment);
+    else result.push({ year, moments: [moment] });
+    return result;
+  },
+  [],
+);
+const totals = moments.map(momentCounts).reduce(
+  (sum, counts) => ({
+    photos: sum.photos + counts.photos,
+    videos: sum.videos + counts.videos,
+  }),
+  { photos: 0, videos: 0 },
+);
+const tally = [
+  `${moments.length} 条记录`,
+  totals.photos && `${totals.photos} 张照片`,
+  totals.videos && `${totals.videos} 段视频`,
+].filter(Boolean);
+// The latest photos, at most two from any one record, piled up like prints.
+const pile = moments
+  .flatMap((moment) =>
+    momentStills(moment)
+      .slice(0, 2)
+      .map((still) => ({ still, moment })),
+  )
+  .slice(0, 5);
+const since = groups.at(-1)?.year;
+const QUARTERS = ['一月', '四月', '七月', '十月'];
+---
+
+<BaseLayout
+  title="生活"
+  description="huxint 的生活记录：照片、视频和随手写下的日常。"
+>
+  <main class="page life-page" id="main">
+    <header class:list={['life-hero', { 'has-pile': pile.length }]}>
+      <div class="life-intro">
+        <p class="eyebrow">碎碎念{since && ` · 始于 ${since}`}</p>
+        <h1>生活</h1>
+        <p class="life-lead">拍下来的日常，和随手写下的只言片语。</p>
+        {
+          groups.length > 0 && (
+            <div class="life-rulers">
+              {groups.slice(0, 3).map((group) => {
+                const months = monthStarts(group.year);
+                return (
+                  <div class="life-ruler">
+                    <span class="ruler-year">{group.year}</span>
+                    <div class="ruler-track">
+                      {months.map((at, month) => (
+                        <i
+                          class:list={[
+                            'ruler-month',
+                            { 'is-quarter': month % 3 === 0 },
+                          ]}
+                          style={`--at: ${at.toFixed(4)}`}
+                          aria-hidden="true"
+                        >
+                          {month % 3 === 0 && (
+                            <span>{QUARTERS[month / 3]}</span>
+                          )}
+                        </i>
+                      ))}
+                      {group.moments.map((moment) => (
+                        <a
+                          class="ruler-mark"
+                          href={`#${moment.id}`}
+                          style={`--at: ${yearFraction(moment).toFixed(4)}`}
+                          data-label={formatDate(moment.data.date).slice(5)}
+                          aria-label={`跳到 ${formatDate(moment.data.date)} 的记录`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )
+        }
+        {moments.length > 0 && <p class="life-tally">{tally.join(' · ')}</p>}
+      </div>
+      {
+        pile.length > 0 && (
+          <div class="life-pile" aria-label="最近的照片">
+            {pile.map(({ still, moment }, position) => (
+              <Print
+                still={still}
+                href={`/life/${moment.id}/`}
+                label={`${formatDate(moment.data.date)} 的记录`}
+                note={printNote(moment)}
+                sizes="(max-width: 640px) 52vw, 300px"
+                eager={position === 0}
+              />
+            ))}
+          </div>
+        )
+      }
+    </header>
+    {
+      moments.length ? (
+        <ol class="moment-list">
+          {groups.map((group) => (
+            <li class="moment-year-group">
+              <h2 class="moment-year">
+                <span>{group.year}</span>
+                <small>{group.moments.length} 条</small>
+              </h2>
+              <ol class="moment-timeline" aria-label={`${group.year} 年的记录`}>
+                {group.moments.map((moment) => (
+                  <li>
+                    <Moment moment={moment} />
+                  </li>
+                ))}
+              </ol>
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <p class="empty-state">
+          还没有记录。
+          <a class="text-link" href="/">
+            先去看看文章
+          </a>
+        </p>
+      )
+    }
+  </main>
+  {moments.length > 0 && <LifeViewer />}
+</BaseLayout>
+{moments.length > 0 && <script>import '../../scripts/life';</script>}

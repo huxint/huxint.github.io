@@ -11,7 +11,9 @@ interface Props {
     | 'close'
     | 'rotate'
     | 'pause'
-    | 'play';
+    | 'play'
+    | 'chevron'
+    | 'pin';
   size?: number;
 }
 const { name, size = 20 } = Astro.props;
@@ -28,6 +30,8 @@ const paths = {
   rotate: 'M3 11a9 9 0 1 1 2.6 7M3 4v7h7',
   pause: 'M8 5v14M16 5v14',
   play: 'm8 5 11 7-11 7Z',
+  chevron: 'm9 5 7 7-7 7',
+  pin: 'M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11Z M14.4 10a2.4 2.4 0 1 1-4.8 0 2.4 2.4 0 0 1 4.8 0',
 };
 ---
 

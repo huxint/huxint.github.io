@@ -1,0 +1,55 @@
+---
+import { render } from 'astro:content';
+import Icon from './Icon.astro';
+import { formatDate } from '../lib/posts';
+import { momentDate, type Moment } from '../lib/life';
+
+interface Props {
+  moment: Moment;
+  standalone?: boolean;
+}
+const { moment, standalone = false } = Astro.props;
+const { Content } = await render(moment);
+const { year, month, day, weekday } = momentDate(moment);
+const date = formatDate(moment.data.date);
+const datetime = moment.data.date.toISOString();
+const { location } = moment.data;
+const caption = [date, location].filter(Boolean).join(' · ');
+const DateWrapper = standalone ? 'div' : 'a';
+---
+
+<article
+  class:list={['moment', { 'is-standalone': standalone }]}
+  id={moment.id}
+  aria-label={`${date} 的记录`}
+  data-caption={caption}
+>
+  <header class="moment-aside">
+    <DateWrapper
+      class="moment-date"
+      href={standalone ? undefined : `/life/${moment.id}/`}
+    >
+      <time datetime={datetime}>
+        <span class="sr-only">{`${date} ${weekday}`}</span>
+        <span class="moment-day" aria-hidden="true">
+          {String(day).padStart(2, '0')}
+        </span>
+        <span class="moment-month" aria-hidden="true">
+          {standalone ? `${year} · ${month}` : month} · {weekday}
+        </span>
+      </time>
+    </DateWrapper>
+    {
+      location && (
+        <span class="moment-location">
+          <Icon name="pin" size={13} />
+          {location}
+        </span>
+      )
+    }
+    {moment.data.draft && <span class="draft-badge">草稿</span>}
+  </header>
+  <div class="prose moment-text">
+    <Content />
+  </div>
+</article>

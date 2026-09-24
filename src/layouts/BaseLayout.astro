@@ -12,20 +12,21 @@ interface Props {
   description?: string;
   article?: boolean;
   noindex?: boolean;
+  image?: { src: string; width: number; height: number; alt: string };
 }
 const {
   title,
   description = site.description,
   article = false,
   noindex = false,
+  image = {
+    src: '/images/gorilla-share.webp',
+    width: 640,
+    height: 640,
+    alt: '银背猩猩头像',
+  },
 } = Astro.props;
 const pageTitle = title ? `${title} · ${site.name}` : site.title;
-const image = {
-  src: '/images/gorilla-share.webp',
-  width: 640,
-  height: 640,
-  alt: '银背猩猩头像',
-};
 ---
 
 <!doctype html>

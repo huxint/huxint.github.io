@@ -9,6 +9,7 @@ const links = [
     label: '文章',
     active: path === '/' || path.startsWith('/posts/'),
   },
+  { href: '/life/', label: '生活', active: path.startsWith('/life/') },
   { href: '/tags/', label: '标签', active: path.startsWith('/tags/') },
   { href: '/about/', label: '关于', active: path.startsWith('/about/') },
 ];
