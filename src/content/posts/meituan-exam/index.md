@@ -55,6 +55,7 @@ $n\le 1000$，枚举所有数对的开销可以接受。关键是不要每枚举
 
 ```cpp title="meituan_divisors.cpp"
 #include <algorithm>
+#include <cstdint>
 #include <iostream>
 #include <utility>
 #include <vector>
@@ -90,27 +91,27 @@ int main() {
         factors[i] = factorize(x);
     }
 
-    auto merge = [&](const Factors &lhs, const Factors &rhs) -> std::int64_t {
-        int i = 0, j = 0;
+    auto merge = [](const Factors &lhs, const Factors &rhs) -> std::int64_t {
+        std::size_t i = 0, j = 0;
         std::int64_t count = 1;
-        while (i < n && j < m) {
-            if (a[i].first == b[j].first) {
-                count *= a[i].second + b[j].second + 1;
+        while (i < lhs.size() && j < rhs.size()) {
+            if (lhs[i].first == rhs[j].first) {
+                count *= lhs[i].second + rhs[j].second + 1;
                 ++i;
                 ++j;
-            } else if (a[i].first < b[j].first) {
-                count *= a[i].second + 1;
+            } else if (lhs[i].first < rhs[j].first) {
+                count *= lhs[i].second + 1;
                 ++i;
             } else {
-                count *= b[j].second + 1;
+                count *= rhs[j].second + 1;
                 ++j;
             }
         }
-        while (i < n) {
-            count *= a[i++].second + 1;
+        while (i < lhs.size()) {
+            count *= lhs[i++].second + 1;
         }
-        while (j < m) {
-            count *= b[j++].second + 1;
+        while (j < rhs.size()) {
+            count *= rhs[j++].second + 1;
         }
         return count;
     };
@@ -118,7 +119,7 @@ int main() {
     std::int64_t ans = 0;
     for (int i = 0; i < n; ++i) {
         for (int j = 0; j < n; ++j) {
-            ans = std::max(ans,  merge(factors[i], factors[j]));
+            ans = std::max(ans, merge(factors[i], factors[j]));
         }
     }
     std::cout << ans << '\n';

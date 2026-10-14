@@ -27,6 +27,11 @@ interface Props {
 const { post, next } = Astro.props;
 const { Content, headings } = await render(post);
 const toc = headings.filter(({ depth }) => depth === 2 || depth === 3);
+// Match Pagefind's browser tokenizer; its build-time Chinese dictionary differs.
+const searchTitle = Array.from(
+  new Intl.Segmenter('zh-CN', { granularity: 'word' }).segment(post.data.title),
+  ({ segment }) => segment,
+).join(' ');
 const structuredArticle = {
   '@context': 'https://schema.org',
   '@type': 'BlogPosting',
@@ -72,7 +77,12 @@ const structuredArticle = {
                 )
               }
             </div>
-            <h1 data-pagefind-meta="title">{post.data.title}</h1>
+            <h1
+              data-pagefind-meta="title, titleWords[data-search-title]"
+              data-search-title={searchTitle}
+            >
+              {post.data.title}
+            </h1>
             <p class="post-description" data-pagefind-meta="description">
               {post.data.description}
             </p>
