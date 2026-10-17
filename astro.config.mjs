@@ -6,6 +6,7 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import { rehypeArticle } from './src/lib/rehype-article.mjs';
 import { remarkMoment } from './src/lib/remark-moment.mjs';
+import { remarkArticleExtras } from './src/lib/remark-article-extras.mjs';
 import { lifeMedia } from './src/integrations/life-media.mjs';
 
 pluginFramesTexts.addLocale('zh', {
@@ -18,6 +19,9 @@ export default defineConfig({
   site: 'https://huxint.github.io',
   trailingSlash: 'always',
   vite: {
+    optimizeDeps: {
+      include: ['mermaid'],
+    },
     build: {
       // Astro can inline scripts before Vite resolves their dynamic-import preload markers.
       assetsInlineLimit: (filePath) =>
@@ -44,7 +48,7 @@ export default defineConfig({
   markdown: {
     processor: unified({
       remarkRehype: { footnoteLabel: '注释', footnoteBackLabel: '返回正文' },
-      remarkPlugins: [remarkMath, remarkMoment],
+      remarkPlugins: [remarkMath, remarkArticleExtras, remarkMoment],
       rehypePlugins: [[rehypeKatex, { strict: 'error' }], rehypeArticle],
     }),
   },

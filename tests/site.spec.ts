@@ -181,3 +181,33 @@ test('手机视口下标签页没有横向溢出', async ({ page }) => {
   }));
   expect(dimensions.page).toBeLessThanOrEqual(dimensions.viewport + 1);
 });
+
+test('文章正文支持提示框、行内强调、脚注预览和 Mermaid', async ({ page }) => {
+  await page.goto('/posts/cpp-memory/');
+  await page.evaluate(() => document.fonts.ready);
+
+  await expect(page.locator('.prose .callout')).toHaveCount(3);
+  await expect(page.locator('.prose mark').first()).toBeVisible();
+  await expect(page.locator('.prose u').first()).toBeVisible();
+
+  const docMeta = page.locator('.doc-meta');
+  await expect(docMeta).toBeVisible();
+  await docMeta.locator('summary').click();
+  await expect(docMeta).toContainText('published');
+  await expect(docMeta).toContainText('cpp-memory');
+
+  const diagram = page.locator('.mermaid-figure').first();
+  await expect(diagram).toBeVisible();
+  await expect(diagram.locator('svg')).toBeVisible({ timeout: 15000 });
+  expect(await diagram.locator('.node').count()).toBeGreaterThan(0);
+
+  const footnote = page.locator('.prose sup a').first();
+  await footnote.scrollIntoViewIfNeeded();
+  await footnote.hover();
+  await expect(page.locator('.footnote-popover')).toHaveClass(/is-visible/);
+
+  const formula = page.locator('.katex-display').first();
+  await formula.scrollIntoViewIfNeeded();
+  await formula.hover();
+  await expect(formula.locator('.math-copy')).toBeVisible();
+});

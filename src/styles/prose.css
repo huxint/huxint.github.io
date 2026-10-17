@@ -389,6 +389,844 @@
   margin-bottom: 1em;
 }
 
+/* Rich article elements */
+.prose {
+  --highlight-bg: #f6e3a1;
+  --highlight-ink: #4a3708;
+  --highlight-edge: #dfbd50;
+  --annotation-bg: color-mix(in srgb, var(--bg-raised) 74%, var(--surface) 26%);
+  --annotation-line: color-mix(in srgb, var(--rule) 82%, var(--accent) 7%);
+  --annotation-note: #4d739a;
+  --annotation-tip: #47785d;
+  --annotation-important: #a34f2d;
+  --annotation-warning: #9b6a20;
+  --annotation-caution: #9c4743;
+  --diff-add: #3f8a61;
+  --diff-add-bg: color-mix(in srgb, #3f8a61 12%, transparent);
+  --diff-del: #b25751;
+  --diff-del-bg: color-mix(in srgb, #b25751 11%, transparent);
+  --mermaid-node-fill: color-mix(
+    in srgb,
+    var(--bg-raised) 68%,
+    var(--accent-soft) 32%
+  );
+  --mermaid-node-stroke: color-mix(in srgb, var(--accent) 46%, var(--rule));
+  --mermaid-node-text: var(--text);
+  --mermaid-edge: color-mix(in srgb, var(--muted) 66%, var(--accent) 34%);
+  --mermaid-cluster: color-mix(in srgb, var(--surface) 42%, transparent);
+  --mermaid-cluster-border: color-mix(
+    in srgb,
+    var(--rule-strong) 76%,
+    transparent
+  );
+  --mermaid-label-bg: var(--bg-raised);
+}
+
+:root[data-theme='dark'] .prose {
+  --highlight-bg: #63552a;
+  --highlight-ink: #fff4c7;
+  --highlight-edge: #927d3c;
+  --annotation-note: #8db4da;
+  --annotation-tip: #8cc09c;
+  --annotation-important: #e3a17e;
+  --annotation-warning: #dfb66a;
+  --annotation-caution: #df9490;
+  --diff-add: #67b88a;
+  --diff-add-bg: color-mix(in srgb, #67b88a 13%, transparent);
+  --diff-del: #d7817a;
+  --diff-del-bg: color-mix(in srgb, #d7817a 12%, transparent);
+  --mermaid-node-fill: color-mix(
+    in srgb,
+    var(--bg-raised) 76%,
+    var(--accent-soft) 24%
+  );
+  --mermaid-node-stroke: color-mix(in srgb, var(--accent) 52%, var(--rule));
+  --mermaid-edge: color-mix(in srgb, var(--muted) 60%, var(--accent) 40%);
+  --mermaid-cluster: color-mix(in srgb, var(--surface) 40%, transparent);
+}
+
+/* Links: a quiet underline that gets stronger on hover */
+.prose a {
+  text-decoration-thickness: 1px;
+  text-decoration-color: color-mix(in srgb, var(--accent) 30%, transparent);
+  transition:
+    color var(--dur-fast) ease,
+    text-decoration-color var(--dur-fast) ease,
+    text-decoration-thickness var(--dur-fast) ease;
+}
+.prose a:hover {
+  color: color-mix(in srgb, var(--accent-ink) 82%, var(--text));
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 1.5px;
+}
+.prose a[href^='http']:not(:has(img)):not(.footnote-backref)::after {
+  content: '↗';
+  display: inline-block;
+  margin-left: 0.22em;
+  color: var(--accent);
+  font-size: 0.72em;
+  line-height: 1;
+  opacity: 0.48;
+  text-decoration: none;
+  transition:
+    opacity var(--dur-fast) ease,
+    transform var(--dur-base) var(--ease-spring);
+}
+.prose a[href^='http']:not(:has(img)):not(.footnote-backref):hover::after {
+  opacity: 1;
+  transform: translate(1px, -1px);
+}
+
+/* Highlights, underlines, deletions and insertions */
+.prose mark {
+  padding: 0.06em 0.22em;
+  border-radius: 4px;
+  background: linear-gradient(
+    180deg,
+    transparent 8%,
+    var(--highlight-bg) 8%,
+    var(--highlight-bg) 92%,
+    transparent 92%
+  );
+  color: var(--highlight-ink);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--highlight-edge) 42%, transparent);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+.prose u {
+  text-decoration-line: underline;
+  text-decoration-color: color-mix(in srgb, var(--accent) 52%, transparent);
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.25em;
+  transition: text-decoration-color var(--dur-fast) ease;
+}
+.prose u:hover {
+  text-decoration-color: var(--accent);
+}
+.prose del,
+.prose s {
+  color: var(--faint);
+  text-decoration-color: color-mix(in srgb, var(--faint) 72%, transparent);
+  text-decoration-thickness: 1px;
+}
+.prose ins {
+  padding: 0.03em 0.17em;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--diff-add) 14%, transparent);
+  color: color-mix(in srgb, var(--diff-add) 76%, var(--text));
+  text-decoration: none;
+}
+
+/* Lists: clearer rhythm and quieter nested markers */
+.prose li {
+  margin: 0.52em 0;
+  padding-left: 0.15em;
+}
+.prose li + li {
+  margin-top: 0.42em;
+}
+.prose ul:not(.contains-task-list) {
+  padding-left: 1.35em;
+  list-style: none;
+}
+.prose ul:not(.contains-task-list) > li {
+  position: relative;
+  padding-left: 1em;
+}
+.prose ul:not(.contains-task-list) > li::before {
+  content: '';
+  position: absolute;
+  left: 0.12em;
+  top: 0.85em;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 56%, var(--faint));
+  transition: background-color var(--dur-fast) ease;
+}
+.prose ul:not(.contains-task-list) > li:hover::before {
+  background: var(--accent);
+}
+.prose ul:not(.contains-task-list) ul:not(.contains-task-list) > li::before {
+  top: 0.82em;
+  width: 5px;
+  height: 5px;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--faint));
+  background: transparent;
+}
+.prose
+  ul:not(.contains-task-list)
+  ul:not(.contains-task-list)
+  ul:not(.contains-task-list)
+  > li::before {
+  top: 0.9em;
+  width: 4px;
+  height: 4px;
+  border: 0;
+  border-radius: 1px;
+  background: color-mix(in srgb, var(--accent) 50%, var(--faint));
+  transform: rotate(45deg);
+}
+.prose ol {
+  padding-left: 1.65em;
+  list-style: decimal;
+}
+.prose ol > li::marker {
+  color: color-mix(in srgb, var(--accent) 60%, var(--muted));
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+  font-weight: 550;
+}
+.prose ol ol {
+  list-style: lower-alpha;
+}
+.prose ol ol ol {
+  list-style: lower-roman;
+}
+.prose li > ul,
+.prose li > ol {
+  margin-top: 0.48em;
+  margin-bottom: 0.48em;
+}
+.prose .contains-task-list {
+  padding-left: 0.15em;
+}
+.prose .task-list-item {
+  list-style: none;
+  padding-left: 0;
+}
+.prose .task-list-item input[type='checkbox'] {
+  display: inline-grid;
+  place-content: center;
+  width: 1.08em;
+  height: 1.08em;
+  margin: 0 0.55em 0 0.02em;
+  border: 1.5px solid var(--rule-strong);
+  border-radius: 5px;
+  background: var(--bg-raised);
+  color: #fff;
+  appearance: none;
+  -webkit-appearance: none;
+  vertical-align: -0.16em;
+  transition:
+    background-color var(--dur-fast) ease,
+    border-color var(--dur-fast) ease,
+    transform var(--dur-base) var(--ease-spring);
+}
+.prose .task-list-item input[type='checkbox']:checked {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+.prose .task-list-item input[type='checkbox']:checked::after {
+  content: '';
+  width: 0.31em;
+  height: 0.58em;
+  border: solid #fff;
+  border-width: 0 0.16em 0.16em 0;
+  transform: rotate(45deg) translate(0.01em, -0.06em);
+}
+.prose .task-list-item:has(> input[type='checkbox']:checked) {
+  color: var(--faint);
+  text-decoration-line: line-through;
+  text-decoration-thickness: 1px;
+  text-decoration-color: color-mix(in srgb, var(--faint) 58%, transparent);
+}
+.prose .task-list-item:has(> input[type='checkbox']:checked) a {
+  color: var(--faint);
+}
+
+/* Keycaps */
+.prose kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.7em;
+  min-height: 1.6em;
+  padding: 0.14em 0.48em;
+  border: 1px solid var(--rule-strong);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.28), transparent 60%),
+    var(--surface);
+  color: color-mix(in srgb, var(--text) 90%, var(--muted));
+  font-family: var(--font-mono);
+  font-size: 0.76em;
+  font-weight: 500;
+  line-height: 1.2;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.34),
+    0 1px 0 color-mix(in srgb, var(--rule-strong) 68%, transparent);
+  vertical-align: 0.08em;
+}
+:root[data-theme='dark'] .prose kbd {
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.08), transparent 65%),
+    var(--surface-strong);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.08),
+    0 1px 0 rgb(0 0 0 / 0.6);
+}
+
+/* Callouts */
+.prose blockquote.callout {
+  --callout-accent: var(--annotation-note);
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--callout-accent) 25%, var(--rule));
+  border-radius: 14px;
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--callout-accent) 9%, transparent),
+      transparent 54%
+    ),
+    color-mix(in srgb, var(--bg-raised) 76%, var(--surface) 24%);
+  box-shadow: 0 1px 0 var(--hairline);
+  color: var(--text);
+  font-size: 1em;
+}
+.prose blockquote.callout::before {
+  display: none;
+}
+.prose .callout-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 11px 16px;
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--callout-accent) 18%, var(--rule));
+  background: color-mix(in srgb, var(--callout-accent) 7%, transparent);
+  color: var(--callout-accent);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+.prose .callout-symbol {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 1px solid color-mix(in srgb, var(--callout-accent) 35%, transparent);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--callout-accent) 11%, transparent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.prose .callout-label {
+  color: var(--callout-accent);
+}
+.prose .callout > :not(.callout-title) {
+  margin-right: 17px;
+  margin-left: 17px;
+}
+.prose .callout > .callout-title + * {
+  margin-top: 1em;
+}
+.prose .callout > :last-child {
+  margin-bottom: 1.05em;
+}
+.prose .callout--tip {
+  --callout-accent: var(--annotation-tip);
+}
+.prose .callout--important {
+  --callout-accent: var(--annotation-important);
+}
+.prose .callout--warning {
+  --callout-accent: var(--annotation-warning);
+}
+.prose .callout--caution {
+  --callout-accent: var(--annotation-caution);
+}
+
+/* A quiet quote mark for normal blockquotes */
+.prose blockquote:not(.callout)::after {
+  content: '“';
+  position: absolute;
+  right: 13px;
+  top: 3px;
+  color: color-mix(in srgb, var(--accent) 42%, transparent);
+  font-family: var(--font-serif);
+  font-size: 45px;
+  line-height: 1;
+  opacity: 0.17;
+  pointer-events: none;
+}
+
+/* Tables and inline content */
+.prose table {
+  box-shadow: inset 0 1px 0 var(--hairline);
+}
+.prose thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  backdrop-filter: blur(8px);
+}
+.prose tbody tr {
+  transition: background-color var(--dur-fast) ease;
+}
+.prose tbody tr:hover td {
+  background: color-mix(in srgb, var(--accent) 4%, transparent);
+}
+.prose td > p {
+  margin: 0;
+}
+.prose table kbd {
+  font-size: 0.74em;
+}
+
+/* Code blocks */
+.prose .expressive-code {
+  margin: 1.9em 0;
+}
+.prose .expressive-code figure.frame {
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--rule) 86%, transparent);
+  border-radius: 14px;
+  background: var(--bg-raised);
+  box-shadow:
+    inset 0 1px 0 var(--hairline),
+    0 20px 44px -38px rgb(40 30 10 / 0.45);
+}
+:root[data-theme='dark'] .prose .expressive-code figure.frame {
+  box-shadow:
+    inset 0 1px 0 var(--hairline),
+    0 22px 48px -36px rgb(0 0 0 / 0.92);
+}
+.prose .expressive-code .header {
+  border-bottom: 1px solid color-mix(in srgb, var(--rule) 84%, transparent);
+  background:
+    linear-gradient(180deg, var(--hairline), transparent 80%),
+    color-mix(in srgb, var(--surface) 58%, var(--bg-raised));
+}
+.prose .expressive-code .header .title {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.035em;
+}
+.prose .expressive-code .copy button {
+  border-radius: 7px;
+  transition:
+    background-color var(--dur-fast) ease,
+    color var(--dur-fast) ease;
+}
+.prose .expressive-code .copy button:hover {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent-ink);
+}
+.prose .expressive-code .ec-line.ins {
+  background: linear-gradient(
+    90deg,
+    var(--diff-add-bg),
+    color-mix(in srgb, var(--diff-add-bg) 30%, transparent)
+  ) !important;
+  box-shadow: inset 3px 0 0 var(--diff-add);
+}
+.prose .expressive-code .ec-line.del {
+  background: linear-gradient(
+    90deg,
+    var(--diff-del-bg),
+    color-mix(in srgb, var(--diff-del-bg) 24%, transparent)
+  ) !important;
+  box-shadow: inset 3px 0 0 var(--diff-del);
+}
+.prose .expressive-code .ec-line.del .code {
+  color: color-mix(in srgb, var(--diff-del) 58%, var(--muted));
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+  text-decoration-color: color-mix(in srgb, var(--diff-del) 58%, transparent);
+}
+.prose .expressive-code pre[data-language='diff'] {
+  background: color-mix(in srgb, var(--bg-raised) 84%, var(--surface));
+}
+
+/* Mermaid */
+.prose .mermaid-figure {
+  position: relative;
+  margin: 2em 0;
+  overflow: hidden;
+  border: 1px solid var(--annotation-line);
+  border-radius: 16px;
+  background:
+    radial-gradient(
+      34rem 16rem at 50% 0%,
+      color-mix(in srgb, var(--accent) 6%, transparent),
+      transparent 70%
+    ),
+    color-mix(in srgb, var(--bg-raised) 82%, var(--surface) 18%);
+  box-shadow:
+    inset 0 1px 0 var(--hairline),
+    0 22px 50px -42px rgb(40 30 10 / 0.45);
+}
+.prose .mermaid-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 15px;
+  border-bottom: 1px solid color-mix(in srgb, var(--rule) 76%, transparent);
+  background: color-mix(in srgb, var(--surface) 28%, transparent);
+  color: var(--faint);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.prose .mermaid-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--accent-ink);
+}
+.prose .mermaid-kicker::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+.prose .mermaid-title {
+  margin-left: auto;
+  color: var(--faint);
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+.prose .mermaid-canvas {
+  display: grid;
+  min-height: 100px;
+  place-items: center;
+  padding: clamp(16px, 3.4vw, 30px);
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: thin;
+}
+.prose .mermaid-canvas svg {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  font-family: var(--font-sans) !important;
+}
+.prose .mermaid-canvas .node rect,
+.prose .mermaid-canvas .node polygon,
+.prose .mermaid-canvas .node circle,
+.prose .mermaid-canvas .node ellipse {
+  fill: var(--mermaid-node-fill) !important;
+  stroke: var(--mermaid-node-stroke) !important;
+  stroke-width: 1.25px !important;
+}
+.prose .mermaid-canvas .nodeLabel,
+.prose .mermaid-canvas .label,
+.prose .mermaid-canvas .node text {
+  color: var(--mermaid-node-text) !important;
+  fill: var(--mermaid-node-text) !important;
+}
+.prose .mermaid-canvas .edgePath path,
+.prose .mermaid-canvas .flowchart-link {
+  stroke: var(--mermaid-edge) !important;
+  stroke-width: 1.45px !important;
+}
+.prose .mermaid-canvas marker path {
+  fill: var(--mermaid-edge) !important;
+  stroke: var(--mermaid-edge) !important;
+}
+.prose .mermaid-canvas .cluster rect {
+  fill: var(--mermaid-cluster) !important;
+  stroke: var(--mermaid-cluster-border) !important;
+  stroke-width: 1px !important;
+}
+.prose .mermaid-canvas .edgeLabel,
+.prose .mermaid-canvas .edgeLabel rect,
+.prose .mermaid-canvas .edgeLabel p {
+  background: var(--mermaid-label-bg) !important;
+  fill: var(--mermaid-label-bg) !important;
+  color: var(--text) !important;
+}
+.prose .mermaid-canvas .edgeLabel .label {
+  color: var(--muted) !important;
+  fill: var(--muted) !important;
+}
+.prose .mermaid-source {
+  margin: 0;
+  padding: 16px 18px;
+  overflow-x: auto;
+  border-top: 1px solid var(--rule);
+  background: var(--bg-sunken);
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.65;
+  white-space: pre;
+}
+.prose .mermaid-figure.is-rendered .mermaid-source {
+  display: none;
+}
+.prose .mermaid-figure:not(.is-rendered) .mermaid-canvas {
+  min-height: 0;
+  padding: 0;
+}
+.prose .mermaid-figure.is-rendering .mermaid-canvas::before {
+  content: '正在绘制图表…';
+  color: var(--faint);
+  font-size: 13px;
+}
+.prose .mermaid-error {
+  margin: 0;
+  padding: 16px;
+  color: var(--annotation-caution);
+  font-size: 13px;
+}
+
+/* Footnotes */
+.prose sup {
+  line-height: 0;
+}
+.prose sup a {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.38em;
+  height: 1.38em;
+  margin-left: 0.08em;
+  padding: 0 0.18em;
+  border: 1px solid color-mix(in srgb, var(--rule-strong) 82%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+  color: var(--accent-ink);
+  font-family: var(--font-mono);
+  font-size: 0.62em;
+  line-height: 1;
+  text-decoration: none;
+  vertical-align: super;
+  transition:
+    background-color var(--dur-fast) ease,
+    border-color var(--dur-fast) ease,
+    color var(--dur-fast) ease,
+    transform var(--dur-base) var(--ease-spring);
+}
+.prose sup a:hover {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff8f2;
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+.prose .footnotes {
+  margin-top: 54px;
+  padding-top: 20px;
+  border-top: 1px solid var(--rule);
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.85;
+}
+.prose .footnotes h2 {
+  margin-top: 0.4em;
+  padding-top: 0;
+  border-top: 0;
+  font-size: 18px;
+}
+.prose .footnotes ol {
+  padding-left: 1.4em;
+}
+.prose .footnotes li {
+  position: relative;
+  padding: 0.25em 0.4em;
+  border-radius: 6px;
+  transition: background-color var(--dur-base) ease;
+}
+.prose .footnotes li:target {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+.prose .footnote-backref {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.4em;
+  padding: 0 0.18em;
+  border-radius: 4px;
+  color: var(--faint);
+  font-size: 0.9em;
+  text-decoration: none;
+  transition:
+    color var(--dur-fast) ease,
+    background-color var(--dur-fast) ease;
+}
+.prose .footnote-backref:hover {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  text-decoration: none;
+}
+
+/* Floating footnote preview */
+.footnote-popover {
+  position: fixed;
+  z-index: 60;
+  width: min(360px, calc(100vw - 24px));
+  padding: 13px 15px 14px;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--bg-raised) 94%, transparent);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.75;
+  box-shadow:
+    0 24px 58px -28px rgb(20 16 10 / 0.48),
+    0 0 0 1px color-mix(in srgb, #fff 20%, transparent) inset;
+  backdrop-filter: blur(16px);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(5px) scale(0.985);
+  transform-origin: 50% 0;
+  transition:
+    opacity 150ms ease,
+    transform 180ms var(--ease-out);
+}
+.footnote-popover.is-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+.footnote-popover-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 7px;
+  color: var(--accent-ink);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.footnote-popover-label::before {
+  content: '';
+  width: 12px;
+  height: 1px;
+  background: var(--accent);
+}
+.footnote-popover p {
+  margin: 0;
+}
+.footnote-popover-content ol,
+.footnote-popover-content ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.footnote-popover-content li {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.footnote-popover a {
+  color: var(--accent-ink);
+}
+
+/* Formula blocks: a small copy button, without adding another scroller */
+.prose .katex-display {
+  position: relative;
+}
+.prose .math-copy {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  min-height: 25px;
+  padding: 0 8px;
+  border: 1px solid color-mix(in srgb, var(--rule) 78%, transparent);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--bg-raised) 72%, transparent);
+  color: var(--faint);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  opacity: 0;
+  transform: translateY(-3px);
+  transition:
+    opacity var(--dur-fast) ease,
+    transform var(--dur-base) var(--ease-out),
+    color var(--dur-fast) ease,
+    border-color var(--dur-fast) ease,
+    background-color var(--dur-fast) ease;
+}
+.prose .katex-display:hover .math-copy,
+.prose .katex-display:focus-within .math-copy {
+  opacity: 1;
+  transform: translateY(0);
+}
+.prose .math-copy:hover {
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--rule));
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+.prose .math-copy[data-copied='true'] {
+  color: var(--annotation-tip);
+  border-color: color-mix(in srgb, var(--annotation-tip) 38%, var(--rule));
+}
+
+/* Details and image finishing touches */
+.prose details summary {
+  transition:
+    background-color var(--dur-fast) ease,
+    color var(--dur-fast) ease;
+}
+.prose details summary:hover {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+.prose details[open] summary {
+  color: var(--accent-ink);
+}
+.prose details[open] summary::before {
+  background: var(--accent-soft);
+}
+.prose .article-image figcaption::before {
+  content: '';
+  display: block;
+  width: 18px;
+  height: 1px;
+  margin: 0 auto 8px;
+  background: color-mix(in srgb, var(--accent) 42%, transparent);
+}
+
+@media (max-width: 640px) {
+  .prose .callout > :not(.callout-title) {
+    margin-right: 14px;
+    margin-left: 14px;
+  }
+  .prose .callout-title {
+    padding: 10px 14px;
+  }
+  .prose .mermaid-toolbar {
+    padding: 9px 13px;
+  }
+  .prose .mermaid-canvas {
+    padding: 16px 10px;
+  }
+  .prose .math-copy {
+    top: 6px;
+    right: 6px;
+    opacity: 0.64;
+  }
+  .prose .katex-display:hover .math-copy,
+  .prose .katex-display:focus-within .math-copy {
+    opacity: 1;
+  }
+}
+
+@media (hover: none) {
+  .prose .math-copy {
+    opacity: 0.58;
+    transform: none;
+  }
+}
+
 @media (max-width: 640px) {
   .prose {
     font-size: 16px;
@@ -455,6 +1293,24 @@
     zoom: 1 !important;
   }
   .prose .expressive-code .copy {
+    display: none;
+  }
+  .prose mark {
+    background: #f6e3a1;
+    color: #2d2207;
+  }
+  .prose .callout {
+    background: #fff;
+    border-color: #ddd;
+    box-shadow: none;
+  }
+  .prose .mermaid-figure {
+    background: #fff;
+    box-shadow: none;
+  }
+  .prose .mermaid-source,
+  .prose .mermaid-toolbar,
+  .prose .math-copy {
     display: none;
   }
 }

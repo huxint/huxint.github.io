@@ -6,6 +6,7 @@ import '../../styles/prose.css';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Icon from '../../components/Icon.astro';
 import ImageDialog from '../../components/ImageDialog.astro';
+import DocumentMeta from '../../components/DocumentMeta.astro';
 import { site } from '../../data/site';
 import {
   getPosts,
@@ -26,7 +27,10 @@ interface Props {
 }
 const { post, next } = Astro.props;
 const { Content, headings } = await render(post);
-const toc = headings.filter(({ depth }) => depth === 2 || depth === 3);
+const toc = headings.filter(
+  ({ depth, slug }) =>
+    (depth === 2 || depth === 3) && slug !== 'footnote-label',
+);
 // Match Pagefind's browser tokenizer; its build-time Chinese dictionary differs.
 const searchTitle = Array.from(
   new Intl.Segmenter('zh-CN', { granularity: 'word' }).segment(post.data.title),
@@ -94,6 +98,7 @@ const structuredArticle = {
               }
             </div>
           </header>
+          <DocumentMeta post={post} />
           {
             toc.length > 0 && (
               <details class="mobile-toc" data-pagefind-ignore>
