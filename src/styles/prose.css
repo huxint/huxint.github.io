@@ -1,6 +1,4 @@
 .prose {
-  --math-sheet: color-mix(in srgb, var(--bg-raised) 80%, var(--surface) 20%);
-  --math-line: color-mix(in srgb, var(--rule) 82%, var(--accent) 7%);
   position: relative;
   min-width: 0;
   color: color-mix(in srgb, var(--text) 96%, var(--muted) 4%);
@@ -206,34 +204,20 @@
   padding-right: 16px;
 }
 
-/* Math: fit the equation to the article column instead of creating a scroller. */
+/* Math: plain equations that fit the reading column, with no extra chrome. */
 .prose .katex {
-  font-size: 1.085em;
+  font-size: 1.055em;
   overflow-wrap: normal;
 }
 .prose .katex-display {
   max-width: 100%;
-  margin: 1.9em 0;
-  padding: 1.1em clamp(16px, 3.5vw, 28px);
+  margin: 1.85em 0;
+  padding: 0;
   overflow: visible;
-  border: 1px solid var(--math-line);
-  border-radius: 14px;
-  background:
-    radial-gradient(
-      circle at 8% 0%,
-      color-mix(in srgb, var(--accent) 6%, transparent),
-      transparent 52%
-    ),
-    var(--math-sheet);
-  box-shadow:
-    inset 0 1px 0 var(--hairline),
-    0 16px 36px -32px rgb(40 30 10 / 0.36);
+  border: 0;
+  background: transparent;
+  box-shadow: none;
   text-align: center;
-}
-:root[data-theme='dark'] .prose .katex-display {
-  box-shadow:
-    inset 0 1px 0 var(--hairline),
-    0 18px 40px -32px rgb(0 0 0 / 0.92);
 }
 .prose .katex-display > .katex {
   display: inline-block;
@@ -251,7 +235,7 @@
   display: inline-block;
   max-width: 100%;
   overflow: visible;
-  vertical-align: -0.12em;
+  vertical-align: -0.1em;
 }
 .prose .math-inline > .katex {
   display: inline-block;
@@ -1127,50 +1111,6 @@
   color: var(--accent-ink);
 }
 
-/* Formula blocks: a small copy button, without adding another scroller */
-.prose .katex-display {
-  position: relative;
-}
-.prose .math-copy {
-  position: absolute;
-  top: 9px;
-  right: 9px;
-  z-index: 2;
-  display: inline-flex;
-  align-items: center;
-  min-height: 25px;
-  padding: 0 8px;
-  border: 1px solid color-mix(in srgb, var(--rule) 78%, transparent);
-  border-radius: 6px;
-  background: color-mix(in srgb, var(--bg-raised) 72%, transparent);
-  color: var(--faint);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.04em;
-  opacity: 0;
-  transform: translateY(-3px);
-  transition:
-    opacity var(--dur-fast) ease,
-    transform var(--dur-base) var(--ease-out),
-    color var(--dur-fast) ease,
-    border-color var(--dur-fast) ease,
-    background-color var(--dur-fast) ease;
-}
-.prose .katex-display:hover .math-copy,
-.prose .katex-display:focus-within .math-copy {
-  opacity: 1;
-  transform: translateY(0);
-}
-.prose .math-copy:hover {
-  border-color: color-mix(in srgb, var(--accent) 42%, var(--rule));
-  background: var(--accent-soft);
-  color: var(--accent-ink);
-}
-.prose .math-copy[data-copied='true'] {
-  color: var(--annotation-tip);
-  border-color: color-mix(in srgb, var(--annotation-tip) 38%, var(--rule));
-}
-
 /* Details and image finishing touches */
 .prose details summary {
   transition:
@@ -1209,22 +1149,6 @@
   .prose .mermaid-canvas {
     padding: 16px 10px;
   }
-  .prose .math-copy {
-    top: 6px;
-    right: 6px;
-    opacity: 0.64;
-  }
-  .prose .katex-display:hover .math-copy,
-  .prose .katex-display:focus-within .math-copy {
-    opacity: 1;
-  }
-}
-
-@media (hover: none) {
-  .prose .math-copy {
-    opacity: 0.58;
-    transform: none;
-  }
 }
 
 @media (max-width: 640px) {
@@ -1244,8 +1168,6 @@
   }
   .prose .katex-display {
     margin: 1.55em 0;
-    padding: 0.95em 12px;
-    border-radius: 12px;
   }
   .prose .math-inline.math-inline-block {
     margin: 0.8em auto;
@@ -1309,8 +1231,7 @@
     box-shadow: none;
   }
   .prose .mermaid-source,
-  .prose .mermaid-toolbar,
-  .prose .math-copy {
+  .prose .mermaid-toolbar {
     display: none;
   }
 }

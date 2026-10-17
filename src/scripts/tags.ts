@@ -1,30 +1,21 @@
-const atlas = document.querySelector<HTMLElement>('[data-tag-atlas]');
 const filter = document.querySelector<HTMLInputElement>('[data-tag-filter]');
 const status = document.querySelector<HTMLElement>('[data-tag-status]');
 const empty = document.querySelector<HTMLElement>('[data-tag-empty]');
 const clear = document.querySelector<HTMLButtonElement>('[data-tag-clear]');
-const shuffle = document.querySelector<HTMLButtonElement>('[data-tag-shuffle]');
-const cards = [
-  ...document.querySelectorAll<HTMLAnchorElement>('[data-tag-card]'),
-];
-const finePointer = matchMedia('(pointer: fine)');
-const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+const items = [...document.querySelectorAll<HTMLElement>('[data-tag-item]')];
 
 function normalize(value: string): string {
   return value.normalize('NFKC').toLocaleLowerCase('zh-CN').trim();
 }
 
-function visibleCards(): HTMLAnchorElement[] {
-  return cards.filter((card) => !card.hidden);
-}
-
-function updateFilterStatus(query: string, count: number): void {
+function updateStatus(query: string, count: number): void {
   if (!status) return;
-  status.textContent = query
-    ? count > 0
-      ? `找到 ${count} 个主题。`
-      : '没有匹配的主题。'
-    : `共 ${cards.length} 个主题，按文章数排列。`;
+  if (query) {
+    status.textContent =
+      count > 0 ? `找到 ${count} 个标签。` : '没有匹配的标签。';
+    return;
+  }
+  status.textContent = `共 ${items.length} 个标签，按文章数排列。`;
 }
 
 function applyFilter(): void {
@@ -32,18 +23,17 @@ function applyFilter(): void {
   const query = normalize(filter.value);
   let shown = 0;
 
-  for (const card of cards) {
+  for (const item of items) {
     const haystack = normalize(
-      `${card.dataset.tagName ?? ''} ${card.dataset.tagSearch ?? ''}`,
+      `${item.dataset.tagName ?? ''} ${item.dataset.tagSearch ?? ''}`,
     );
     const matches = !query || haystack.includes(query);
-    card.hidden = !matches;
+    item.hidden = !matches;
     if (matches) shown += 1;
   }
 
   if (empty) empty.hidden = shown > 0;
-  if (shuffle && !shuffle.dataset.busy) shuffle.disabled = shown === 0;
-  updateFilterStatus(query, shown);
+  updateStatus(query, shown);
 }
 
 function clearFilter(): void {
@@ -83,47 +73,4 @@ document.addEventListener('keydown', (event) => {
   event.preventDefault();
   filter.focus();
   filter.select();
-});
-
-if (atlas && finePointer.matches) {
-  for (const card of cards) {
-    card.addEventListener(
-      'pointermove',
-      (event) => {
-        const rect = card.getBoundingClientRect();
-        const x = ((event.clientX - rect.left) / rect.width) * 100;
-        const y = ((event.clientY - rect.top) / rect.height) * 100;
-        card.style.setProperty('--mx', `${x.toFixed(2)}%`);
-        card.style.setProperty('--my', `${y.toFixed(2)}%`);
-      },
-      { passive: true },
-    );
-  }
-}
-
-shuffle?.addEventListener('click', () => {
-  const candidates = visibleCards();
-  if (candidates.length === 0) return;
-
-  const pick = candidates[Math.floor(Math.random() * candidates.length)];
-  if (!pick) return;
-
-  for (const card of cards) card.classList.remove('is-picked');
-  pick.classList.add('is-picked');
-  pick.scrollIntoView({
-    behavior: reducedMotion.matches ? 'auto' : 'smooth',
-    block: 'center',
-  });
-  updateFilterStatus(normalize(filter?.value ?? ''), candidates.length);
-  if (status)
-    status.textContent = `这次抽到「${pick.dataset.tagName ?? '这个主题'}」，正在打开…`;
-
-  shuffle.dataset.busy = 'true';
-  shuffle.disabled = true;
-  window.setTimeout(
-    () => {
-      window.location.href = pick.href;
-    },
-    reducedMotion.matches ? 0 : 520,
-  );
 });

@@ -17,11 +17,6 @@ interface Props {
 }
 const { tag, posts } = Astro.props;
 const allPosts = await getPosts();
-const tags = getTags(allPosts).sort(([leftTag], [rightTag]) =>
-  leftTag.localeCompare(rightTag, 'zh-CN'),
-);
-const tagIndex = tags.findIndex(([name]) => name === tag);
-const latest = posts[0];
 const currentPostIds = new Set(posts.map((post) => post.id));
 const related = getTags(allPosts)
   .filter(([name]) => name !== tag)
@@ -38,35 +33,30 @@ const related = getTags(allPosts)
       left.tag.localeCompare(right.tag, 'zh-CN'),
   )
   .slice(0, 6);
+const latest = posts[0];
 const description = `标签「${tag}」下的 ${posts.length} 篇文章。`;
 ---
 
-<BaseLayout title={tag} description={description}>
+<BaseLayout title={`#${tag}`} description={description}>
   <main class="page tag-detail-page" id="main">
-    <a class="back-link" href="/tags/">← 主题档案</a>
-    <header class="tag-detail-hero">
-      <span class="tag-detail-index">
-        INDEX / {String(tagIndex + 1).padStart(2, '0')}
-      </span>
-      <div>
-        <p class="eyebrow">主题档案 · {posts.length} 篇文章</p>
-        <h1><span class="tag-detail-hash">#</span>{tag}</h1>
-        <p class="tag-detail-lede">
-          这个话题下共收录 {posts.length} 篇文章{
-            latest && `，最近更新于 ${formatDate(latest.data.pubDate)}`
-          }。按时间从上往下读，也可以从一篇题解或笔记随意跳进去。
-        </p>
+    <a class="back-link" href="/tags/">← 所有标签</a>
+    <header class="tag-detail-header">
+      <p class="eyebrow">标签</p>
+      <div class="tag-detail-title-row">
+        <h1><span>#</span>{tag}</h1>
+        <span class="tag-detail-total">{posts.length} 篇</span>
       </div>
-      <div class="tag-detail-count" aria-hidden="true">
-        <strong>{String(posts.length).padStart(2, '0')}</strong>
-        <span>articles</span>
-      </div>
+      <p class="tag-detail-lede">
+        这个话题下收了 {posts.length} 篇文章{
+          latest && `，最近一篇写于 ${formatDate(latest.data.pubDate)}`
+        }。
+      </p>
     </header>
 
     {
       related.length > 0 && (
         <nav class="tag-related" aria-label="相邻主题">
-          <span class="tag-related-label">相邻主题</span>
+          <span class="tag-related-label">相关标签</span>
           {related.map((item) => (
             <a
               href={`/tags/${encodeURIComponent(item.tag)}/`}

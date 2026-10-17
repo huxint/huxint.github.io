@@ -152,18 +152,16 @@ test('窄屏文章里的公式自适应阅读栏，不出现横向滚动条', as
   }
 });
 
-test('标签页可以筛选主题并进入主题档案', async ({ page }) => {
+test('标签页可以筛选标签并进入标签详情', async ({ page }) => {
   await page.goto('/tags/');
-  await expect(page.getByRole('heading', { level: 1 })).toContainText(
-    '主题档案',
-  );
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('标签.');
 
   const search = page.getByRole('searchbox');
   await search.fill('数论');
-  await expect(page.getByRole('status')).toHaveText('找到 1 个主题。');
-  await expect(page.locator('[data-tag-card]:visible')).toHaveCount(1);
+  await expect(page.getByRole('status')).toHaveText('找到 1 个标签。');
+  await expect(page.locator('[data-tag-item]:visible')).toHaveCount(1);
 
-  await page.locator('[data-tag-card]:visible').click();
+  await page.locator('[data-tag-item]:visible').click();
   await expect(page).toHaveURL(/\/tags\/.+\/$/);
   await expect(page.getByRole('heading', { level: 1 })).toContainText('数论');
   await expect(
@@ -190,12 +188,6 @@ test('文章正文支持提示框、行内强调、脚注预览和 Mermaid', asy
   await expect(page.locator('.prose mark').first()).toBeVisible();
   await expect(page.locator('.prose u').first()).toBeVisible();
 
-  const docMeta = page.locator('.doc-meta');
-  await expect(docMeta).toBeVisible();
-  await docMeta.locator('summary').click();
-  await expect(docMeta).toContainText('published');
-  await expect(docMeta).toContainText('cpp-memory');
-
   const diagram = page.locator('.mermaid-figure').first();
   await expect(diagram).toBeVisible();
   await expect(diagram.locator('svg')).toBeVisible({ timeout: 15000 });
@@ -205,9 +197,25 @@ test('文章正文支持提示框、行内强调、脚注预览和 Mermaid', asy
   await footnote.scrollIntoViewIfNeeded();
   await footnote.hover();
   await expect(page.locator('.footnote-popover')).toHaveClass(/is-visible/);
+});
 
-  const formula = page.locator('.katex-display').first();
-  await formula.scrollIntoViewIfNeeded();
-  await formula.hover();
-  await expect(formula.locator('.math-copy')).toBeVisible();
+test('公式保持纯文本排版，不附带文档信息面板', async ({ page }) => {
+  await page.goto('/posts/meituan-exam/');
+  await page.evaluate(() => document.fonts.ready);
+
+  await expect(page.locator('.doc-meta')).toHaveCount(0);
+
+  const displayFormula = page.locator('.katex-display').first();
+  await expect(displayFormula).toBeVisible();
+  await expect(displayFormula).toHaveCSS(
+    'background-color',
+    'rgba(0, 0, 0, 0)',
+  );
+  await expect(displayFormula).toHaveCSS('border-top-width', '0px');
+  await expect(displayFormula).toHaveCSS('box-shadow', 'none');
+
+  const inlineFormula = page.locator('.math-inline').first();
+  await expect(inlineFormula).toBeVisible();
+  await expect(inlineFormula).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+  await expect(inlineFormula).toHaveCSS('border-top-width', '0px');
 });

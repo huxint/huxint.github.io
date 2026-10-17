@@ -6,7 +6,6 @@ import '../../styles/prose.css';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Icon from '../../components/Icon.astro';
 import ImageDialog from '../../components/ImageDialog.astro';
-import DocumentMeta from '../../components/DocumentMeta.astro';
 import { site } from '../../data/site';
 import {
   getPosts,
@@ -98,7 +97,6 @@ const structuredArticle = {
               }
             </div>
           </header>
-          <DocumentMeta post={post} />
           {
             toc.length > 0 && (
               <details class="mobile-toc" data-pagefind-ignore>

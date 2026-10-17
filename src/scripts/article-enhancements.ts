@@ -2,7 +2,6 @@
  * Progressive enhancements for long-form posts:
  * - footnotes get an inline hover/focus preview
  * - fenced mermaid diagrams render lazily and follow the current theme
- * - display formulas get a small copy button
  */
 
 function cssToken(name: string, fallback: string): string {
@@ -123,60 +122,6 @@ function setupFootnotePreviews(): void {
   });
 }
 
-function setupMathCopyButtons(): void {
-  for (const formula of document.querySelectorAll<HTMLElement>(
-    '.prose .katex-display',
-  )) {
-    if (formula.querySelector('.math-copy')) continue;
-    const annotation = formula.querySelector<HTMLElement>(
-      'annotation[encoding="application/x-tex"]',
-    );
-    const tex = annotation?.textContent?.trim();
-    if (!tex) continue;
-
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'math-copy';
-    button.textContent = '复制公式';
-    button.setAttribute('aria-label', '复制公式源码');
-
-    button.addEventListener('click', async () => {
-      try {
-        await copyText(tex);
-        button.textContent = '已复制';
-        button.dataset.copied = 'true';
-        window.setTimeout(() => {
-          button.textContent = '复制公式';
-          delete button.dataset.copied;
-        }, 1400);
-      } catch {
-        button.textContent = '复制失败';
-        window.setTimeout(() => {
-          button.textContent = '复制公式';
-        }, 1400);
-      }
-    });
-
-    formula.append(button);
-  }
-}
-
-async function copyText(value: string): Promise<void> {
-  if (navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(value);
-    return;
-  }
-  const area = document.createElement('textarea');
-  area.value = value;
-  area.setAttribute('readonly', '');
-  area.style.position = 'fixed';
-  area.style.opacity = '0';
-  document.body.append(area);
-  area.select();
-  document.execCommand('copy');
-  area.remove();
-}
-
 type MermaidBlock = {
   figure: HTMLElement;
   target: HTMLElement;
@@ -287,5 +232,4 @@ function setupMermaid(): void {
 }
 
 setupFootnotePreviews();
-setupMathCopyButtons();
 setupMermaid();
