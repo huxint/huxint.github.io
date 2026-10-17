@@ -1,28 +1,176 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import Icon from '../../components/Icon.astro';
 import { getPosts, getTags } from '../../lib/posts';
-const tags = getTags(await getPosts());
+import '../../styles/tags.css';
+
+const posts = await getPosts();
+const tags = getTags(posts).sort(
+  ([leftTag, leftPosts], [rightTag, rightPosts]) =>
+    rightPosts.length - leftPosts.length ||
+    leftTag.localeCompare(rightTag, 'zh-CN'),
+);
+const totalMentions = tags.reduce(
+  (total, [, tagged]) => total + tagged.length,
+  0,
+);
+const years = posts.map((post) => post.data.pubDate.getUTCFullYear());
+const yearRange =
+  years.length > 0 ? `${Math.min(...years)}–${Math.max(...years)}` : '';
+
+const orbitTags = tags.slice(0, 7).map(([tag, tagged], index, nodes) => {
+  const angle = -Math.PI / 2 + (index / nodes.length) * Math.PI * 2;
+  return {
+    tag,
+    count: tagged.length,
+    x: 50 + Math.cos(angle) * 36,
+    y: 50 + Math.sin(angle) * 36,
+    delay: index * 0.55,
+  };
+});
 ---
 
-<BaseLayout title="标签" description="按标签查看博客文章。">
-  <main class="page" id="main">
-    <header class="page-heading">
-      <p class="eyebrow">按主题浏览</p>
-      <h1>标签</h1>
-      <p>{tags.length} 个标签</p>
+<BaseLayout
+  title="标签"
+  description="huxint 博客的主题索引：从题目、算法和技术笔记里，找到继续阅读的线索。"
+>
+  <main class="page tag-index-page" id="main">
+    <header class="tag-hero">
+      <div class="tag-hero-copy">
+        <p class="eyebrow">主题索引 · {yearRange}</p>
+        <h1>主题<span class="tag-hero-accent">档案</span><i>.</i></h1>
+        <p class="tag-hero-lede">
+          把散落在文章里的题目、概念和阶段，收成一条条可以继续读下去的线索。
+        </p>
+        <dl class="tag-hero-stats" aria-label="主题统计">
+          <div>
+            <dt>主题</dt>
+            <dd>{String(tags.length).padStart(2, '0')}</dd>
+          </div>
+          <div>
+            <dt>文章</dt>
+            <dd>{String(posts.length).padStart(2, '0')}</dd>
+          </div>
+          <div>
+            <dt>标记</dt>
+            <dd>{String(totalMentions).padStart(2, '0')}</dd>
+          </div>
+        </dl>
+      </div>
+      <figure class="tag-orbit" aria-hidden="true">
+        <span class="tag-orbit-ring tag-orbit-ring--outer"></span>
+        <span class="tag-orbit-ring tag-orbit-ring--inner"></span>
+        <span class="tag-orbit-core">
+          <strong>{String(tags.length).padStart(2, '0')}</strong>
+          <small>themes</small>
+        </span>
+        {
+          orbitTags.map((node) => (
+            <span
+              class="tag-orbit-node"
+              style={`--x: ${node.x.toFixed(2)}%; --y: ${node.y.toFixed(2)}%; --delay: ${node.delay}s; --weight: ${node.count}`}
+            >
+              {node.tag}
+              <i>{node.count}</i>
+            </span>
+          ))
+        }
+      </figure>
     </header>
+
     {
       tags.length ? (
-        <ul class="tag-index">
-          {tags.map(([tag, tagPosts]) => (
-            <li>
-              <a href={`/tags/${encodeURIComponent(tag)}/`}>
-                {tag}
-                <span>{tagPosts.length} 篇</span>
-              </a>
-            </li>
-          ))}
-        </ul>
+        <section class="tag-atlas-section" aria-labelledby="tag-atlas-title">
+          <div class="tag-section-heading">
+            <div>
+              <p class="eyebrow">01 / 主题图谱</p>
+              <h2 id="tag-atlas-title">从高频开始</h2>
+            </div>
+            <p>卡片越大，留下的文章越多。</p>
+          </div>
+
+          <div class="tag-toolbar">
+            <label class="tag-search">
+              <Icon name="search" size={17} />
+              <span class="sr-only">筛选主题</span>
+              <input
+                type="search"
+                placeholder={`在 ${tags.length} 个主题里找…`}
+                autocomplete="off"
+                spellcheck="false"
+                data-tag-filter
+              />
+              <kbd aria-hidden="true">/</kbd>
+            </label>
+            <button class="tag-shuffle" type="button" data-tag-shuffle>
+              随便看看
+              <Icon name="arrow" size={15} />
+            </button>
+            <p class="tag-toolbar-status" role="status" data-tag-status>
+              共 {tags.length} 个主题，按文章数排列。
+            </p>
+          </div>
+
+          <div class="tag-atlas" data-tag-atlas>
+            {tags.map(([tag, tagged], index) => {
+              const tier =
+                index === 0 ? 'lead' : tagged.length >= 3 ? 'major' : 'minor';
+              const latest = tagged[0];
+              return (
+                <a
+                  class:list={['tag-card', `tag-card--${tier}`]}
+                  href={`/tags/${encodeURIComponent(tag)}/`}
+                  style={`--i: ${index}; --heat: ${tagged.length}; view-transition-name: tag-${index}`}
+                  data-tag-card
+                  data-tag-name={tag}
+                  data-tag-search={[
+                    tag,
+                    ...tagged.map((post) => post.data.title),
+                  ].join(' ')}
+                  aria-label={`${tag}，${tagged.length} 篇文章`}
+                >
+                  <span class="tag-card-meta">
+                    <span class="tag-card-number">
+                      {String(index + 1).padStart(2, '0')}
+                    </span>
+                    <span class="tag-card-count">{tagged.length} 篇</span>
+                  </span>
+                  <span class="tag-card-name">
+                    <span aria-hidden="true">#</span>
+                    {tag}
+                  </span>
+                  {tier === 'lead' && latest ? (
+                    <ol class="tag-card-list">
+                      {tagged.slice(0, 3).map((post) => (
+                        <li>{post.data.title}</li>
+                      ))}
+                    </ol>
+                  ) : (
+                    <span class="tag-card-latest">{latest?.data.title}</span>
+                  )}
+                  <span class="tag-card-foot">
+                    <span class="tag-card-meter" aria-hidden="true">
+                      {Array.from({ length: Math.min(tagged.length, 9) }).map(
+                        () => (
+                          <i />
+                        ),
+                      )}
+                    </span>
+                    <span class="tag-card-arrow">
+                      <Icon name="arrow" size={16} />
+                    </span>
+                  </span>
+                </a>
+              );
+            })}
+          </div>
+          <div class="tag-empty" data-tag-empty hidden>
+            <span>没有找到对应的主题。</span>
+            <button type="button" data-tag-clear>
+              清除筛选
+            </button>
+          </div>
+        </section>
       ) : (
         <p class="empty-state">
           还没有标签。
@@ -33,4 +181,7 @@ const tags = getTags(await getPosts());
       )
     }
   </main>
+  <script>
+    import '../../scripts/tags';
+  </script>
 </BaseLayout>

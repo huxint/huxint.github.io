@@ -2,7 +2,8 @@
 import type { GetStaticPaths } from 'astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PostList from '../../components/PostList.astro';
-import { getPosts, getTags, type Post } from '../../lib/posts';
+import { formatDate, getPosts, getTags, type Post } from '../../lib/posts';
+import '../../styles/tags.css';
 export const getStaticPaths = (async () => {
   const posts = await getPosts();
   return getTags(posts).map(([tag, tagged]) => ({
@@ -15,16 +16,72 @@ interface Props {
   posts: Post[];
 }
 const { tag, posts } = Astro.props;
+const allPosts = await getPosts();
+const tags = getTags(allPosts).sort(([leftTag], [rightTag]) =>
+  leftTag.localeCompare(rightTag, 'zh-CN'),
+);
+const tagIndex = tags.findIndex(([name]) => name === tag);
+const latest = posts[0];
+const currentPostIds = new Set(posts.map((post) => post.id));
+const related = getTags(allPosts)
+  .filter(([name]) => name !== tag)
+  .map(([name, relatedPosts]) => ({
+    tag: name,
+    shared: relatedPosts.filter((post) => currentPostIds.has(post.id)).length,
+    count: relatedPosts.length,
+  }))
+  .filter(({ shared }) => shared > 0)
+  .sort(
+    (left, right) =>
+      right.shared - left.shared ||
+      right.count - left.count ||
+      left.tag.localeCompare(right.tag, 'zh-CN'),
+  )
+  .slice(0, 6);
+const description = `标签「${tag}」下的 ${posts.length} 篇文章。`;
 ---
 
-<BaseLayout title={tag} description={`标签「${tag}」下的文章。`}>
-  <main class="page" id="main">
-    <a class="back-link" href="/tags/">← 所有标签</a>
-    <header class="page-heading">
-      <p class="eyebrow">标签</p>
-      <h1>{tag}</h1>
-      <p>{posts.length} 篇文章</p>
+<BaseLayout title={tag} description={description}>
+  <main class="page tag-detail-page" id="main">
+    <a class="back-link" href="/tags/">← 主题档案</a>
+    <header class="tag-detail-hero">
+      <span class="tag-detail-index">
+        INDEX / {String(tagIndex + 1).padStart(2, '0')}
+      </span>
+      <div>
+        <p class="eyebrow">主题档案 · {posts.length} 篇文章</p>
+        <h1><span class="tag-detail-hash">#</span>{tag}</h1>
+        <p class="tag-detail-lede">
+          这个话题下共收录 {posts.length} 篇文章{
+            latest && `，最近更新于 ${formatDate(latest.data.pubDate)}`
+          }。按时间从上往下读，也可以从一篇题解或笔记随意跳进去。
+        </p>
+      </div>
+      <div class="tag-detail-count" aria-hidden="true">
+        <strong>{String(posts.length).padStart(2, '0')}</strong>
+        <span>articles</span>
+      </div>
     </header>
-    <PostList posts={posts} />
+
+    {
+      related.length > 0 && (
+        <nav class="tag-related" aria-label="相邻主题">
+          <span class="tag-related-label">相邻主题</span>
+          {related.map((item) => (
+            <a
+              href={`/tags/${encodeURIComponent(item.tag)}/`}
+              title={`与「${tag}」共同出现在 ${item.shared} 篇文章里`}
+            >
+              {item.tag}
+              <span>{item.shared}</span>
+            </a>
+          ))}
+        </nav>
+      )
+    }
+
+    <section class="tag-detail-articles" aria-label={`${tag} 标签下的文章`}>
+      <PostList posts={posts} />
+    </section>
   </main>
 </BaseLayout>

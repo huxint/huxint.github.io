@@ -151,3 +151,33 @@ test('窄屏文章里的公式自适应阅读栏，不出现横向滚动条', as
     expect(dimensions.page, path).toBeLessThanOrEqual(dimensions.viewport + 1);
   }
 });
+
+test('标签页可以筛选主题并进入主题档案', async ({ page }) => {
+  await page.goto('/tags/');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText(
+    '主题档案',
+  );
+
+  const search = page.getByRole('searchbox');
+  await search.fill('数论');
+  await expect(page.getByRole('status')).toHaveText('找到 1 个主题。');
+  await expect(page.locator('[data-tag-card]:visible')).toHaveCount(1);
+
+  await page.locator('[data-tag-card]:visible').click();
+  await expect(page).toHaveURL(/\/tags\/.+\/$/);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('数论');
+  await expect(
+    page.getByRole('navigation', { name: '相邻主题' }),
+  ).toBeVisible();
+});
+
+test('手机视口下标签页没有横向溢出', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/tags/');
+  await page.evaluate(() => document.fonts.ready);
+  const dimensions = await page.evaluate(() => ({
+    page: document.documentElement.scrollWidth,
+    viewport: document.documentElement.clientWidth,
+  }));
+  expect(dimensions.page).toBeLessThanOrEqual(dimensions.viewport + 1);
+});
