@@ -91,3 +91,63 @@ test('不存在的地址返回 404 并提供返回入口', async ({ page }) => {
   await expect(page).toHaveURL('/');
   await expect(page.locator('.post-title a').first()).toBeVisible();
 });
+
+test('窄屏文章里的公式自适应阅读栏，不出现横向滚动条', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+
+  for (const path of [
+    '/posts/transformer/',
+    '/posts/p1253/',
+    '/posts/sparse-table/',
+  ]) {
+    await page.goto(path);
+    await page.evaluate(() => document.fonts.ready);
+
+    const displayFormula = page.locator('.katex-display').first();
+    await expect(displayFormula, path).toBeVisible();
+
+    await expect
+      .poll(
+        async () =>
+          page.evaluate(() => {
+            const formulas = [
+              ...document.querySelectorAll<HTMLElement>(
+                '.katex-display, .math-inline',
+              ),
+            ];
+            return formulas
+              .filter((formula) => {
+                const overflow = getComputedStyle(formula).overflowX;
+                return overflow === 'auto' || overflow === 'scroll';
+              })
+              .map((formula) => formula.textContent?.slice(0, 40) ?? '');
+          }),
+        { message: path },
+      )
+      .toEqual([]);
+
+    await expect
+      .poll(
+        async () =>
+          page.evaluate(() => {
+            return [...document.querySelectorAll<HTMLElement>('.katex-display')]
+              .filter(
+                (formula) => formula.scrollWidth > formula.clientWidth + 1,
+              )
+              .map((formula) => ({
+                width: formula.clientWidth,
+                content: formula.scrollWidth,
+                text: formula.textContent?.slice(0, 40) ?? '',
+              }));
+          }),
+        { message: path },
+      )
+      .toEqual([]);
+
+    const dimensions = await page.evaluate(() => ({
+      page: document.documentElement.scrollWidth,
+      viewport: document.documentElement.clientWidth,
+    }));
+    expect(dimensions.page, path).toBeLessThanOrEqual(dimensions.viewport + 1);
+  }
+});

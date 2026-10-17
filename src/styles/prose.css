@@ -1,7 +1,13 @@
 .prose {
+  --math-sheet: color-mix(in srgb, var(--bg-raised) 80%, var(--surface) 20%);
+  --math-line: color-mix(in srgb, var(--rule) 82%, var(--accent) 7%);
+  position: relative;
+  min-width: 0;
+  color: color-mix(in srgb, var(--text) 96%, var(--muted) 4%);
   font-size: 17px;
   line-height: 1.95;
   overflow-wrap: break-word;
+  text-wrap: pretty;
 }
 .prose > :first-child {
   margin-top: 0;
@@ -27,10 +33,21 @@
   letter-spacing: -0.01em;
 }
 .prose h3 {
+  position: relative;
   margin: 2em 0 0.7em;
   font-size: 21px;
   line-height: 1.55;
   font-weight: 600;
+}
+.prose h3::before {
+  content: '';
+  position: absolute;
+  left: -15px;
+  top: 0.46em;
+  width: 3px;
+  height: 0.86em;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 62%, transparent);
 }
 .prose h4 {
   margin: 1.6em 0 0.6em;
@@ -44,8 +61,12 @@
   text-decoration-thickness: 1px;
   text-underline-offset: 4px;
   text-decoration-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  transition:
+    color var(--dur-fast) ease,
+    text-decoration-color var(--dur-fast) ease;
 }
 .prose a:hover {
+  color: color-mix(in srgb, var(--accent-ink) 82%, var(--text));
   text-decoration-color: var(--accent);
 }
 .prose ul,
@@ -64,7 +85,7 @@
   padding-left: 0.2em;
 }
 .prose li::marker {
-  color: var(--faint);
+  color: color-mix(in srgb, var(--accent) 58%, var(--faint));
 }
 .prose li > p {
   margin: 0.5em 0;
@@ -82,100 +103,176 @@
   accent-color: var(--accent);
 }
 .prose :not(pre) > code {
+  padding: 0.12em 0.42em;
+  border: 1px solid color-mix(in srgb, var(--rule) 78%, transparent);
+  border-radius: 5px;
+  background:
+    linear-gradient(180deg, var(--hairline), transparent 60%),
+    color-mix(in srgb, var(--surface) 78%, transparent);
+  color: color-mix(in srgb, var(--text) 91%, var(--accent) 9%);
   font-family: var(--font-mono);
   font-size: 0.86em;
-  padding: 0.12em 0.4em;
-  background: var(--surface);
-  border: 1px solid var(--rule);
-  border-radius: 5px;
   overflow-wrap: anywhere;
 }
 .prose blockquote {
-  margin: 1.8em 0;
-  padding: 0.2em 0 0.2em 1.3em;
-  border-left: 2px solid var(--accent);
+  position: relative;
+  margin: 1.9em 0;
+  padding: 1em 1.25em 1em 1.45em;
+  border: 1px solid color-mix(in srgb, var(--rule) 78%, transparent);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--accent-soft) 45%, transparent),
+      transparent 62%
+    ),
+    color-mix(in srgb, var(--bg-raised) 50%, transparent);
   color: var(--muted);
   font-size: 0.97em;
+}
+.prose blockquote::before {
+  content: '';
+  position: absolute;
+  left: -1px;
+  top: 12px;
+  bottom: 12px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: linear-gradient(
+    var(--accent),
+    color-mix(in srgb, var(--accent) 30%, transparent)
+  );
 }
 .prose blockquote p {
   margin: 0.7em 0;
 }
+.prose blockquote p:first-child {
+  margin-top: 0;
+}
+.prose blockquote p:last-child {
+  margin-bottom: 0;
+}
 .prose hr {
-  border: 0;
-  border-top: 1px solid var(--rule);
+  height: 1px;
+  width: 58%;
   margin: 3em auto;
-  width: 40%;
+  border: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--rule-strong),
+    transparent
+  );
 }
 .prose table {
   display: block;
   max-width: 100%;
   width: max-content;
+  margin: 1.9em 0;
   overflow-x: auto;
-  border-collapse: collapse;
-  margin: 1.8em 0;
+  overscroll-behavior-inline: contain;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  border-collapse: separate;
+  border-spacing: 0;
+  background: color-mix(in srgb, var(--bg-raised) 66%, transparent);
   font-size: 0.88em;
   line-height: 1.7;
+  scrollbar-width: thin;
 }
 .prose th,
 .prose td {
   border-bottom: 1px solid var(--rule);
-  padding: 10px 16px;
+  padding: 11px 16px;
   vertical-align: top;
 }
 .prose th {
-  text-align: left;
-  font-weight: 600;
   border-bottom-color: var(--rule-strong);
+  background: color-mix(in srgb, var(--surface) 54%, transparent);
   color: var(--muted);
   font-size: 0.94em;
+  font-weight: 600;
+  text-align: left;
 }
 .prose tr:last-child td {
-  border-bottom-color: var(--rule-strong);
+  border-bottom: 0;
 }
 .prose th:first-child,
 .prose td:first-child {
-  padding-left: 4px;
+  padding-left: 16px;
 }
 .prose th:last-child,
 .prose td:last-child {
-  padding-right: 4px;
+  padding-right: 16px;
 }
 
-/* Math */
+/* Math: fit the equation to the article column instead of creating a scroller. */
 .prose .katex {
-  font-size: 1.08em;
+  font-size: 1.085em;
   overflow-wrap: normal;
 }
 .prose .katex-display {
-  margin: 1.6em 0;
-  padding: 0.6em 0.2em;
   max-width: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: thin;
+  margin: 1.9em 0;
+  padding: 1.1em clamp(16px, 3.5vw, 28px);
+  overflow: visible;
+  border: 1px solid var(--math-line);
+  border-radius: 14px;
+  background:
+    radial-gradient(
+      circle at 8% 0%,
+      color-mix(in srgb, var(--accent) 6%, transparent),
+      transparent 52%
+    ),
+    var(--math-sheet);
+  box-shadow:
+    inset 0 1px 0 var(--hairline),
+    0 16px 36px -32px rgb(40 30 10 / 0.36);
+  text-align: center;
+}
+:root[data-theme='dark'] .prose .katex-display {
+  box-shadow:
+    inset 0 1px 0 var(--hairline),
+    0 18px 40px -32px rgb(0 0 0 / 0.92);
 }
 .prose .katex-display > .katex {
-  padding: 0 0.2em;
+  display: inline-block;
+  max-width: none;
+  padding: 0;
+  white-space: nowrap;
+  text-align: left;
+  zoom: var(--math-zoom, 1);
 }
-/* Long inline formulas scroll inside their own box instead of stretching the page. */
+.prose .katex-display .tag {
+  color: var(--faint);
+  font-size: 0.86em;
+}
 .prose .math-inline {
   display: inline-block;
   max-width: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
-  vertical-align: middle;
-  scrollbar-width: thin;
+  overflow: visible;
+  vertical-align: -0.12em;
 }
-.prose .math-inline .katex {
+.prose .math-inline > .katex {
   display: inline-block;
+  zoom: var(--math-zoom, 1);
+}
+/* Applied by article.ts only when an inline formula cannot fit on its own line. */
+.prose .math-inline.math-inline-block {
+  display: block;
+  width: 100%;
+  margin: 0.95em auto;
+  text-align: center;
 }
 
 /* Code */
 .prose .expressive-code {
-  margin: 1.8em 0;
+  margin: 1.9em 0;
 }
 .prose .expressive-code figure {
   margin: 0;
+  border-radius: 14px;
+  box-shadow: 0 18px 40px -36px rgb(40 30 10 / 0.42);
 }
 
 /* Images */
@@ -187,24 +284,35 @@
   width: 100%;
   height: auto;
   border: 1px solid var(--rule);
-  border-radius: 10px;
+  border-radius: 14px;
   background: #fff;
+  box-shadow: 0 18px 40px -34px rgb(40 30 10 / 0.4);
 }
 .prose figcaption {
-  text-align: center;
   margin-top: 12px;
   color: var(--muted);
   font-size: 14px;
   line-height: 1.7;
+  text-align: center;
 }
 .prose .image-trigger {
   display: block;
   width: 100%;
   padding: 0;
+  overflow: hidden;
   border: 0;
-  border-radius: 10px;
+  border-radius: 14px;
   background: transparent;
   cursor: zoom-in;
+}
+.prose .image-trigger img {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  transition: transform 520ms var(--ease-out);
+}
+.prose .image-trigger:hover img {
+  transform: scale(1.012);
 }
 
 /* Footnotes and details */
@@ -233,14 +341,41 @@
 .prose details {
   margin: 1.6em 0;
   border: 1px solid var(--rule);
-  border-radius: 10px;
-  background: var(--bg-raised);
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, var(--hairline), transparent 40%), var(--bg-raised);
 }
 .prose summary {
+  display: flex;
+  align-items: center;
+  gap: 9px;
   padding: 12px 18px;
   cursor: pointer;
   font-size: 0.94em;
   font-weight: 550;
+  list-style: none;
+}
+.prose summary::-webkit-details-marker {
+  display: none;
+}
+.prose summary::before {
+  content: '+';
+  display: inline-grid;
+  place-items: center;
+  width: 19px;
+  height: 19px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--accent-ink);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1;
+  transition: transform var(--dur-base) var(--ease-spring);
+}
+.prose details[open] summary::before {
+  content: '−';
+  transform: rotate(180deg);
 }
 .prose details > :not(summary) {
   margin-left: 18px;
@@ -260,8 +395,8 @@
     line-height: 1.85;
   }
   .prose h2 {
-    font-size: 23px;
     margin-top: 2.2em;
+    font-size: 23px;
   }
   .prose h3 {
     font-size: 19px;
@@ -269,9 +404,31 @@
   .prose .katex {
     font-size: 1.04em;
   }
+  .prose .katex-display {
+    margin: 1.55em 0;
+    padding: 0.95em 12px;
+    border-radius: 12px;
+  }
+  .prose .math-inline.math-inline-block {
+    margin: 0.8em auto;
+  }
+  .prose table {
+    font-size: 0.85em;
+  }
   .prose th,
   .prose td {
     padding: 9px 12px;
+  }
+  .prose th:first-child,
+  .prose td:first-child {
+    padding-left: 12px;
+  }
+  .prose th:last-child,
+  .prose td:last-child {
+    padding-right: 12px;
+  }
+  .prose blockquote {
+    padding: 0.9em 1em 0.9em 1.2em;
   }
 }
 @media print {
@@ -285,6 +442,17 @@
   .prose .katex-display,
   .prose table {
     overflow: visible;
+  }
+  .prose .katex-display {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    break-inside: avoid;
+  }
+  .prose .katex-display > .katex,
+  .prose .math-inline > .katex {
+    zoom: 1 !important;
   }
   .prose .expressive-code .copy {
     display: none;
