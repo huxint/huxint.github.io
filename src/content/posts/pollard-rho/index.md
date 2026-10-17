@@ -1,13 +1,13 @@
 ---
 title: "Pollard–Rho 质因数分解模板"
-description: "用 Pollard–Rho 找因子，配合 Miller–Rabin 完成分解，再顺便枚举因子、求欧拉函数。"
+description: "用 Pollard–Rho 找因子，Miller–Rabin 判素数，最后顺手把枚举因子和欧拉函数也写好。"
 pubDate: 2024-08-28T18:36:00+08:00
 tags: ["算法", "数论", "模板", "C++"]
 ---
 
-试除法很好写，但遇到大数就有些慢了。Pollard–Rho 换了个思路：先找一个因子，把数拆成两部分，再分别处理。
+试除法好写，但数字一大就慢得离谱。Pollard–Rho 换了个思路：先随便拆出一个因子，把 $n$ 分成两半，再递归处理。
 
-拆到质数就停下，这一步交给 [Miller–Rabin](/posts/miller-rabin/) 判断。
+拆到质数就停，这一步交给 [Miller–Rabin](/posts/miller-rabin/) 判断。
 
 ## 找因子的思路
 
@@ -27,11 +27,11 @@ $1<d<n$ 时就找到了因子。得到 $1$ 就继续找，得到 $n$ 就回退�
 
 ## 少做几次 GCD
 
-每次迭代都算 GCD 有些浪费。可以先把一批差值乘起来，最后一起算；如果得到的是 $n$，再回到这一批里逐个检查。
+每次都算一遍 gcd 太浪费了。可以先攒一批差值乘起来，最后一起算；如果乘出来是 $n$，再回到这一批里逐个检查。
 
-模板里同时跑两条序列，找不到合适的因子就换起点再试。
+模板里同时跑两条序列，一条不行就换起点，省得卡在原地。
 
-## 模板代码
+## 模板
 
 ~~~cpp title="pollard-rho.hpp"
 #include <algorithm>
@@ -259,7 +259,7 @@ namespace PollardRho {
 }
 ~~~
 
-## 简单用法
+## 怎么用
 
 `factorize` 最省事，会把质因子和次数整理好：
 
@@ -302,3 +302,5 @@ $$
 const auto phi = PollardRho::euler_phi(360ULL);
 // phi == 96。
 ```
+
+模板本身挺长，实际用的时候基本只需要最后那个 `factorize`。其他几个回调接口，等真要枚举因子或者求欧拉函数时再翻。

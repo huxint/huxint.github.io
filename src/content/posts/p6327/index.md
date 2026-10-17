@@ -1,13 +1,13 @@
 ---
 title: "P6327 题解：区间加区间 sin 和"
-description: "把正弦和、余弦和一起存下来，区间加就能用两角和公式处理。"
+description: "只存正弦和不够，就再把余弦和一起存下来；区间加就能用两角和公式直接更新。"
 pubDate: 2024-10-25T17:34:00+08:00
 tags: ["题解", "线段树", "C++"]
 ---
 
 [题目链接](https://www.luogu.com.cn/problem/P6327)
 
-区间加很好理解，麻烦的是加完以后，原来的正弦和该怎么变。只存正弦和不够，还得把余弦和一起带上。
+这题我一开始只想着维护正弦和，写到要下传加法标记的时候才发现更新不了。后来才反应过来，余弦和也得一起存。
 
 ## 用两角和公式更新
 
@@ -38,7 +38,7 @@ $$
 
 这样，节点只存 $S$ 和 $C$ 就够了，用不到区间长度。合并节点时分别相加，懒标记也直接累加。
 
-## 主要代码
+## 代码
 
 ~~~cpp title="main.cpp"
 using Info = std::array<double, 2>;
@@ -70,5 +70,7 @@ SegmentTree::LazySegTree<Info, Function, mapping, composition, op, e, id> seg(n,
     return x;
 });
 ~~~
+
+这题的关键不是线段树，而是看到 $\sin(a+d)$ 里还带着 $\cos a$。想到这一点，剩下的就顺了。
 
 本文原发表于[洛谷专栏](https://www.luogu.com.cn/article/e0a4pppn)。
