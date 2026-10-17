@@ -118,3 +118,84 @@ test('手机视口下生活页没有横向溢出', async ({ page }) => {
   }));
   expect(dimensions.page).toBeLessThanOrEqual(dimensions.viewport + 1);
 });
+
+test('公式在桌面和窄屏下完整显示，编号与正文保持间距', async ({ page }) => {
+  await page.goto('/posts/writing-sample/');
+  for (const width of [1280, 390, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.evaluate(() => document.fonts.ready);
+    await expect(page.locator('.prose u .math-inline')).not.toHaveClass(
+      /math-inline-block/,
+    );
+    await expect
+      .poll(
+        () =>
+          page.locator('.katex-display').evaluateAll((formulas) =>
+            formulas
+              .filter(
+                (formula) => formula.scrollWidth > formula.clientWidth + 1,
+              )
+              .map((formula) => ({
+                source: formula.querySelector('annotation')!.textContent,
+                available: formula.clientWidth,
+                actual: formula.scrollWidth,
+              })),
+          ),
+        { message: `${width}px 视口下所有公式均应放在正文宽度内` },
+      )
+      .toEqual([]);
+    const formula = page.locator('.math-numbered');
+    await expect(formula.locator('.tag')).toHaveText('(1)');
+    await expect
+      .poll(() =>
+        formula.evaluate((element) => {
+          const body = element
+            .querySelector('.math-body')!
+            .getBoundingClientRect();
+          const tag = element.querySelector('.tag')!.getBoundingClientRect();
+          const frame = element.getBoundingClientRect();
+          return (
+            body.right + 12 <= tag.left &&
+            body.left >= frame.left - 1 &&
+            tag.right <= frame.right + 1
+          );
+        }),
+      )
+      .toBe(true);
+  }
+});
+
+test('写作样例的 diff 区分上下文和行内改动，Mermaid 直接显示图表', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/posts/writing-sample/');
+  const stylesheet = await page
+    .locator('.expressive-code link[rel="stylesheet"]')
+    .first()
+    .getAttribute('href');
+  expect((await page.request.get(stylesheet!)).ok()).toBe(true);
+  const image = page.locator('.article-image img');
+  await image.scrollIntoViewIfNeeded();
+  await image.evaluate((element: HTMLImageElement) => element.decode());
+  const diff = page.locator('.expressive-code pre[data-language="diff"]');
+  await expect(diff.locator('.ec-line:not(.ins):not(.del)')).toHaveCount(2);
+  await expect(diff.locator('.ec-line.del')).toHaveCount(1);
+  await expect(diff.locator('.ec-line.ins')).toHaveCount(2);
+  await expect(diff.locator('.ec-line.del .code')).toHaveCSS(
+    'text-decoration-line',
+    'line-through',
+  );
+  expect(await diff.locator('.diff-word').count()).toBeGreaterThan(0);
+
+  const diagram = page.locator('.mermaid-figure');
+  await diagram.scrollIntoViewIfNeeded();
+  await expect(diagram.locator('svg')).toBeVisible({ timeout: 15000 });
+  await expect(diagram.locator('.mermaid-source')).toBeHidden();
+  const backref = page.getByRole('link', { name: '返回正文', exact: true });
+  await expect(backref.locator('svg')).toHaveCount(1);
+  await backref.click();
+  await expect(page).toHaveURL(/#user-content-fnref-note$/);
+  expect(errors).toEqual([]);
+});

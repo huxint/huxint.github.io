@@ -12,6 +12,12 @@ draft: true
 
 一段话里可以混用 ==黄色高亮==、++下划线++、~~细删除线~~、`行内代码`，以及 <kbd>Ctrl</kbd> + <kbd>K</kbd> 这样的键帽。
 
+也可以嵌套使用，例如 ==高亮里的 **重点**==，或 ++包含 $a^2+b^2=c^2$ 的下划线++。
+
+正文链接会带有细下划线，例如 [站内标签索引](/tags/) 和 [KaTeX 文档](https://katex.org/docs/supported)。
+
+直接粘贴网址也会自动识别：https://katex.org/docs/supported。
+
 > [!NOTE]
 > 说明用来补充背景。正文里的 `const`、数学公式和链接都会沿用文章本身的样式。
 
@@ -36,7 +42,15 @@ draft: true
 
 ## 公式
 
+### 行内公式与上下标
+
 行内公式与正文混排，例如 $E=mc^2$ 和 $\mathbb{R}^{n\times d}$。
+
+行内求和 $\sum_{i=1}^{n} i$ 默认将上下标放在右侧，以保持段落行距。需要放在上下方时，可使用 `\limits`，例如 $\sum\limits_{i=1}^{n} i$。
+
+字母、向量和嵌套下标也可以放在一行里：$x_i^2$、$x_{i_j}$、$\alpha+\beta$、$\mathbf{v}\in\mathbb{R}^3$、$\hat{\theta}$ 和 $\bar{x}$。
+
+### 对齐、矩阵与编号
 
 独立公式可以使用对齐、矩阵、分段函数和手动编号：
 
@@ -54,6 +68,165 @@ g(x)=\begin{cases}x,&x\ge0,\\-x,&x<0.\end{cases}
 \tag{1}
 $$
 
+
+### arraystretch 与矩阵行距
+
+下面两组矩阵内容相同。第一组使用默认行距，第二组通过 `\def\arraystretch{1.7}` 增加行距；设置只在当前这一组公式内生效。
+
+默认行距：
+
+$$
+A=\begin{bmatrix}
+1 & \frac{1}{2} & 0 \\
+0 & 1 & \frac{1}{3} \\
+\frac{1}{4} & 0 & 1
+\end{bmatrix}
+$$
+
+1.7 倍行距：
+
+$$
+{\def\arraystretch{1.7}
+A=\begin{bmatrix}
+1 & \frac{1}{2} & 0 \\
+0 & 1 & \frac{1}{3} \\
+\frac{1}{4} & 0 & 1
+\end{bmatrix}}
+$$
+
+### 交换图
+
+横向、纵向箭头可以带说明，底部也可以使用双线等号。这一例对应一个交换的方形图。
+
+$$
+\begin{CD}
+A @>a>> B \\
+@VbVV @AAcA \\
+C @= D
+\end{CD}
+$$
+
+### 分式、根式与连分数
+
+$$
+x=\frac{-b\pm\sqrt{b^2-4ac}}{2a},
+\qquad
+\sqrt[n]{a_1a_2\cdots a_n}
+$$
+
+$$
+\sqrt{2}=1+\cfrac{1}{2+\cfrac{1}{2+\cfrac{1}{2+\ddots}}}
+$$
+
+### 求和、连乘与极限
+
+$$
+\sum_{k=1}^{n}k=\frac{n(n+1)}{2},
+\qquad
+\prod_{k=1}^{n}k=n!
+$$
+
+$$
+\lim_{n\to\infty}\left(1+\frac{1}{n}\right)^n=e
+$$
+
+带多重条件的求和：
+
+$$
+\sum_{\substack{1\le i,j\le n\\i\ne j}} a_{ij}
+=\sum_{i=1}^{n}\sum_{j=1}^{n}a_{ij}-\sum_{i=1}^{n}a_{ii}
+$$
+
+### 积分与微分
+
+$$
+\int_{-\infty}^{+\infty} e^{-x^2}\,\mathrm{d}x=\sqrt{\pi}
+$$
+
+$$
+\frac{\partial f}{\partial x}
+=\lim_{h\to0}\frac{f(x+h,y)-f(x,y)}{h}
+$$
+
+二重积分和边界积分可以用来观察更长的公式在窄屏中的表现：
+
+$$
+\oint_{\partial\Omega}\left(P\,\mathrm{d}x+Q\,\mathrm{d}y\right)
+=\iint_{\Omega}\left(\frac{\partial Q}{\partial x}-\frac{\partial P}{\partial y}\right)\mathrm{d}x\,\mathrm{d}y
+$$
+
+### 分段函数与方程组
+
+$$
+\operatorname{ReLU}(x)=
+\begin{cases}
+0, & x<0, \\
+x, & x\ge0.
+\end{cases}
+$$
+
+$$
+\left\{
+\begin{aligned}
+2x+y-z &= 8, \\
+-3x-y+2z &= -11, \\
+-2x+y+2z &= -3.
+\end{aligned}
+\right.
+$$
+
+### 括号、上下括号与长箭头
+
+$$
+\left\langle\frac{x}{1+x^2},\left\|\mathbf{v}\right\|_2\right\rangle
+\qquad
+\left\lfloor\frac{n}{2}\right\rfloor
+\qquad
+\left\lceil\frac{n}{2}\right\rceil
+$$
+
+$$
+\underbrace{x_1+x_2+\cdots+x_n}_{n\text{ terms}}
+\qquad
+\overbrace{x_1^2+x_2^2+\cdots+x_n^2}^{\text{sum of squares}}
+$$
+
+$$
+X\xrightarrow[\text{input}]{f}Y
+\xrightarrow[\text{output}]{g}Z,
+\qquad
+g\circ f:X\longrightarrow Z
+$$
+
+### 概率、集合与逻辑
+
+$$
+p(x)=\frac{1}{\sigma\sqrt{2\pi}}
+\exp\!\left(-\frac{(x-\mu)^2}{2\sigma^2}\right)
+$$
+
+$$
+\mathbb{P}(A\mid B)
+=\frac{\mathbb{P}(B\mid A)\mathbb{P}(A)}{\mathbb{P}(B)}
+$$
+
+$$
+S=\{x\in\mathbb{R}\mid x^2\le1\}=[-1,1]
+\qquad
+A\subseteq B\iff\forall x\,(x\in A\Rightarrow x\in B)
+$$
+
+### 对齐的推导过程
+
+$$
+\begin{aligned}
+(a+b)^2
+&=(a+b)(a+b) \\
+&=a^2+ab+ba+b^2 \\
+&=a^2+2ab+b^2.
+\end{aligned}
+$$
+
 ## 代码
 
 围栏代码块指定语言后会自动高亮。`title` 设置文件名，花括号指定强调的行。
@@ -64,7 +237,7 @@ int square(int value) {
 }
 ~~~
 
-Diff 代码块会直接显示增删行：
+Diff 代码块会合并重复的上下文，并在行内标出真正变动的部分。删除的代码用细线划去：
 
 ```diff title="patch.diff"
 - int square(int value) {
@@ -80,6 +253,7 @@ Diff 代码块会直接显示增删行：
 
 ```mermaid
 flowchart LR
+    accTitle: Markdown 渲染流程
     A["Markdown"] --> B["渲染器"]
     B --> C["HTML"]
     B --> D["文章样式"]

@@ -26,6 +26,10 @@ tags: ['算法']
 
 标 `draft: true` 的文章只在本地预览里出现。行内公式 `$…$`，独立公式 `$$…$$`。
 
+`==高亮==`、`++下划线++` 和 `~~删除线~~` 可以和公式、链接混用。提示用 `> [!NOTE]`、`TIP`、`IMPORTANT`、`WARNING` 或 `CAUTION`；围栏代码块支持 `diff` 和 `mermaid`。完整示例在本地的 `/posts/writing-sample/`。
+
+构建会自动刷新 Markdown 缓存。修改渲染插件后做本地预览时，先运行 `pnpm exec astro sync --force`，再启动预览。
+
 ## 写生活
 
 `src/content/life/<目录名>/index.md`，媒体文件放在同一目录。
@@ -34,15 +38,15 @@ tags: ['算法']
 ---
 date: 2026-09-22T20:30:00+08:00
 location: 深圳
-media:
-  - image: ./photo.jpg
-    alt: 说明
-  - image: ./live.jpg
-    live: ./live.mp4
-  - video: ./clip.mp4
-    poster: ./clip.jpg
 ---
+今天的随手记录。
+
+![照片说明](./photo.jpg) ![实况照片](./live.jpg)
+
+![一段视频](./clip.mp4)
 ```
+
+同一段里的照片会排成媒体行。`live.jpg` 旁边放同名的 `live.mp4` 就是实况照片；`clip.jpg` 会用作 `clip.mp4` 的封面。
 
 实况的 MOV 转成网页能放的 MP4：
 
@@ -51,3 +55,5 @@ ffmpeg -i IMG_0001.MOV -c:v libx264 -crf 23 -pix_fmt yuv420p -movflags +faststar
 ```
 
 推送到 `main` 会自动构建并发布到 GitHub Pages。
+
+修改猩猩模型后，先启动本地预览，再用 `pnpm render:gorilla` 更新头像和分享图片。预览不在默认端口时，用 `GORILLA_BASE_URL` 指定地址。

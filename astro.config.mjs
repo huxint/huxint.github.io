@@ -8,6 +8,7 @@ import { rehypeArticle } from './src/lib/rehype-article.mjs';
 import { remarkMoment } from './src/lib/remark-moment.mjs';
 import { remarkArticleExtras } from './src/lib/remark-article-extras.mjs';
 import { lifeMedia } from './src/integrations/life-media.mjs';
+import { pluginDiffDetails } from './src/lib/expressive-diff.mjs';
 
 pluginFramesTexts.addLocale('zh', {
   terminalWindowFallbackTitle: '终端',
@@ -32,16 +33,32 @@ export default defineConfig({
     sitemap({ filter: (url) => !url.endsWith('/search/') }),
     lifeMedia(),
     expressiveCode({
+      plugins: [pluginDiffDetails()],
       defaultLocale: 'zh',
       getBlockLocale: () => 'zh',
       themes: ['github-light', 'github-dark'],
       useDarkModeMediaQuery: false,
       themeCssSelector: (theme) => `[data-theme="${theme.type}"]`,
       styleOverrides: {
-        borderRadius: '0.6rem',
+        borderRadius: '8px',
+        borderColor: 'var(--rule)',
+        codeBackground: 'var(--bg-sunken)',
         codeFontFamily: 'var(--font-mono)',
         codeFontSize: '0.83rem',
         codeLineHeight: '1.75',
+        frames: {
+          frameBoxShadowCssValue: 'none',
+          editorActiveTabBackground: 'transparent',
+          editorActiveTabForeground: 'var(--muted)',
+          editorActiveTabIndicatorHeight: '0px',
+          editorTabBarBackground: 'transparent',
+          editorTabBarBorderColor: 'var(--rule)',
+          editorTabBarBorderBottomColor: 'var(--rule)',
+          terminalBackground: 'var(--bg-sunken)',
+          terminalTitlebarBackground: 'transparent',
+          terminalTitlebarForeground: 'var(--muted)',
+          terminalTitlebarBorderBottomColor: 'var(--rule)',
+        },
       },
     }),
   ],

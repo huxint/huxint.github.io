@@ -1,3 +1,6 @@
+import './article-enhancements';
+import './math';
+
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
 // Plays a muted clip over its still, as Live Photos do. `host` carries the
@@ -39,13 +42,8 @@ function livePlayer(
 }
 
 function largestSource(image: HTMLImageElement): string {
-  let best: { url: string; width: number } | undefined;
-  for (const candidate of image.srcset.split(',')) {
-    const [url, descriptor] = candidate.trim().split(/\s+/);
-    const width = parseFloat(descriptor ?? '');
-    if (url && (!best || width > best.width)) best = { url, width };
-  }
-  return best?.url ?? image.currentSrc ?? image.src;
+  // remarkMoment supplies srcset widths in ascending order.
+  return image.srcset.split(',').at(-1)!.trim().split(/\s+/)[0] || image.src;
 }
 
 interface Photo {

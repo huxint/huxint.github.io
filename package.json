@@ -9,10 +9,11 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build && node scripts/build-search.mjs",
+    "build": "astro sync --force && astro build && pagefind --site dist --glob 'posts/*/index.html'",
     "preview": "astro preview",
     "check": "astro check",
     "format": "prettier --write .",
+    "render:gorilla": "node scripts/render-gorilla.mjs",
     "test": "pnpm build && playwright test"
   },
   "dependencies": {
@@ -23,6 +24,7 @@
     "@fontsource-variable/jetbrains-mono": "5.3.0",
     "astro": "7.3.1",
     "astro-expressive-code": "0.44.2",
+    "diff": "9.0.0",
     "katex": "0.16.47",
     "mermaid": "^12.2.0",
     "rehype-katex": "7.0.1",
@@ -34,7 +36,6 @@
   "devDependencies": {
     "@astrojs/check": "0.9.10",
     "@playwright/test": "1.62.1",
-    "@types/hast": "3.0.5",
     "@types/three": "0.185.4",
     "pagefind": "1.5.2",
     "prettier": "3.9.6",

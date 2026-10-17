@@ -1,4 +1,6 @@
 import { openImageViewer } from './image-viewer';
+import './article-enhancements';
+import './math';
 
 document
   .querySelectorAll<HTMLImageElement>('.prose .article-image img')
@@ -24,14 +26,20 @@ const tocLinks = [
 const sectionIds = [
   ...new Set(tocLinks.map((link) => decodeURIComponent(link.hash.slice(1)))),
 ];
-const sections = sectionIds
-  .map((id) => document.getElementById(id))
-  .filter((heading) => heading !== null);
+const sections = sectionIds.map((id) => document.getElementById(id)!);
 const article = document.querySelector<HTMLElement>(
   'article[data-pagefind-body]',
 )!;
 const progress = document.querySelector<HTMLElement>('.reading-progress span')!;
 let pendingFrame = false;
+
+function activateToc(currentId: string | undefined): void {
+  for (const link of tocLinks) {
+    if (decodeURIComponent(link.hash.slice(1)) === currentId)
+      link.setAttribute('aria-current', 'location');
+    else link.removeAttribute('aria-current');
+  }
+}
 
 function updateReadingPosition(): void {
   const inset = parseFloat(
@@ -49,11 +57,7 @@ function updateReadingPosition(): void {
   }
   // A short final section cannot always reach the top of the viewport.
   if (bounds.bottom <= innerHeight) currentId = sections.at(-1)?.id;
-  for (const link of tocLinks) {
-    if (decodeURIComponent(link.hash.slice(1)) === currentId)
-      link.setAttribute('aria-current', 'location');
-    else link.removeAttribute('aria-current');
-  }
+  activateToc(currentId);
   pendingFrame = false;
 }
 
@@ -69,20 +73,28 @@ window.addEventListener('resize', scheduleReadingPosition);
 window.addEventListener('pageshow', scheduleReadingPosition);
 new ResizeObserver(scheduleReadingPosition).observe(article);
 
-// Collapse the mobile table of contents after choosing an entry and move focus
-// to the heading so keyboard users do not stay inside the hidden list.
-document
-  .querySelectorAll<HTMLAnchorElement>('.mobile-toc a')
-  .forEach((link) => {
-    link.addEventListener('click', () => {
-      const details = link.closest('details');
-      const heading = document.getElementById(
-        decodeURIComponent(link.hash.slice(1)),
-      );
-      if (details) details.open = false;
-      if (heading) {
-        if (!heading.hasAttribute('tabindex')) heading.tabIndex = -1;
-        heading.focus({ preventScroll: true });
-      }
+// Jump immediately instead of waiting through a smooth-scroll animation, and
+// highlight the chosen heading before the next scroll frame.
+for (const link of tocLinks) {
+  link.addEventListener('click', (event) => {
+    const id = decodeURIComponent(link.hash.slice(1));
+    const heading = document.getElementById(id)!;
+
+    event.preventDefault();
+    const inset = parseFloat(
+      getComputedStyle(document.documentElement).scrollPaddingTop,
+    );
+    window.scrollTo({
+      top: heading.getBoundingClientRect().top + scrollY - inset,
+      behavior: 'instant',
     });
+    history.pushState(null, '', link.hash);
+    activateToc(id);
+    scheduleReadingPosition();
+
+    const details = link.closest('details');
+    if (details) details.open = false;
+    heading.tabIndex = -1;
+    heading.focus({ preventScroll: true });
   });
+}

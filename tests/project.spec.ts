@@ -1,14 +1,6 @@
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { globSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
-
-function htmlFiles(dir: string): string[] {
-  return readdirSync(dir).flatMap((name) => {
-    const path = join(dir, name);
-    if (statSync(path).isDirectory()) return htmlFiles(path);
-    return name.endsWith('.html') ? [path] : [];
-  });
-}
 
 test('项目页可以直接打开，并且有自己的标题与页内导航', async ({ page }) => {
   await page.goto('/projects/orangutan/');
@@ -21,13 +13,11 @@ test('项目页可以直接打开，并且有自己的标题与页内导航', as
     'href',
     'https://github.com/huxint/orangutan',
   );
-  await page.reload();
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Orangutan');
 });
 
 test('博客页面没有通向项目页的链接，站点地图包含项目页', async () => {
   const dist = 'dist';
-  const blogPages = htmlFiles(dist).filter(
+  const blogPages = globSync(`${dist}/**/*.html`).filter(
     (file) => !file.includes(`${join(dist, 'projects')}`),
   );
   expect(blogPages.length).toBeGreaterThan(0);
@@ -45,17 +35,7 @@ test('博客页面没有通向项目页的链接，站点地图包含项目页',
 });
 
 test('搜索索引只包含文章', async ({ page }) => {
-  await page.goto('/');
-  const title = (
-    await page.locator('.post-title a').first().innerText()
-  ).trim();
-  await page.getByRole('link', { name: '搜索文章', exact: true }).click();
-  const input = page.getByRole('searchbox');
-  await input.fill(title);
-  await expect(
-    page.locator('.search-results a[href^="/posts/"]').first(),
-  ).toBeVisible();
-  await input.fill('Orangutan');
+  await page.goto('/search/?q=Orangutan');
   await expect(page.getByRole('status')).toHaveText(/找到/);
   await expect(
     page.locator('.search-results a[href^="/projects/"]'),

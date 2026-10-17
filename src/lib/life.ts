@@ -25,41 +25,20 @@ const dateParts = new Intl.DateTimeFormat('zh-CN', {
   weekday: 'short',
 });
 const MONTHS = '一二三四五六七八九十'.split('').concat(['十一', '十二']);
-const DAY = 24 * 60 * 60 * 1000;
-
-function calendar(date: Date) {
-  const parts = Object.fromEntries(
-    dateParts.formatToParts(date).map(({ type, value }) => [type, value]),
-  );
-  return {
-    year: Number(parts.year),
-    month: Number(parts.month),
-    day: Number(parts.day),
-    weekday: parts.weekday,
-  };
-}
 
 // Calendar fields as seen in China, e.g. { year: 2026, month: '九月', day: 22, weekday: '周二' }.
 export function momentDate(moment: Moment) {
-  const { year, month, day, weekday } = calendar(moment.data.date);
-  return { year, month: `${MONTHS[month - 1]}月`, day, weekday };
-}
-
-// Where the middle of a record's day falls in its year, between 0 and 1.
-export function yearFraction(moment: Moment): number {
-  const { year, month, day } = calendar(moment.data.date);
-  const start = Date.UTC(year, 0, 1);
-  return (
-    (Date.UTC(year, month - 1, day) - start + DAY / 2) /
-    (Date.UTC(year + 1, 0, 1) - start)
+  const parts = Object.fromEntries(
+    dateParts
+      .formatToParts(moment.data.date)
+      .map(({ type, value }) => [type, value]),
   );
-}
-
-// Where each month begins in the year, as fractions like yearFraction's.
-export function monthStarts(year: number): number[] {
-  const start = Date.UTC(year, 0, 1);
-  const length = Date.UTC(year + 1, 0, 1) - start;
-  return MONTHS.map((_, month) => (Date.UTC(year, month, 1) - start) / length);
+  return {
+    year: Number(parts.year),
+    month: `${MONTHS[Number(parts.month) - 1]}月`,
+    day: Number(parts.day),
+    weekday: parts.weekday,
+  };
 }
 
 const stills = import.meta.glob<{ default: ImageMetadata }>(
@@ -75,16 +54,18 @@ function mediaUrls(moment: Moment): string[] {
   );
 }
 
-// Photos in the text in order, standing in for each video with its poster.
-export function momentStills(moment: Moment): ImageMetadata[] {
-  return mediaUrls(moment).flatMap((path) => {
-    if (!videoFile.test(path)) return stills[path]?.default ?? [];
+// Use the first available still as the cover, or a video's poster.
+export function momentCover(moment: Moment): ImageMetadata | undefined {
+  for (const path of mediaUrls(moment)) {
     const stem = path.replace(videoFile, '');
-    const poster = Object.keys(stills).find(
-      (candidate) => candidate.replace(/\.[^.]+$/, '') === stem,
-    );
-    return poster ? stills[poster].default : [];
-  });
+    const source = videoFile.test(path)
+      ? Object.keys(stills).find(
+          (candidate) => candidate.replace(/\.[^.]+$/, '') === stem,
+        )
+      : path;
+    const image = source && stills[source]?.default;
+    if (image) return image;
+  }
 }
 
 export function momentCounts(moment: Moment) {
@@ -102,11 +83,4 @@ export function momentExcerpt(moment: Moment, limit = 60): string {
     .trim();
   if (!text) return `${formatDate(moment.data.date)} 的记录`;
   return text.length > limit ? `${text.slice(0, limit)}…` : text;
-}
-
-// The line written under a print, e.g. "09.22 · 深圳".
-export function printNote(moment: Moment): string {
-  return [formatDate(moment.data.date).slice(5), moment.data.location]
-    .filter(Boolean)
-    .join(' · ');
 }

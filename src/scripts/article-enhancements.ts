@@ -4,22 +4,18 @@
  * - fenced mermaid diagrams render lazily and follow the current theme
  */
 
-function cssToken(name: string, fallback: string): string {
-  return (
-    getComputedStyle(document.documentElement).getPropertyValue(name).trim() ||
-    fallback
-  );
+function cssToken(name: string): string {
+  return getComputedStyle(document.documentElement)
+    .getPropertyValue(name)
+    .trim();
 }
 
 function setupFootnotePreviews(): void {
   const refs = [
-    ...document.querySelectorAll<HTMLAnchorElement>('.prose sup a[href^="#"]'),
-  ].filter((link) => {
-    const target = document.getElementById(
-      decodeURIComponent(link.hash.slice(1)),
-    );
-    return Boolean(target?.closest('.footnotes'));
-  });
+    ...document.querySelectorAll<HTMLAnchorElement>(
+      '.prose [data-footnote-ref]',
+    ),
+  ];
 
   if (refs.length === 0) return;
 
@@ -76,8 +72,7 @@ function setupFootnotePreviews(): void {
   function show(ref: HTMLAnchorElement): void {
     const target = document.getElementById(
       decodeURIComponent(ref.hash.slice(1)),
-    );
-    if (!target) return;
+    )!;
 
     window.clearTimeout(hideTimer);
     activeRef?.removeAttribute('aria-describedby');
@@ -86,10 +81,9 @@ function setupFootnotePreviews(): void {
 
     shownAt = performance.now();
     const clone = target.cloneNode(true) as HTMLElement;
+    clone.removeAttribute('id');
     clone
-      .querySelectorAll(
-        '.footnote-backref, a[href^="#user-content-fnref-"], a[href^="#fnref-"]',
-      )
+      .querySelectorAll('.footnote-backref')
       .forEach((node) => node.remove());
     content.replaceChildren(clone);
 
@@ -126,23 +120,23 @@ type MermaidBlock = {
   figure: HTMLElement;
   target: HTMLElement;
   source: string;
+  theme?: string;
 };
 
 function setupMermaid(): void {
   const figures = [
-    ...document.querySelectorAll<HTMLElement>('[data-mermaid-figure]'),
+    ...document.querySelectorAll<HTMLElement>('.prose .mermaid-figure'),
   ];
   if (figures.length === 0) return;
 
-  const blocks: MermaidBlock[] = figures.flatMap((figure) => {
-    const target = figure.querySelector<HTMLElement>('[data-mermaid-target]');
-    const source = figure
-      .querySelector<HTMLElement>('[data-mermaid-source]')
-      ?.textContent?.trim();
-    return target && source ? [{ figure, target, source }] : [];
-  });
-
-  if (blocks.length === 0) return;
+  const blocks: MermaidBlock[] = figures.map((figure) => ({
+    figure,
+    target: figure.querySelector<HTMLElement>('.mermaid-canvas')!,
+    source: figure
+      .querySelector<HTMLElement>('.mermaid-source')!
+      .textContent!.trim(),
+  }));
+  const visible = new Set<MermaidBlock>();
 
   let renderSequence = 0;
   let scheduled = 0;
@@ -150,8 +144,11 @@ function setupMermaid(): void {
 
   async function renderAll(): Promise<void> {
     const sequence = ++renderSequence;
+    const theme = document.documentElement.dataset.theme!;
+    const pending = [...visible].filter((block) => block.theme !== theme);
+    if (pending.length === 0) return;
 
-    for (const block of blocks) {
+    for (const block of pending) {
       block.figure.classList.add('is-rendering');
       block.figure.classList.remove('has-error');
     }
@@ -165,28 +162,32 @@ function setupMermaid(): void {
         startOnLoad: false,
         securityLevel: 'strict',
         theme: 'base',
-        fontFamily: cssToken('--font-sans', 'sans-serif'),
+        fontFamily: cssToken('--font-sans'),
         themeVariables: {
-          primaryColor: cssToken('--surface', '#eee8dd'),
-          primaryTextColor: cssToken('--text', '#201d18'),
-          primaryBorderColor: cssToken('--accent', '#b85a31'),
-          secondaryColor: cssToken('--accent-soft', '#f3e2d5'),
-          tertiaryColor: cssToken('--bg-raised', '#fffdfa'),
-          lineColor: cssToken('--rule-strong', '#cfc6b7'),
-          clusterBkg: cssToken('--bg-sunken', '#f0eadf'),
-          clusterBorder: cssToken('--rule-strong', '#cfc6b7'),
-          edgeLabelBackground: cssToken('--bg-raised', '#fffdfa'),
-          textColor: cssToken('--text', '#201d18'),
-          mainBkg: cssToken('--surface', '#eee8dd'),
-          nodeBorder: cssToken('--accent', '#b85a31'),
+          fontSize: '14px',
+          primaryColor: cssToken('--accent-soft'),
+          primaryTextColor: cssToken('--text'),
+          primaryBorderColor: cssToken('--accent'),
+          secondaryColor: cssToken('--surface'),
+          tertiaryColor: cssToken('--bg-sunken'),
+          lineColor: cssToken('--muted'),
+          clusterBkg: cssToken('--bg-sunken'),
+          clusterBorder: cssToken('--rule-strong'),
+          edgeLabelBackground: cssToken('--bg'),
+          textColor: cssToken('--text'),
+          mainBkg: cssToken('--accent-soft'),
+          nodeBorder: cssToken('--accent'),
         },
         flowchart: {
           htmlLabels: true,
           curve: 'basis',
+          nodeSpacing: 36,
+          rankSpacing: 48,
+          padding: 14,
         },
       });
 
-      for (const [index, block] of blocks.entries()) {
+      for (const [index, block] of pending.entries()) {
         if (sequence !== renderSequence) return;
         try {
           const { svg } = await mermaid.render(
@@ -195,8 +196,7 @@ function setupMermaid(): void {
           );
           if (sequence !== renderSequence) return;
           block.target.innerHTML = svg;
-          block.target.setAttribute('role', 'img');
-          block.target.setAttribute('aria-label', 'Mermaid 图表');
+          block.theme = theme;
           block.figure.classList.add('is-rendered');
           block.figure.classList.remove('is-rendering', 'has-error');
         } catch {
@@ -207,7 +207,7 @@ function setupMermaid(): void {
         }
       }
     } catch {
-      for (const block of blocks) {
+      for (const block of pending) {
         block.figure.classList.remove('is-rendering');
         block.figure.classList.add('has-error');
         block.target.innerHTML =
@@ -224,7 +224,18 @@ function setupMermaid(): void {
     });
   }
 
-  void renderAll();
+  const observer = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        visible.add(blocks.find((block) => block.figure === entry.target)!);
+        observer.unobserve(entry.target);
+      }
+      scheduleRender();
+    },
+    { rootMargin: '320px' },
+  );
+  for (const block of blocks) observer.observe(block.figure);
   new MutationObserver(scheduleRender).observe(document.documentElement, {
     attributes: true,
     attributeFilter: ['data-theme'],

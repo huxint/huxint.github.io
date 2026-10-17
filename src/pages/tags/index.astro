@@ -10,9 +10,6 @@ const tags = getTags(posts).sort(
     rightPosts.length - leftPosts.length ||
     leftTag.localeCompare(rightTag, 'zh-CN'),
 );
-const years = posts.map((post) => post.data.pubDate.getUTCFullYear());
-const yearRange =
-  years.length > 0 ? `${Math.min(...years)}—${Math.max(...years)}` : '';
 ---
 
 <BaseLayout
@@ -21,18 +18,11 @@ const yearRange =
 >
   <main class="page tag-index-page" id="main">
     <header class="tag-hero">
-      <p class="eyebrow">主题索引</p>
-      <h1>标签<span>.</span></h1>
-      <div class="tag-hero-copy">
-        <p class="tag-hero-lede">
-          把写过的题目、技术和零散念头收在这里。从一个词开始，继续往下读。
-        </p>
-        <p class="tag-hero-meta">
-          <span>{posts.length} 篇文章</span>
-          <span>{tags.length} 个标签</span>
-          {yearRange && <span>{yearRange}</span>}
-        </p>
+      <div>
+        <h1>标签</h1>
+        <p class="tag-hero-lede">从一个主题，找到想读的文章。</p>
       </div>
+      <p class="tag-hero-meta">{posts.length} 篇文章，{tags.length} 个主题</p>
     </header>
 
     {
@@ -56,51 +46,34 @@ const yearRange =
             </p>
           </div>
 
-          <ol class="tag-list" data-tag-list>
-            {tags.map(([tag, tagged], index) => {
-              const latest = tagged[0];
-              return (
-                <li
-                  class="tag-list-item"
-                  data-tag-item
-                  data-tag-name={tag}
-                  data-tag-search={[
-                    tag,
-                    ...tagged.map((post) => post.data.title),
-                  ].join(' ')}
-                  style={`--i: ${index}`}
+          <ol class="tag-list">
+            {tags.map(([tag, tagged]) => (
+              <li
+                class="tag-list-item"
+                data-tag-item
+                data-tag-search={[
+                  tag,
+                  ...tagged.map((post) => post.data.title),
+                ].join(' ')}
+              >
+                <a
+                  class="tag-entry"
+                  href={`/tags/${encodeURIComponent(tag)}/`}
+                  aria-label={`${tag}，${tagged.length} 篇文章`}
                 >
-                  <a
-                    class="tag-entry"
-                    href={`/tags/${encodeURIComponent(tag)}/`}
-                    aria-label={`${tag}，${tagged.length} 篇文章`}
-                  >
-                    <span class="tag-entry-main">
-                      <span class="tag-entry-name">
-                        <span class="tag-entry-hash" aria-hidden="true">
-                          #
-                        </span>
-                        {tag}
-                      </span>
-                      {latest && (
-                        <span class="tag-entry-latest">
-                          {latest.data.title}
-                        </span>
-                      )}
+                  <span class="tag-entry-name">
+                    <span class="tag-entry-hash" aria-hidden="true">
+                      #
                     </span>
-                    <span class="tag-entry-side">
-                      <span class="tag-entry-count">
-                        {tagged.length}
-                        <small>篇</small>
-                      </span>
-                      <span class="tag-entry-arrow" aria-hidden="true">
-                        <Icon name="arrow" size={15} />
-                      </span>
-                    </span>
-                  </a>
-                </li>
-              );
-            })}
+                    {tag}
+                  </span>
+                  <span class="tag-entry-count">
+                    {tagged.length}
+                    <small>篇</small>
+                  </span>
+                </a>
+              </li>
+            ))}
           </ol>
 
           <div class="tag-empty" data-tag-empty hidden>

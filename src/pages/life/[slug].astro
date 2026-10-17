@@ -12,7 +12,7 @@ import { formatDate } from '../../lib/posts';
 import {
   getMoments,
   momentExcerpt,
-  momentStills,
+  momentCover,
   type Moment as MomentEntry,
 } from '../../lib/life';
 export const getStaticPaths = (async () => {
@@ -27,9 +27,9 @@ interface Props {
   newer?: MomentEntry;
   older?: MomentEntry;
 }
-const { moment, newer, older } = Astro.props;
+const { moment, newer, older }: Props = Astro.props;
 const excerpt = momentExcerpt(moment);
-const [cover] = momentStills(moment);
+const cover = momentCover(moment);
 const share = cover
   ? await getImage({ src: cover, width: 1200, format: 'jpeg' })
   : undefined;
@@ -58,7 +58,7 @@ const neighbours = [
       neighbours.length > 0 && (
         <nav class="moment-pager" aria-label="前后记录">
           {neighbours.map(({ moment: neighbour, rel, label }) => {
-            const [thumbnail] = momentStills(neighbour);
+            const thumbnail = momentCover(neighbour);
             return (
               <a href={`/life/${neighbour.id}/`} rel={rel} class={`is-${rel}`}>
                 {thumbnail ? (

@@ -18,19 +18,36 @@ function resetMathZoom(katex: HTMLElement): void {
 }
 
 function zoomToFit(katex: HTMLElement, availableWidth: number): void {
-  const naturalWidth = katex.getBoundingClientRect().width;
-  if (availableWidth <= 0 || naturalWidth <= availableWidth + 0.5) return;
-  katex.style.setProperty(
-    '--math-zoom',
-    (availableWidth / naturalWidth).toFixed(4),
-  );
+  // Font and spacing rounding can change after zoom, so measure the result too.
+  for (let pass = 0; pass < 2; pass += 1) {
+    const zoom = parseFloat(getComputedStyle(katex).zoom);
+    const width = Math.max(
+      katex.scrollWidth * zoom,
+      katex.getBoundingClientRect().width,
+    );
+    if (width <= availableWidth + 0.5) return;
+    katex.style.setProperty(
+      '--math-zoom',
+      ((zoom * (availableWidth - 1)) / width).toFixed(4),
+    );
+  }
 }
 
 function fitMath(): void {
   for (const math of displayMath) {
-    const katex = math.querySelector<HTMLElement>(':scope > .katex');
-    if (!katex) continue;
-    resetMathZoom(katex);
+    const katex = math.querySelector<HTMLElement>(':scope > .katex')!;
+    const body = math.querySelector<HTMLElement>('.math-body');
+    resetMathZoom(body ?? katex);
+    if (body) {
+      const html = body.parentElement!;
+      const tag = html.querySelector<HTMLElement>(':scope > .tag')!;
+      const gap = parseFloat(getComputedStyle(html).columnGap);
+      zoomToFit(
+        body,
+        html.clientWidth - tag.getBoundingClientRect().width - gap,
+      );
+      continue;
+    }
     const style = getComputedStyle(math);
     const availableWidth =
       math.clientWidth -
@@ -40,18 +57,19 @@ function fitMath(): void {
   }
 
   for (const math of inlineMath) {
-    const katex = math.querySelector<HTMLElement>(':scope > .katex');
-    if (!katex) continue;
+    const katex = math.querySelector<HTMLElement>(':scope > .katex')!;
     math.classList.remove('math-inline-block');
     resetMathZoom(katex);
 
-    const parent = math.parentElement;
-    const availableWidth = parent?.clientWidth ?? math.clientWidth;
+    let container = math.parentElement!;
+    while (getComputedStyle(container).display === 'inline')
+      container = container.parentElement!;
+    const availableWidth = container.clientWidth;
     const naturalWidth = katex.getBoundingClientRect().width;
     if (naturalWidth <= availableWidth + 0.5) continue;
 
     math.classList.add('math-inline-block');
-    zoomToFit(katex, math.clientWidth || availableWidth);
+    zoomToFit(katex, math.clientWidth);
   }
 
   mathFrame = 0;
@@ -62,12 +80,12 @@ function scheduleMathFit(): void {
   mathFrame = requestAnimationFrame(fitMath);
 }
 
-scheduleMathFit();
-document.fonts.ready.then(scheduleMathFit);
-window.addEventListener('resize', scheduleMathFit, { passive: true });
-window.addEventListener('pageshow', scheduleMathFit);
+if (displayMath.length || inlineMath.length) {
+  scheduleMathFit();
+  document.fonts.ready.then(scheduleMathFit);
+  window.addEventListener('resize', scheduleMathFit, { passive: true });
+  window.addEventListener('pageshow', scheduleMathFit);
 
-if (proseBlocks.length > 0) {
   const knownWidths = new WeakMap<HTMLElement, number>();
   const observer = new ResizeObserver((entries) => {
     let widthChanged = false;

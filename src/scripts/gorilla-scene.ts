@@ -72,15 +72,7 @@ export function mountGorilla(element: HTMLElement): () => void {
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = PCFShadowMap;
 
-  let gorilla: ReturnType<typeof createGorilla>;
-  try {
-    gorilla = createGorilla();
-  } catch (error) {
-    renderer.dispose();
-    renderer.forceContextLoss();
-    throw error;
-  }
-  const { body, head, eyes, rightArm, rightForearm } = gorilla;
+  const { body, head, eyes, rightArm, rightForearm } = createGorilla();
   body.traverse((object) => {
     if (!(object instanceof Mesh)) return;
     object.castShadow = true;

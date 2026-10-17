@@ -27,7 +27,13 @@ const links = [
           <a
             href={link.href}
             class:list={{ active: link.active }}
-            aria-current={path === link.href ? 'page' : undefined}
+            aria-current={
+              link.active
+                ? path === link.href
+                  ? 'page'
+                  : 'location'
+                : undefined
+            }
           >
             {link.label}
           </a>

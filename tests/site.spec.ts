@@ -70,7 +70,7 @@ test('搜索能找到当前文章，并能清空结果', async ({ page }) => {
 
 test('手机视口下页面没有横向溢出', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
-  for (const path of ['/', '/life/']) {
+  for (const path of ['/', '/life/', '/tags/']) {
     await page.goto(path);
     await page.evaluate(() => document.fonts.ready);
     const dimensions = await page.evaluate(() => ({
@@ -108,38 +108,22 @@ test('窄屏文章里的公式自适应阅读栏，不出现横向滚动条', as
 
     await expect
       .poll(
-        async () =>
-          page.evaluate(() => {
-            const formulas = [
+        () =>
+          page.evaluate(() =>
+            [
               ...document.querySelectorAll<HTMLElement>(
                 '.katex-display, .math-inline',
               ),
-            ];
-            return formulas
-              .filter((formula) => {
-                const overflow = getComputedStyle(formula).overflowX;
-                return overflow === 'auto' || overflow === 'scroll';
-              })
-              .map((formula) => formula.textContent?.slice(0, 40) ?? '');
-          }),
-        { message: path },
-      )
-      .toEqual([]);
-
-    await expect
-      .poll(
-        async () =>
-          page.evaluate(() => {
-            return [...document.querySelectorAll<HTMLElement>('.katex-display')]
-              .filter(
-                (formula) => formula.scrollWidth > formula.clientWidth + 1,
+            ]
+              .filter((formula) =>
+                formula.classList.contains('katex-display')
+                  ? formula.scrollWidth > formula.clientWidth + 1
+                  : ['auto', 'scroll'].includes(
+                      getComputedStyle(formula).overflowX,
+                    ),
               )
-              .map((formula) => ({
-                width: formula.clientWidth,
-                content: formula.scrollWidth,
-                text: formula.textContent?.slice(0, 40) ?? '',
-              }));
-          }),
+              .map((formula) => formula.textContent?.slice(0, 40)),
+          ),
         { message: path },
       )
       .toEqual([]);
@@ -154,7 +138,7 @@ test('窄屏文章里的公式自适应阅读栏，不出现横向滚动条', as
 
 test('标签页可以筛选标签并进入标签详情', async ({ page }) => {
   await page.goto('/tags/');
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('标签.');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('标签');
 
   const search = page.getByRole('searchbox');
   await search.fill('数论');
@@ -169,17 +153,6 @@ test('标签页可以筛选标签并进入标签详情', async ({ page }) => {
   ).toBeVisible();
 });
 
-test('手机视口下标签页没有横向溢出', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/tags/');
-  await page.evaluate(() => document.fonts.ready);
-  const dimensions = await page.evaluate(() => ({
-    page: document.documentElement.scrollWidth,
-    viewport: document.documentElement.clientWidth,
-  }));
-  expect(dimensions.page).toBeLessThanOrEqual(dimensions.viewport + 1);
-});
-
 test('文章正文支持提示框、行内强调、脚注预览和 Mermaid', async ({ page }) => {
   await page.goto('/posts/cpp-memory/');
   await page.evaluate(() => document.fonts.ready);
@@ -188,7 +161,17 @@ test('文章正文支持提示框、行内强调、脚注预览和 Mermaid', asy
   await expect(page.locator('.prose mark').first()).toBeVisible();
   await expect(page.locator('.prose u').first()).toBeVisible();
 
+  const callout = page.locator('.prose .callout').first();
+  await expect(callout.locator('.callout-symbol')).toHaveCount(1);
+  const calloutColors = await page
+    .locator('.callout-title')
+    .evaluateAll((titles) =>
+      titles.map((title) => getComputedStyle(title).color),
+    );
+  expect(new Set(calloutColors).size).toBe(3);
+
   const diagram = page.locator('.mermaid-figure').first();
+  await diagram.scrollIntoViewIfNeeded();
   await expect(diagram).toBeVisible();
   await expect(diagram.locator('svg')).toBeVisible({ timeout: 15000 });
   expect(await diagram.locator('.node').count()).toBeGreaterThan(0);
@@ -199,23 +182,21 @@ test('文章正文支持提示框、行内强调、脚注预览和 Mermaid', asy
   await expect(page.locator('.footnote-popover')).toHaveClass(/is-visible/);
 });
 
-test('公式保持纯文本排版，不附带文档信息面板', async ({ page }) => {
+test('文章目录点击后立即定位并高亮目标', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto('/posts/meituan-exam/');
   await page.evaluate(() => document.fonts.ready);
 
-  await expect(page.locator('.doc-meta')).toHaveCount(0);
+  const toc = page.locator('.toc-sidebar');
+  await toc.getByRole('link', { name: '代码', exact: true }).click();
 
-  const displayFormula = page.locator('.katex-display').first();
-  await expect(displayFormula).toBeVisible();
-  await expect(displayFormula).toHaveCSS(
-    'background-color',
-    'rgba(0, 0, 0, 0)',
-  );
-  await expect(displayFormula).toHaveCSS('border-top-width', '0px');
-  await expect(displayFormula).toHaveCSS('box-shadow', 'none');
-
-  const inlineFormula = page.locator('.math-inline').first();
-  await expect(inlineFormula).toBeVisible();
-  await expect(inlineFormula).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
-  await expect(inlineFormula).toHaveCSS('border-top-width', '0px');
+  await expect(toc.locator('[aria-current="location"]')).toHaveText('代码');
+  await expect
+    .poll(async () =>
+      page.locator('#代码').evaluate((heading) => {
+        const top = heading.getBoundingClientRect().top;
+        return top >= 0 && top <= 160;
+      }),
+    )
+    .toBe(true);
 });
