@@ -973,69 +973,23 @@ ol {
 }
 
 .related-post {
-  margin-top: 64px;
-  padding: 24px 26px 26px;
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-lg);
-  background:
-    radial-gradient(
-      30rem 14rem at 100% 0%,
-      color-mix(in srgb, var(--accent) 7%, transparent),
-      transparent 68%
-    ),
-    var(--bg-raised);
-  box-shadow: var(--shadow);
-  transition:
-    border-color var(--dur-fast) ease,
-    box-shadow var(--dur-base) ease,
-    transform var(--dur-base) var(--ease-spring);
-}
-.related-post:hover {
-  border-color: color-mix(in srgb, var(--accent) 34%, var(--rule));
-  box-shadow: var(--shadow-hover);
-  transform: translateY(-2px);
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  margin-top: 56px;
+  padding-top: 24px;
+  border-top: 1px solid var(--rule);
 }
 .related-post p {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
-  color: var(--faint);
-  margin-bottom: 11px;
-}
-.related-post p::before {
-  content: '';
-  width: 14px;
-  height: 1px;
-  background: var(--accent);
+  flex-shrink: 0;
+  color: var(--muted);
+  font-size: 13px;
 }
 .related-post a {
-  display: flex;
-  gap: 16px;
-  align-items: center;
+  min-width: 0;
   font-family: var(--font-serif);
-  font-weight: 600;
-  font-size: 20px;
-  line-height: 1.5;
-  transition: color var(--dur-fast) ease;
-}
-.related-post a svg {
-  margin-left: auto;
-  flex-shrink: 0;
-  color: var(--faint);
-  transition:
-    color var(--dur-fast) ease,
-    transform var(--dur-base) var(--ease-spring);
-}
-.related-post a:hover {
-  color: var(--accent-ink);
-}
-.related-post a:hover svg {
-  color: var(--accent);
-  transform: translateX(4px);
+  font-size: 18px;
+  line-height: 1.6;
 }
 .post-end {
   display: flex;
@@ -1473,9 +1427,6 @@ ol {
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
-  }
-  .related-post a {
-    font-size: 18px;
   }
 }
 @media (max-width: 360px) {

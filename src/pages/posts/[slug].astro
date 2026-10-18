@@ -4,7 +4,6 @@ import { render } from 'astro:content';
 import 'katex/dist/katex.min.css';
 import '../../styles/prose.css';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import Icon from '../../components/Icon.astro';
 import ImageDialog from '../../components/ImageDialog.astro';
 import { site } from '../../data/site';
 import {
@@ -119,9 +118,8 @@ const structuredArticle = {
           next && (
             <aside class="related-post">
               <p>继续阅读</p>
-              <a href={`/posts/${next.id}/`}>
+              <a class="text-link" href={`/posts/${next.id}/`}>
                 {next.data.title}
-                <Icon name="arrow" size={18} />
               </a>
             </aside>
           )
