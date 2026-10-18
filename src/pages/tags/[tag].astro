@@ -2,7 +2,13 @@
 import type { GetStaticPaths } from 'astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PostList from '../../components/PostList.astro';
-import { formatDate, getPosts, getTags, type Post } from '../../lib/posts';
+import {
+  formatDate,
+  getPosts,
+  getTags,
+  tagHref,
+  type Post,
+} from '../../lib/posts';
 import '../../styles/tags.css';
 export const getStaticPaths = (async () => {
   const posts = await getPosts();
@@ -58,7 +64,7 @@ const description = `标签「${tag}」下的 ${posts.length} 篇文章。`;
           <span class="tag-related-label">相关标签</span>
           {related.map((item) => (
             <a
-              href={`/tags/${encodeURIComponent(item.tag)}/`}
+              href={tagHref(item.tag)}
               title={`与「${tag}」共同出现在 ${item.shared} 篇文章里`}
             >
               {item.tag}

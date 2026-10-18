@@ -81,22 +81,12 @@
   box-decoration-break: clone;
 }
 .prose u {
-  text-decoration-color: color-mix(in srgb, var(--text) 55%, transparent);
-  text-decoration-thickness: 1px;
-  text-underline-offset: 0.23em;
-  text-decoration-skip-ink: auto;
-}
-/* Inline math is atomic, so bridge its underline at the text baseline. */
-.prose u .math-inline::after {
-  content: '';
-  display: inline-block;
-  width: 100%;
-  margin-left: -100%;
-  border-bottom: 1px solid color-mix(in srgb, var(--text) 55%, transparent);
-  vertical-align: -0.23em;
-}
-.prose u .math-inline.math-inline-block {
-  width: fit-content;
+  --underline-ink: color-mix(in srgb, var(--text) 55%, transparent);
+  text-decoration: none;
+  background: linear-gradient(var(--underline-ink), var(--underline-ink)) 0
+    calc(100% - 0.1em) / 100% 1px no-repeat;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 .prose del,
 .prose s {

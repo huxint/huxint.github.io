@@ -19,6 +19,9 @@ pluginFramesTexts.addLocale('zh', {
 export default defineConfig({
   site: 'https://huxint.github.io',
   trailingSlash: 'always',
+  redirects: {
+    '/tags/C%2B%2B/': '/tags/C++/',
+  },
   vite: {
     optimizeDeps: {
       include: ['mermaid'],

@@ -10,6 +10,7 @@ import {
   getPosts,
   formatDate,
   readingMinutes,
+  tagHref,
   type Post,
 } from '../../lib/posts';
 export const getStaticPaths = (async () => {
@@ -89,11 +90,7 @@ const structuredArticle = {
               {post.data.description}
             </p>
             <div class="tag-links" data-pagefind-ignore>
-              {
-                post.data.tags.map((tag) => (
-                  <a href={`/tags/${encodeURIComponent(tag)}/`}>{tag}</a>
-                ))
-              }
+              {post.data.tags.map((tag) => <a href={tagHref(tag)}>{tag}</a>)}
             </div>
           </header>
           {

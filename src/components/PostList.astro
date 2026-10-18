@@ -1,6 +1,6 @@
 ---
 import type { Post } from '../lib/posts';
-import { formatDate, readingMinutes } from '../lib/posts';
+import { formatDate, readingMinutes, tagHref } from '../lib/posts';
 import Icon from './Icon.astro';
 interface Props {
   posts: Post[];
@@ -52,7 +52,7 @@ const groups = posts.reduce<{ year: number; posts: Post[] }[]>(
                 <p>{post.data.description}</p>
                 <div class="tag-links">
                   {post.data.tags.map((tag) => (
-                    <a href={`/tags/${encodeURIComponent(tag)}/`}>{tag}</a>
+                    <a href={tagHref(tag)}>{tag}</a>
                   ))}
                 </div>
               </div>

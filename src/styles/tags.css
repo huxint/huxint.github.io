@@ -1,14 +1,10 @@
-/* Topics stay compact so the words themselves form the index. */
+/* Topics flow naturally, with restrained size differences and generous spacing. */
 .page.tag-index-page,
 .page.tag-detail-page {
   width: min(100% - 48px, 840px);
   padding-top: 48px;
 }
 .tag-hero {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 24px;
   padding-bottom: 32px;
 }
 .tag-hero h1,
@@ -25,12 +21,6 @@
   color: var(--muted);
   font-size: 15px;
   line-height: 1.8;
-}
-.tag-hero-meta {
-  padding-bottom: 3px;
-  color: var(--faint);
-  font-size: 13px;
-  white-space: nowrap;
 }
 .tag-toolbar {
   display: flex;
@@ -91,57 +81,51 @@
   text-align: right;
 }
 .tag-list {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  column-gap: 28px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 28px 48px;
+  padding-top: 40px;
 }
 .tag-list-item {
   min-width: 0;
-  border-bottom: 1px solid var(--rule);
+  max-width: 100%;
 }
 .tag-entry {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  min-height: 64px;
-  margin: 0 -6px;
-  padding: 12px 6px;
-  border-radius: 4px;
-  transition: background-color var(--dur-fast) ease;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  max-width: 100%;
+  min-height: 44px;
+  padding: 6px 0;
 }
 .tag-entry-name {
   min-width: 0;
   color: var(--text);
-  font-size: 16px;
+  font-family: var(--font-serif);
+  font-size: var(--tag-size);
   font-weight: 500;
-  line-height: 1.6;
+  line-height: 1.5;
   overflow-wrap: anywhere;
-  transition: color var(--dur-fast) ease;
-}
-.tag-entry-hash {
-  margin-right: 4px;
-  color: var(--faint);
-  font-size: 13px;
-  font-weight: 400;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.22em;
+  transition:
+    color var(--dur-fast) ease,
+    text-decoration-color var(--dur-fast) ease;
 }
 .tag-entry-count {
   flex-shrink: 0;
   color: var(--faint);
   font-size: 12px;
   font-variant-numeric: tabular-nums;
-}
-.tag-entry-count small {
-  margin-left: 3px;
-  font-size: inherit;
-}
-.tag-entry:hover,
-.tag-entry:focus-visible {
-  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  line-height: 1.5;
 }
 .tag-entry:hover .tag-entry-name,
 .tag-entry:focus-visible .tag-entry-name {
   color: var(--accent-ink);
+  text-decoration-color: color-mix(in srgb, var(--accent) 55%, transparent);
 }
 .tag-empty {
   padding: 48px 0;
@@ -227,9 +211,6 @@
     padding-top: 32px;
   }
   .tag-hero {
-    align-items: start;
-    flex-direction: column;
-    gap: 12px;
     padding-bottom: 24px;
   }
   .tag-toolbar {
@@ -245,15 +226,8 @@
     text-align: left;
   }
   .tag-list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    column-gap: 20px;
-  }
-  .tag-entry {
-    min-height: 60px;
-    gap: 8px;
-  }
-  .tag-entry-name {
-    font-size: 15px;
+    gap: 20px 28px;
+    padding-top: 32px;
   }
   .tag-detail-header {
     padding-top: 24px;

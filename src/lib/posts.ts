@@ -39,3 +39,8 @@ export function getTags(posts: Post[]): [string, Post[]][] {
     left.localeCompare(right, 'zh-CN'),
   );
 }
+
+export function tagHref(tag: string): string {
+  // A literal + is valid in a path; Astro preserves %2B when matching routes.
+  return `/tags/${encodeURIComponent(tag).replaceAll('%2B', '+')}/`;
+}
