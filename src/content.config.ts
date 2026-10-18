@@ -6,6 +6,7 @@ const posts = defineCollection({
   loader: glob({
     pattern: '*/index.md',
     base: './src/content/posts',
+    deferRender: true,
     generateId: ({ entry }) => entry.split('/')[0],
   }),
   schema: z.object({
@@ -22,6 +23,7 @@ const life = defineCollection({
   loader: glob({
     pattern: '*/index.md',
     base: './src/content/life',
+    deferRender: true,
     generateId: ({ entry }) => entry.split('/')[0],
   }),
   schema: z.object({

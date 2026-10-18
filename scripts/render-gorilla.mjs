@@ -12,7 +12,7 @@ const context = await browser.newContext({
 });
 const page = await context.newPage();
 await page.goto(base);
-await page.waitForSelector('gorilla-avatar[data-state="ready"] canvas', {
+await page.waitForSelector('[data-gorilla][data-state="ready"] canvas', {
   timeout: 30000,
 });
 // Pause the idle animation so the bake is deterministic, then let it settle.
@@ -33,7 +33,7 @@ await page.evaluate(() => {
 await page.waitForTimeout(600);
 
 const png = await page
-  .locator('gorilla-avatar canvas')
+  .locator('[data-gorilla] canvas')
   .screenshot({ omitBackground: true });
 await browser.close();
 
@@ -67,6 +67,4 @@ await sharp(head)
   .flatten({ background: '#f7f4ee' })
   .webp({ quality: 92 })
   .toFile('public/images/gorilla-share.webp');
-console.log(
-  'wrote gorilla-portrait.webp, gorilla.webp and gorilla-share.webp',
-);
+console.log('wrote gorilla-portrait.webp, gorilla.webp and gorilla-share.webp');

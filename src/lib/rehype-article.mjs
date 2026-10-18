@@ -41,23 +41,16 @@ const CALLOUT_SYMBOLS = {
 };
 
 function classesOf(node) {
-  const value = node.properties?.className;
-  if (Array.isArray(value)) return value;
-  if (typeof value === 'string') return value.split(/\s+/).filter(Boolean);
-  return [];
+  return node.properties?.className ?? [];
 }
 
 function addClasses(node, classes) {
-  node.properties = {
-    ...(node.properties ?? {}),
-    className: [...new Set([...classesOf(node), ...classes])],
-  };
+  node.properties.className = [...new Set([...classesOf(node), ...classes])];
 }
 
 function textContent(node) {
   if (node.type === 'text') return node.value;
-  if (!Array.isArray(node.children)) return '';
-  return node.children.map(textContent).join('');
+  return (node.children ?? []).map(textContent).join('');
 }
 
 function calloutTitle(callout) {
@@ -124,12 +117,12 @@ function calloutTitle(callout) {
 }
 
 function transformCallout(node) {
-  const firstIndex = node.children?.findIndex(
+  const firstIndex = node.children.findIndex(
     (child) => child.type === 'element' && child.tagName === 'p',
   );
-  if (firstIndex === undefined || firstIndex < 0) return;
+  if (firstIndex < 0) return;
   const first = node.children[firstIndex];
-  const marker = first.children?.find(
+  const marker = first.children.find(
     (child) => child.type === 'text' && /^\s*\[!/.test(child.value),
   );
   if (!marker) return;
@@ -260,7 +253,7 @@ export function rehypeArticle() {
         }
       }
 
-      if (node.tagName === 'table' && parent) {
+      if (node.tagName === 'table') {
         parent.children[index] = {
           type: 'element',
           tagName: 'div',
@@ -274,8 +267,8 @@ export function rehypeArticle() {
         };
       }
 
-      if (node.tagName === 'pre' && parent && typeof index === 'number') {
-        const code = node.children?.find(
+      if (node.tagName === 'pre') {
+        const code = node.children.find(
           (child) => child.type === 'element' && child.tagName === 'code',
         );
         if (code && classesOf(code).includes('language-mermaid')) {
@@ -286,14 +279,8 @@ export function rehypeArticle() {
 
       if (
         node.tagName === 'span' &&
-        Array.isArray(node.properties?.className) &&
-        node.properties.className.includes('katex') &&
-        parent &&
-        !(
-          parent.type === 'element' &&
-          Array.isArray(parent.properties?.className) &&
-          parent.properties.className.includes('katex-display')
-        )
+        classesOf(node).includes('katex') &&
+        !classesOf(parent).includes('katex-display')
       ) {
         parent.children[index] = {
           type: 'element',

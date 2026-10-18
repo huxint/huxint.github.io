@@ -1,14 +1,8 @@
 /*
  * Progressive enhancements for long-form posts:
  * - footnotes get an inline hover/focus preview
- * - fenced mermaid diagrams render lazily and follow the current theme
+ * - Mermaid diagrams render ahead of reading and reuse themed SVGs
  */
-
-function cssToken(name: string): string {
-  return getComputedStyle(document.documentElement)
-    .getPropertyValue(name)
-    .trim();
-}
 
 function setupFootnotePreviews(): void {
   const refs = [
@@ -120,6 +114,7 @@ type MermaidBlock = {
   figure: HTMLElement;
   target: HTMLElement;
   source: string;
+  svgs: Map<string, string>;
   theme?: string;
 };
 
@@ -135,111 +130,81 @@ function setupMermaid(): void {
     source: figure
       .querySelector<HTMLElement>('.mermaid-source')!
       .textContent!.trim(),
+    svgs: new Map(),
   }));
-  const visible = new Set<MermaidBlock>();
+  const pending = new Set<MermaidBlock>();
+  const mermaidPromise = Promise.all([
+    import('mermaid'),
+    document.fonts.ready,
+  ]).then(([module]) => module.default);
+  let running = false;
+  let rendered = 0;
+  let configuredTheme: string | undefined;
 
-  let renderSequence = 0;
-  let scheduled = 0;
-  let mermaidPromise: Promise<typeof import('mermaid').default> | undefined;
-
-  async function renderAll(): Promise<void> {
-    const sequence = ++renderSequence;
-    const theme = document.documentElement.dataset.theme!;
-    const pending = [...visible].filter((block) => block.theme !== theme);
-    if (pending.length === 0) return;
-
-    for (const block of pending) {
+  async function renderPending(): Promise<void> {
+    if (running) return;
+    running = true;
+    while (pending.size) {
+      const block = pending.values().next().value!;
+      pending.delete(block);
       block.figure.classList.add('is-rendering');
-      block.figure.classList.remove('has-error');
-    }
-
-    try {
-      mermaidPromise ??= import('mermaid').then((module) => module.default);
-      const mermaid = await mermaidPromise;
-      if (sequence !== renderSequence) return;
-
-      mermaid.initialize({
-        startOnLoad: false,
-        securityLevel: 'strict',
-        theme: 'base',
-        fontFamily: cssToken('--font-sans'),
-        themeVariables: {
-          fontSize: '14px',
-          primaryColor: cssToken('--accent-soft'),
-          primaryTextColor: cssToken('--text'),
-          primaryBorderColor: cssToken('--accent'),
-          secondaryColor: cssToken('--surface'),
-          tertiaryColor: cssToken('--bg-sunken'),
-          lineColor: cssToken('--muted'),
-          clusterBkg: cssToken('--bg-sunken'),
-          clusterBorder: cssToken('--rule-strong'),
-          edgeLabelBackground: cssToken('--bg'),
-          textColor: cssToken('--text'),
-          mainBkg: cssToken('--accent-soft'),
-          nodeBorder: cssToken('--accent'),
-        },
-        flowchart: {
-          htmlLabels: true,
-          curve: 'basis',
-          nodeSpacing: 36,
-          rankSpacing: 48,
-          padding: 14,
-        },
-      });
-
-      for (const [index, block] of pending.entries()) {
-        if (sequence !== renderSequence) return;
-        try {
-          const { svg } = await mermaid.render(
-            `mermaid-${index}-${sequence}`,
-            block.source,
-          );
-          if (sequence !== renderSequence) return;
-          block.target.innerHTML = svg;
-          block.theme = theme;
-          block.figure.classList.add('is-rendered');
-          block.figure.classList.remove('is-rendering', 'has-error');
-        } catch {
-          block.figure.classList.remove('is-rendering');
-          block.figure.classList.add('has-error');
-          block.target.innerHTML =
-            '<p class="mermaid-error">图表渲染失败，下面保留了原始源码。</p>';
+      try {
+        const mermaid = await mermaidPromise;
+        const theme = document.documentElement.dataset.theme!;
+        if (block.theme === theme) continue;
+        let svg = block.svgs.get(theme);
+        if (!svg) {
+          if (configuredTheme !== theme) {
+            mermaid.initialize({
+              startOnLoad: false,
+              securityLevel: 'strict',
+              theme: theme === 'dark' ? 'dark' : 'neutral',
+              fontFamily: getComputedStyle(document.body).fontFamily,
+              themeVariables: { fontSize: '14px' },
+              flowchart: {
+                htmlLabels: true,
+                curve: 'basis',
+                nodeSpacing: 36,
+                rankSpacing: 48,
+                padding: 14,
+              },
+            });
+            configuredTheme = theme;
+          }
+          svg = (await mermaid.render(`mermaid-${++rendered}`, block.source))
+            .svg;
+          block.svgs.set(theme, svg);
         }
-      }
-    } catch {
-      for (const block of pending) {
-        block.figure.classList.remove('is-rendering');
+        if (theme !== document.documentElement.dataset.theme) {
+          pending.add(block);
+          continue;
+        }
+        block.target.innerHTML = svg;
+        block.theme = theme;
+        block.figure.classList.add('is-rendered');
+        block.figure.classList.remove('has-error');
+      } catch {
         block.figure.classList.add('has-error');
         block.target.innerHTML =
-          '<p class="mermaid-error">图表加载失败，下面保留了原始源码。</p>';
+          '<p class="mermaid-error">图表暂时无法显示，下面保留了原始源码。</p>';
+      } finally {
+        block.figure.classList.remove('is-rendering');
       }
     }
+    running = false;
   }
 
   function scheduleRender(): void {
-    if (scheduled) cancelAnimationFrame(scheduled);
-    scheduled = requestAnimationFrame(() => {
-      scheduled = 0;
-      void renderAll();
-    });
+    const theme = document.documentElement.dataset.theme!;
+    for (const block of blocks) if (block.theme !== theme) pending.add(block);
+    void renderPending();
   }
 
-  const observer = new IntersectionObserver(
-    (entries) => {
-      for (const entry of entries) {
-        if (!entry.isIntersecting) continue;
-        visible.add(blocks.find((block) => block.figure === entry.target)!);
-        observer.unobserve(entry.target);
-      }
-      scheduleRender();
-    },
-    { rootMargin: '320px' },
-  );
-  for (const block of blocks) observer.observe(block.figure);
   new MutationObserver(scheduleRender).observe(document.documentElement, {
     attributes: true,
     attributeFilter: ['data-theme'],
   });
+  scheduleRender();
 }
 
 setupFootnotePreviews();

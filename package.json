@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "astro sync --force && astro build && pagefind --site dist --glob 'posts/*/index.html'",
+    "build": "astro build && pagefind --site dist --glob 'posts/*/index.html'",
     "preview": "astro preview",
     "check": "astro check",
     "format": "prettier --write .",

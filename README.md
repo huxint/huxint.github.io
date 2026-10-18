@@ -28,7 +28,7 @@ tags: ['算法']
 
 `==高亮==`、`++下划线++` 和 `~~删除线~~` 可以和公式、链接混用。提示用 `> [!NOTE]`、`TIP`、`IMPORTANT`、`WARNING` 或 `CAUTION`；围栏代码块支持 `diff` 和 `mermaid`。完整示例在本地的 `/posts/writing-sample/`。
 
-构建会自动刷新 Markdown 缓存。修改渲染插件后做本地预览时，先运行 `pnpm exec astro sync --force`，再启动预览。
+Markdown 交由页面按需渲染，内容集合不再缓存完整 HTML。修改渲染插件后，重启本地开发服务即可。
 
 ## 写生活
 

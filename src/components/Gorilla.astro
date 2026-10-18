@@ -2,7 +2,7 @@
 import Icon from './Icon.astro';
 ---
 
-<gorilla-avatar class="gorilla-avatar">
+<div class="gorilla-avatar" data-gorilla>
   <div class="gorilla-stage">
     <div class="gorilla-backdrop" aria-hidden="true"></div>
     <span class="gorilla-greeting" role="status" data-gorilla-status></span>
@@ -52,46 +52,24 @@ import Icon from './Icon.astro';
     拖动可以旋转，点击可以打招呼。键盘左右方向键旋转，Home 键恢复视角，Enter
     键打招呼。
   </p>
-</gorilla-avatar>
+</div>
 
 <script>
-  class GorillaAvatar extends HTMLElement {
-    private visibility?: IntersectionObserver;
-    private dispose?: () => void;
-    private generation = 0;
-
-    connectedCallback() {
-      const generation = ++this.generation;
-      this.visibility = new IntersectionObserver(
-        (entries) => {
-          if (!entries.some((entry) => entry.isIntersecting)) return;
-          this.visibility?.disconnect();
-          void this.load(generation);
-        },
-        { rootMargin: '120px' },
-      );
-      this.visibility.observe(this);
-    }
-
-    private async load(generation: number) {
+  const avatar = document.querySelector<HTMLElement>('[data-gorilla]')!;
+  const visibility = new IntersectionObserver(
+    async ([entry]) => {
+      if (!entry.isIntersecting) return;
+      visibility.disconnect();
       try {
         const { mountGorilla } = await import('../scripts/gorilla-scene');
-        if (generation !== this.generation) return;
-        this.dispose = mountGorilla(this);
+        mountGorilla(avatar);
       } catch {
-        this.dataset.state = 'fallback';
+        avatar.dataset.state = 'fallback';
       }
-    }
-
-    disconnectedCallback() {
-      this.generation++;
-      this.visibility?.disconnect();
-      this.dispose?.();
-      this.dispose = undefined;
-    }
-  }
-
-  customElements.define('gorilla-avatar', GorillaAvatar);
+    },
+    { rootMargin: '120px' },
+  );
+  visibility.observe(avatar);
 </script>
 
 <style>

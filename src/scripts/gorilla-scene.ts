@@ -12,9 +12,7 @@ import {
   PlaneGeometry,
   Scene,
   RGBAFormat,
-  Texture,
   WebGLRenderer,
-  type Material,
 } from 'three';
 import { createGorilla } from '../lib/gorilla-model';
 
@@ -42,7 +40,7 @@ function contactShadow(): DataTexture {
   return texture;
 }
 
-export function mountGorilla(element: HTMLElement): () => void {
+export function mountGorilla(element: HTMLElement): void {
   const canvas = element.querySelector<HTMLCanvasElement>('canvas')!;
   const poster = element.querySelector<HTMLImageElement>('.gorilla-poster')!;
   const controls = element.querySelector<HTMLElement>('.gorilla-controls')!;
@@ -53,8 +51,6 @@ export function mountGorilla(element: HTMLElement): () => void {
     '[data-gorilla-status]',
   )!;
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-  const events = new AbortController();
-  const { signal } = events;
   const scene = new Scene();
   const camera = new OrthographicCamera(-2.65, 2.65, 2.65, -2.65, 0.1, 30);
   camera.position.set(0, 0.65, 8);
@@ -250,140 +246,100 @@ export function mountGorilla(element: HTMLElement): () => void {
     draw();
   }
 
-  canvas.addEventListener(
-    'pointerdown',
-    (event) => {
-      if (!event.isPrimary || event.button !== 0) return;
-      pointerId = event.pointerId;
+  canvas.addEventListener('pointerdown', (event) => {
+    if (!event.isPrimary || event.button !== 0) return;
+    pointerId = event.pointerId;
+    pointerX = event.clientX;
+    dragDistance = 0;
+    canvas.setPointerCapture(event.pointerId);
+  });
+
+  canvas.addEventListener('pointermove', (event) => {
+    if (pointerId === event.pointerId) {
+      const distance = event.clientX - pointerX;
+      dragDistance += Math.abs(distance);
+      yaw += distance * 0.012;
       pointerX = event.clientX;
-      dragDistance = 0;
-      canvas.setPointerCapture(event.pointerId);
-    },
-    { signal },
-  );
-
-  canvas.addEventListener(
-    'pointermove',
-    (event) => {
-      if (pointerId === event.pointerId) {
-        const distance = event.clientX - pointerX;
-        dragDistance += Math.abs(distance);
-        yaw += distance * 0.012;
-        pointerX = event.clientX;
-        draw();
-      } else if (event.pointerType === 'mouse' && motionEnabled) {
-        const bounds = canvas.getBoundingClientRect();
-        headX =
-          MathUtils.clamp(
-            (event.clientY - bounds.top) / bounds.height - 0.5,
-            -0.5,
-            0.5,
-          ) * 0.12;
-        headY =
-          MathUtils.clamp(
-            (event.clientX - bounds.left) / bounds.width - 0.5,
-            -0.5,
-            0.5,
-          ) * 0.2;
-      }
-    },
-    { signal },
-  );
-
-  canvas.addEventListener(
-    'pointerup',
-    (event) => {
-      if (pointerId !== event.pointerId) return;
-      pointerId = undefined;
-      canvas.releasePointerCapture(event.pointerId);
-      if (dragDistance < 5) greet();
-    },
-    { signal },
-  );
-  canvas.addEventListener(
-    'lostpointercapture',
-    () => {
-      pointerId = undefined;
-    },
-    { signal },
-  );
-  canvas.addEventListener(
-    'pointerleave',
-    () => {
-      headX = 0;
-      headY = 0;
-    },
-    { signal },
-  );
-
-  canvas.addEventListener(
-    'keydown',
-    (event) => {
-      switch (event.key) {
-        case 'ArrowLeft':
-          yaw -= Math.PI / 8;
-          break;
-        case 'ArrowRight':
-          yaw += Math.PI / 8;
-          break;
-        case 'Home':
-          resetView();
-          break;
-        case 'Enter':
-        case ' ':
-          greet();
-          break;
-        default:
-          return;
-      }
-      event.preventDefault();
       draw();
-    },
-    { signal },
-  );
+    } else if (event.pointerType === 'mouse' && motionEnabled) {
+      const bounds = canvas.getBoundingClientRect();
+      headX =
+        MathUtils.clamp(
+          (event.clientY - bounds.top) / bounds.height - 0.5,
+          -0.5,
+          0.5,
+        ) * 0.12;
+      headY =
+        MathUtils.clamp(
+          (event.clientX - bounds.left) / bounds.width - 0.5,
+          -0.5,
+          0.5,
+        ) * 0.2;
+    }
+  });
+
+  canvas.addEventListener('pointerup', (event) => {
+    if (pointerId !== event.pointerId) return;
+    pointerId = undefined;
+    canvas.releasePointerCapture(event.pointerId);
+    if (dragDistance < 5) greet();
+  });
+  canvas.addEventListener('lostpointercapture', () => {
+    pointerId = undefined;
+  });
+  canvas.addEventListener('pointerleave', () => {
+    headX = 0;
+    headY = 0;
+  });
+
+  canvas.addEventListener('keydown', (event) => {
+    switch (event.key) {
+      case 'ArrowLeft':
+        yaw -= Math.PI / 8;
+        break;
+      case 'ArrowRight':
+        yaw += Math.PI / 8;
+        break;
+      case 'Home':
+        resetView();
+        break;
+      case 'Enter':
+      case ' ':
+        greet();
+        break;
+      default:
+        return;
+    }
+    event.preventDefault();
+    draw();
+  });
 
   element
     .querySelector('[data-gorilla-greet]')!
-    .addEventListener('click', greet, { signal });
+    .addEventListener('click', greet);
   element
     .querySelector('[data-gorilla-reset]')!
-    .addEventListener('click', resetView, { signal });
-  motionButton.addEventListener(
-    'click',
-    () => {
-      applyMotion(!motionEnabled);
-    },
-    { signal },
-  );
-  reducedMotion.addEventListener(
-    'change',
-    () => {
-      applyMotion(!reducedMotion.matches);
-    },
-    { signal },
-  );
-  document.addEventListener('visibilitychange', syncAnimation, { signal });
+    .addEventListener('click', resetView);
+  motionButton.addEventListener('click', () => {
+    applyMotion(!motionEnabled);
+  });
+  reducedMotion.addEventListener('change', () => {
+    applyMotion(!reducedMotion.matches);
+  });
+  document.addEventListener('visibilitychange', syncAnimation);
 
-  canvas.addEventListener(
-    'webglcontextlost',
-    (event) => {
-      event.preventDefault();
-      hasContext = false;
-      showCanvas(false);
-      syncAnimation();
-    },
-    { signal },
-  );
-  canvas.addEventListener(
-    'webglcontextrestored',
-    () => {
-      hasContext = true;
-      resize();
-      showCanvas(true);
-      syncAnimation();
-    },
-    { signal },
-  );
+  canvas.addEventListener('webglcontextlost', (event) => {
+    event.preventDefault();
+    hasContext = false;
+    showCanvas(false);
+    syncAnimation();
+  });
+  canvas.addEventListener('webglcontextrestored', () => {
+    hasContext = true;
+    resize();
+    showCanvas(true);
+    syncAnimation();
+  });
 
   const visibility = new IntersectionObserver(([entry]) => {
     inView = entry.isIntersecting;
@@ -410,35 +366,4 @@ export function mountGorilla(element: HTMLElement): () => void {
   resize();
   showCanvas(true);
   syncAnimation();
-
-  return () => {
-    clearTimeout(greetingTimeout);
-    greetingStatus.textContent = '';
-    cancelAnimationFrame(frame);
-    events.abort();
-    visibility.disconnect();
-    dimensions.disconnect();
-    theme.disconnect();
-    key.shadow.dispose();
-    const geometries = new Set<Mesh['geometry']>();
-    const materials = new Set<Material>();
-    const textures = new Set<Texture>();
-    scene.traverse((object) => {
-      if (!(object instanceof Mesh)) return;
-      geometries.add(object.geometry);
-      for (const material of [object.material].flat()) materials.add(material);
-    });
-    geometries.forEach((geometry) => geometry.dispose());
-    for (const material of materials) {
-      for (const value of Object.values(material))
-        if (value instanceof Texture) textures.add(value);
-      material.dispose();
-    }
-    textures.forEach((texture) => texture.dispose());
-    renderer.dispose();
-    renderer.forceContextLoss();
-    showCanvas(false);
-    // A lost WebGL context belongs to its canvas and cannot be reused on remount.
-    canvas.replaceWith(canvas.cloneNode());
-  };
 }

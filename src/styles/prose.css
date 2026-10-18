@@ -81,12 +81,8 @@
   box-decoration-break: clone;
 }
 .prose u {
-  --underline-ink: color-mix(in srgb, var(--text) 55%, transparent);
-  text-decoration: none;
-  background: linear-gradient(var(--underline-ink), var(--underline-ink)) 0
-    calc(100% - 0.1em) / 100% 1px no-repeat;
-  -webkit-box-decoration-break: clone;
-  box-decoration-break: clone;
+  text-decoration-thickness: from-font;
+  text-underline-offset: 0.2em;
 }
 .prose del,
 .prose s {
