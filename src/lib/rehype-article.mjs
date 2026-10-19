@@ -1,4 +1,5 @@
 import { visit } from 'unist-util-visit';
+import { renderBlock } from './render-blocks.mjs';
 
 const CALLOUTS = new Map([
   ['note', { type: 'note', label: '说明' }],
@@ -273,6 +274,13 @@ export function rehypeArticle() {
         );
         if (code && classesOf(code).includes('language-mermaid')) {
           parent.children[index] = mermaidFigure(textContent(code));
+          return;
+        }
+        if (code && classesOf(code).includes('language-render')) {
+          parent.children[index] = renderBlock(
+            textContent(code),
+            code.data?.meta,
+          );
           return;
         }
       }

@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .astro/
+.agents/
 docs/
 .cache/
 test-results/

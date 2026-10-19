@@ -1,5 +1,6 @@
 import { openImageViewer } from './image-viewer';
 import './article-enhancements';
+import './render-blocks';
 import './math';
 
 document

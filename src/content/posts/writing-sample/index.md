@@ -259,6 +259,114 @@ flowchart LR
     B --> D["文章样式"]
 ```
 
+## 直接写在正文里的图
+
+使用 `render 类型` 标记绘图块：`render svg`、`render excalidraw` 直接绘图，`render html` 可以写 HTML、CSS 和 JavaScript。图形就在正文里，背景透明，不需要为每幅图另存一个资源文件。`title` 是可选的图注。
+
+### SVG
+
+SVG 可以使用 `currentColor` 和文章的 CSS 变量，随主题一起变化。
+
+```render svg title="输入经过变换得到输出"
+<svg viewBox="0 0 560 144" xmlns="http://www.w3.org/2000/svg">
+  <g fill="none" stroke="var(--rule-strong)" stroke-width="1.5">
+    <rect x="8" y="36" width="128" height="64" rx="8" />
+    <rect x="216" y="36" width="128" height="64" rx="8" />
+    <rect x="424" y="36" width="128" height="64" rx="8" />
+    <path d="M146 68h58m-8-6 8 6-8 6M354 68h58m-8-6 8 6-8 6" />
+  </g>
+  <g fill="currentColor" text-anchor="middle" font-size="18">
+    <text x="72" y="75">输入</text>
+    <text x="280" y="75">变换</text>
+    <text x="488" y="75">输出</text>
+  </g>
+</svg>
+```
+
+### HTML 与 Canvas
+
+下面的柱形图由 Canvas 绘制。拖动滑块会改变数值，切换主题会重绘；整块内容沿用文章字体和颜色，按内容自动撑高。
+
+```render html title="拖动滑块，观察平方的增长"
+<style>
+  .square-demo { padding-block: 12px; }
+  .square-demo label { display: flex; align-items: center; gap: 16px; }
+  .square-demo input { flex: 1; min-width: 0; accent-color: var(--accent); }
+  .square-demo output { min-width: 6em; font-variant-numeric: tabular-nums; }
+  .square-demo canvas { display: block; width: 100%; margin-bottom: 16px; }
+</style>
+<div class="square-demo">
+  <canvas role="img" aria-label="从 1 到 n 的平方柱形图"></canvas>
+  <label>
+    <span>n</span>
+    <input type="range" min="2" max="12" value="7" aria-label="项数" />
+    <output></output>
+  </label>
+</div>
+<script>
+  const canvas = document.querySelector('canvas');
+  const input = document.querySelector('input');
+  const output = document.querySelector('output');
+  const context = canvas.getContext('2d');
+
+  function draw() {
+    const n = Number(input.value);
+    const width = canvas.clientWidth;
+    const height = 180;
+    const scale = devicePixelRatio;
+    canvas.width = width * scale;
+    canvas.height = height * scale;
+    canvas.style.height = `${height}px`;
+    context.scale(scale, scale);
+    const colors = getComputedStyle(document.documentElement);
+    const gap = 8;
+    const barWidth = (width - (n - 1) * gap) / n;
+    for (let i = 1; i <= n; i++) {
+      const barHeight = (i * i / 144) * 144;
+      const x = (i - 1) * (barWidth + gap);
+      context.fillStyle = colors.getPropertyValue('--accent');
+      context.fillRect(x, 150 - barHeight, barWidth, barHeight);
+      context.fillStyle = colors.getPropertyValue('--muted');
+      context.font = '12px sans-serif';
+      context.textAlign = 'center';
+      context.fillText(String(i), x + barWidth / 2, 174);
+    }
+    output.textContent = `${n}² = ${n * n}`;
+  }
+
+  input.addEventListener('input', draw);
+  window.addEventListener('themechange', draw);
+  new ResizeObserver(draw).observe(document.querySelector('.square-demo'));
+  draw();
+</script>
+```
+
+普通的 `html` 代码块只显示源码，不会执行：
+
+```html
+<p>这是一段用于讲解的 HTML。</p>
+```
+
+### Excalidraw
+
+将 `.excalidraw` 文件里的 JSON 直接粘贴进代码块即可，也可以像下面这样手写场景。
+
+```render excalidraw title="Excalidraw 手绘图直接来自文章源码"
+{
+  "type": "excalidraw",
+  "version": 2,
+  "elements": [
+    { "id": "source", "type": "rectangle", "x": 0, "y": 0, "width": 160, "height": 80, "strokeColor": "#1e1e1e", "backgroundColor": "#e7f5ff", "fillStyle": "hachure", "roughness": 1, "seed": 10 },
+    { "id": "arrow", "type": "arrow", "x": 178, "y": 40, "width": 90, "height": 0, "points": [[0, 0], [90, 0]], "endArrowhead": "arrow", "strokeColor": "#1e1e1e", "seed": 20 },
+    { "id": "result", "type": "ellipse", "x": 290, "y": 0, "width": 160, "height": 80, "strokeColor": "#1e1e1e", "backgroundColor": "#fff3bf", "fillStyle": "hachure", "roughness": 1, "seed": 30 },
+    { "id": "source-label", "type": "text", "x": 30, "y": 28, "width": 100, "height": 25, "text": "Markdown", "fontSize": 20, "fontFamily": 2, "textAlign": "center", "strokeColor": "#1e1e1e" },
+    { "id": "result-label", "type": "text", "x": 320, "y": 28, "width": 100, "height": 25, "text": "Drawing", "fontSize": 20, "fontFamily": 2, "textAlign": "center", "strokeColor": "#1e1e1e" }
+  ],
+  "appState": { "viewBackgroundColor": "#ffffff" },
+  "files": {}
+}
+```
+
 ## 图片
 
 Markdown 图片的替代文本用于描述内容，标题会显示为图注。

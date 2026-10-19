@@ -24,7 +24,7 @@ export default defineConfig({
   },
   vite: {
     optimizeDeps: {
-      include: ['mermaid'],
+      include: ['mermaid', '@excalidraw/excalidraw'],
     },
     build: {
       // Astro can inline scripts before Vite resolves their dynamic-import preload markers.

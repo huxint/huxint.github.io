@@ -510,6 +510,34 @@
   font-size: 13px;
 }
 
+/* Source-driven figures sit directly on the page, without preview chrome. */
+.prose .render-block {
+  margin: 2em 0;
+}
+.prose .render-canvas > svg,
+.prose .render-canvas::part(svg) {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin-inline: auto;
+}
+.prose .render-canvas > iframe {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: transparent;
+}
+.prose .render-block.is-rendering .render-canvas:empty::before {
+  content: '正在绘制图示…';
+  color: var(--muted);
+  font-size: 13px;
+}
+.prose .render-error {
+  margin: 0;
+  color: var(--annotation-caution);
+  font-size: 13px;
+}
+
 /* Footnotes are small links, with a preview only when requested. */
 .prose sup {
   line-height: 0;
@@ -675,7 +703,8 @@
     overflow: visible;
   }
   .prose .katex-display,
-  .prose .mermaid-figure {
+  .prose .mermaid-figure,
+  .prose .render-block {
     break-inside: avoid;
   }
   .prose .katex-display > .katex,
