@@ -1,11 +1,12 @@
 import inter from '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?inline';
 import mono from '@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2?inline';
 
+// The host owns vertical scrolling, so viewport scrollbars must not narrow the measurement.
 const baseStyle = `
   @font-face{font-family:'Inter Variable';font-style:normal;font-weight:100 900;font-display:swap;src:url('${inter}') format('woff2')}
   @font-face{font-family:'JetBrains Mono Variable';font-style:normal;font-weight:100 800;font-display:swap;src:url('${mono}') format('woff2')}
   *,*::before,*::after{box-sizing:border-box}
-  html{background:transparent}
+  html{background:transparent;overflow-y:clip}
   body{display:flow-root;margin:0;min-width:0;background:transparent;color:var(--text);font:17px/1.95 var(--font-sans);overflow-wrap:break-word}
   button,input,select,textarea{font:inherit;color:inherit}
   code,pre{font-family:var(--font-mono)}
@@ -23,12 +24,15 @@ function frameBridge(): void {
 
   function reportHeight(): void {
     pendingFrame = false;
-    const height = Math.ceil(
-      Math.max(
-        document.body.scrollHeight,
-        document.body.getBoundingClientRect().height,
-      ),
-    );
+    const horizontalScrollbarHeight =
+      window.innerHeight - document.documentElement.clientHeight;
+    const height =
+      Math.ceil(
+        Math.max(
+          document.body.scrollHeight,
+          document.body.getBoundingClientRect().height,
+        ),
+      ) + horizontalScrollbarHeight;
     if (height === previousHeight) return;
     previousHeight = height;
     parent.postMessage(
@@ -55,6 +59,7 @@ function frameBridge(): void {
     );
   });
   new ResizeObserver(scheduleHeight).observe(document.body);
+  window.addEventListener('resize', reportHeight);
   window.addEventListener('load', reportHeight);
   void document.fonts.ready.then(reportHeight);
 }
