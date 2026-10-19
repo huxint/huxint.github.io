@@ -153,35 +153,6 @@ test('标签页可以筛选标签并进入标签详情', async ({ page }) => {
   ).toBeVisible();
 });
 
-test('文章正文支持提示框、行内强调、脚注预览和 Mermaid', async ({ page }) => {
-  await page.goto('/posts/cpp-memory/');
-  await page.evaluate(() => document.fonts.ready);
-
-  await expect(page.locator('.prose .callout')).toHaveCount(3);
-  await expect(page.locator('.prose mark').first()).toBeVisible();
-  await expect(page.locator('.prose u').first()).toBeVisible();
-
-  const callout = page.locator('.prose .callout').first();
-  await expect(callout.locator('.callout-symbol')).toHaveCount(1);
-  const calloutColors = await page
-    .locator('.callout-title')
-    .evaluateAll((titles) =>
-      titles.map((title) => getComputedStyle(title).color),
-    );
-  expect(new Set(calloutColors).size).toBe(3);
-
-  const diagram = page.locator('.mermaid-figure').first();
-  await diagram.scrollIntoViewIfNeeded();
-  await expect(diagram).toBeVisible();
-  await expect(diagram.locator('svg')).toBeVisible({ timeout: 15000 });
-  expect(await diagram.locator('.node').count()).toBeGreaterThan(0);
-
-  const footnote = page.locator('.prose sup a').first();
-  await footnote.scrollIntoViewIfNeeded();
-  await footnote.hover();
-  await expect(page.locator('.footnote-popover')).toHaveClass(/is-visible/);
-});
-
 test('文章目录点击后立即定位并高亮目标', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto('/posts/meituan-exam/');

@@ -199,3 +199,32 @@ test('写作样例的 diff 区分上下文和行内改动，Mermaid 直接显示
   await expect(page).toHaveURL(/#user-content-fnref-note$/);
   expect(errors).toEqual([]);
 });
+
+test('文章正文支持提示框、行内强调、脚注预览和 Mermaid', async ({ page }) => {
+  await page.goto('/posts/writing-sample/');
+  await page.evaluate(() => document.fonts.ready);
+
+  await expect(page.locator('.prose .callout')).toHaveCount(5);
+  await expect(page.locator('.prose mark').first()).toBeVisible();
+  await expect(page.locator('.prose u').first()).toBeVisible();
+
+  const callout = page.locator('.prose .callout').first();
+  await expect(callout.locator('.callout-symbol')).toHaveCount(1);
+  const calloutColors = await page
+    .locator('.callout-title')
+    .evaluateAll((titles) =>
+      titles.map((title) => getComputedStyle(title).color),
+    );
+  expect(new Set(calloutColors).size).toBe(5);
+
+  const diagram = page.locator('.mermaid-figure').first();
+  await diagram.scrollIntoViewIfNeeded();
+  await expect(diagram).toBeVisible();
+  await expect(diagram.locator('svg')).toBeVisible({ timeout: 15000 });
+  expect(await diagram.locator('.node').count()).toBeGreaterThan(0);
+
+  const footnote = page.locator('.prose sup a').first();
+  await footnote.scrollIntoViewIfNeeded();
+  await footnote.hover();
+  await expect(page.locator('.footnote-popover')).toHaveClass(/is-visible/);
+});
