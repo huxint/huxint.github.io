@@ -55,8 +55,8 @@ function frameBridge(): void {
     );
   });
   new ResizeObserver(scheduleHeight).observe(document.body);
-  window.addEventListener('load', scheduleHeight);
-  void document.fonts.ready.then(scheduleHeight);
+  window.addEventListener('load', reportHeight);
+  void document.fonts.ready.then(reportHeight);
 }
 
 const bridgeSource = `(${frameBridge.toString()})();`;

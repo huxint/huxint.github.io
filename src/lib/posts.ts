@@ -21,8 +21,9 @@ export function formatDate(date: Date): string {
 }
 
 export function readingMinutes(body: string = ''): number {
-  const chineseCharacters = body.match(/[\u4e00-\u9fff]/g)?.length ?? 0;
-  const words = body.match(/[a-zA-Z0-9]+/g)?.length ?? 0;
+  const text = body.replace(/^```render[^\n]*\n[\s\S]*?^```[ \t]*$/gm, '');
+  const chineseCharacters = text.match(/[\u4e00-\u9fff]/g)?.length ?? 0;
+  const words = text.match(/[a-zA-Z0-9]+/g)?.length ?? 0;
   return Math.max(1, Math.ceil(chineseCharacters / 400 + words / 200));
 }
 
