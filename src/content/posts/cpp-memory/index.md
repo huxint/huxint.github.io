@@ -55,59 +55,165 @@ void work() {
 }
 ```
 
-`count`、`values` 每次调用重新创建，`calls` 跨调用保留。vector 自身只存管理信息，元素另行分配；`sizeof(values)` 不包含那片元素。点“函数返回”看清理过程：
+`count`、`values` 每次调用重新创建，`calls` 跨调用保留。vector 自身只存管理信息，元素另行分配；`sizeof(values)` 不包含那片元素。拖动时间轴查看各个阶段，或点“函数返回”看清理过程：
 
-```render html title="vector 对象与元素不在同一片存储里。函数返回会触发拥有者的析构。"
+```render html
 <style>
-  .lifetime-lab { --dynamic: #386f9b; padding-block: 8px; }
-  :root[data-theme="dark"] .lifetime-lab { --dynamic: #8ebce2; }
-  .lifetime-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 16px; font-size: 14px; }
-  .lifetime-phase { color: var(--muted); }
-  .lifetime-scene svg { display: block; width: 100%; }
-  .lifetime-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 22px; margin-top: 12px; }
-  .lifetime-controls button { min-height: 44px; border: 0; border-bottom: 1px solid var(--rule-strong); border-radius: 0; padding: 4px 0; background: transparent; font-size: 15px; cursor: pointer; }
-  .lifetime-controls .lifetime-next { color: var(--accent-ink); border-color: var(--accent); }
-  .lifetime-note { display: block; margin-top: 14px; min-height: 2em; color: var(--muted); font-size: 13px; }
+  .life-score { --blue: #356f9b; --amber: #ae622f; --amber-soft: #f0dfc9; position: relative; padding: 12px 0 4px; }
+  :root[data-theme="dark"] .life-score { --blue: #95bfdc; --amber: #e3ad77; --amber-soft: #3e3022; }
+  .score-scene { --score-ink: var(--text); --score-blue: var(--blue); position: relative; }
+  .life-score[data-ended="true"] .score-scene { --score-ink: var(--rule-strong); --score-blue: var(--rule-strong); }
+  .life-score[data-ended="true"] .score-wash { opacity: .35; }
+  .score-present { will-change: transform; }
+  .score-scene svg { display: block; width: 100%; overflow: visible; }
+  .score-scene text { dominant-baseline: middle; font-family: var(--font-mono); }
+  .score-name { fill: var(--text); font-size: 14px; }
+  .score-region { fill: var(--muted); font-family: var(--font-sans) !important; font-size: 12px; letter-spacing: 2px; text-anchor: middle; }
+  .score-scrub { position: absolute; top: 35px; height: 44px; margin: 0; padding: 0; appearance: none; background: transparent; cursor: ew-resize; }
+  .score-scrub::-webkit-slider-runnable-track { height: 1px; background: transparent; }
+  .score-scrub::-webkit-slider-thumb { appearance: none; width: 14px; height: 22px; margin-top: -11px; border: 1px solid var(--text); border-radius: 4px; background: linear-gradient(90deg, transparent 5px, var(--rule-strong) 5px, var(--rule-strong) 7px, transparent 7px), var(--bg-raised); box-shadow: 0 2px 4px rgb(0 0 0 / .08); }
+  .score-scrub::-moz-range-track { height: 1px; background: transparent; }
+  .score-scrub::-moz-range-thumb { width: 12px; height: 20px; border: 1px solid var(--text); border-radius: 4px; background: var(--bg-raised); }
+  .score-scrub:focus-visible { outline-offset: 5px; }
+  .score-controls { display: flex; justify-content: flex-end; align-items: center; gap: 14px; margin-top: 8px; padding-right: 12px; }
+  .score-controls button { display: inline-flex; justify-content: center; align-items: center; min-height: 44px; border: 0; background: transparent; cursor: pointer; }
+  .score-next { gap: 12px; padding: 0 0 0 12px; font-size: 13px; }
+  .score-next svg { width: 36px; height: 32px; padding: 8px; border: 1px solid var(--rule-strong); border-radius: 5px; background: var(--bg-raised); box-shadow: 0 2px 0 var(--rule); }
+  .score-next:hover svg { border-color: var(--text); }
+  .score-reset { width: 44px; padding: 0; color: var(--muted); }
+  .score-reset svg { width: 15px; height: 15px; }
+  .score-controls button:disabled { cursor: default; opacity: .5; }
+  .score-sr { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 </style>
-<section class="lifetime-lab" data-returned="false" aria-label="函数调用中的局部对象、动态元素与静态对象">
-  <div class="lifetime-top"><span>第 <b class="lifetime-call">1</b> 次调用 work()</span><span class="lifetime-phase">即将返回</span></div>
-  <div class="lifetime-scene"></div>
-  <div class="lifetime-controls"><button type="button" class="lifetime-next">函数返回</button><button type="button" class="lifetime-reset">重置</button></div>
-  <output class="lifetime-note" aria-live="polite">沿着箭头看：values 拥有另一片存储中的三个元素。</output>
+<section class="life-score" aria-label="拖动时间切面，观察对象的生命线">
+  <div class="score-scene"></div>
+  <input class="score-scrub" type="range" min="0" max="1000" step="1" value="620" aria-label="函数调用时间" />
+  <div class="score-controls">
+    <button class="score-reset" type="button" aria-label="重置演示" title="重置"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 5a5.5 5.5 0 1 1-1 5M3 1v4h4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <button class="score-next" type="button"><span>函数返回</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13 3v6H3m4-4L3 9l4 4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  </div>
+  <output class="score-sr" aria-live="polite"></output>
 </section>
 <script>
-  const lab = document.querySelector('.lifetime-lab'), scene = document.querySelector('.lifetime-scene');
-  const next = document.querySelector('.lifetime-next');
-  let calls = 1, returned = false;
-  function draw() {
-    const w = scene.clientWidth, narrow = w < 500, bx = narrow?12:24, bw = narrow?w-24:w*.37;
-    const dx = narrow?bx:w*.64, dy = narrow?228:82, dw = narrow?bw:w*.33;
-    const sy = narrow?364:228;
-    const text = (x,y,label,fill='var(--text)',size=14) => `<text x="${x}" y="${y}" fill="${fill}" font-size="${size}">${label}</text>`;
-    scene.innerHTML = `<svg viewBox="0 0 ${w} ${sy+76}" role="img" aria-label="${returned?'局部对象销毁，元素存储归还分配器，calls 保留':'局部 values 指向动态元素，静态 calls 独立保留'}">
-      <defs><marker id="owner-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M1 1L8 5L1 9" fill="none" stroke="var(--dynamic)" stroke-width="1.5"/></marker></defs>
-      ${text(bx,22,'本次调用 · 通常在栈上','var(--muted)',13)}
-      <path d="M${bx} 40v128h${bw}V40" stroke="${returned?'var(--rule)':'var(--rule-strong)'}" fill="none" ${returned?'stroke-dasharray="4 5"':''}/>
-      ${returned?`${text(bx+16,85,'局部对象已销毁','var(--muted)')}${text(bx+16,120,'栈空间可以复用','var(--muted)',13)}`:`${text(bx+16,76,'count = 3')}${text(bx+16,124,'values')}<circle cx="${bx+bw-24}" cy="120" r="3" fill="var(--dynamic)"/>`}
-      ${text(dx,dy-18,'动态存储','var(--dynamic)',13)}
-      ${returned?`<path d="M${dx} ${dy}h${dw}v60h-${dw}z" fill="none" stroke="var(--rule-strong)" stroke-dasharray="4 5"/>${text(dx+12,dy+36,'已归还分配器','var(--muted)',13)}`:[0,1,2].map(i=>`<rect x="${dx+i*dw/3}" y="${dy}" width="${dw/3}" height="60" fill="var(--dynamic)" fill-opacity=".09" stroke="var(--dynamic)"/><text x="${dx+(i+.5)*dw/3}" y="${dy+38}" text-anchor="middle" fill="var(--dynamic)" font-size="22">7</text>`).join('')}
-      ${!returned?`<path d="${narrow?`M${bx+bw-24} 120v78H${dx+dw/2}v26`:`M${bx+bw-24} 120H${dx-8}`}" fill="none" stroke="var(--dynamic)" stroke-width="1.5" marker-end="url(#owner-arrow)"/>`:''}
-      <path d="M${bx} ${sy}H${w-12}" stroke="var(--rule)"/>
-      ${text(bx,sy+30,'静态存储','var(--muted)',13)}${text(narrow?bx+94:bx+120,sy+30,`calls = ${calls}`,'var(--accent-ink)',18)}
-      ${text(bx,sy+59,'函数返回后继续保留','var(--muted)',13)}
+  const lab = document.querySelector('.life-score');
+  const scene = lab.querySelector('.score-scene');
+  const scrub = lab.querySelector('.score-scrub');
+  const next = lab.querySelector('.score-next');
+  const reset = lab.querySelector('.score-reset');
+  const actionLabel = next.querySelector('span'), actionIcon = next.querySelector('path');
+  let invocation = 1, time = .62, width = 0, start, span, nodes, stateKey = '', inputFrame = 0;
+  function layout(w) {
+    width = w;
+    const narrow = w < 500, end = w - 22;
+    start = narrow ? 98 : 154;
+    span = end - start;
+    const at = t => start + span * t;
+    const cut = at(.8), countBorn = at(.06), valuesBorn = at(.24), elementsBorn = at(.32);
+    const tracks = `<path d="M${countBorn} 104H${cut-10}" stroke="var(--score-ink)" stroke-width="2"/>
+      <path d="M${valuesBorn} 153H${cut-10}" stroke="var(--score-blue)" stroke-width="3"/>
+      ${[211,233,255].map(y=>`<path d="M${elementsBorn} ${y}H${cut-10}" stroke="var(--score-blue)" stroke-width="1.5"/>`).join('')}`;
+    const bead = (y,label,tone) => `<circle cy="${y}" r="12" fill="var(--bg)"/><text y="${y+1}" fill="${tone}" font-size="16" text-anchor="middle">${label}</text>`;
+    scene.innerHTML = `<svg viewBox="0 0 ${w} 356" role="img">
+      <defs>
+        <linearGradient id="call-wash" x1="0" x2="1"><stop stop-color="var(--surface)" stop-opacity=".3"/><stop offset="1" stop-color="var(--surface)" stop-opacity=".65"/></linearGradient>
+        <clipPath id="score-past"><rect class="score-clip" x="${start-12}" y="70" width="0" height="282"/></clipPath>
+      </defs>
+      <path class="score-wash" d="M${start-12} 67H${cut-10}V282H${start-12}Z" fill="url(#call-wash)"/>
+      <text x="${start-12}" y="17" fill="var(--text)" font-size="${narrow?13:16}">work()<tspan class="score-invocation" dx="8" fill="var(--muted)" font-size="12"></tspan></text>
+      <path d="M${start-12} 45H${end+8}m-4-3 4 3-4 3" fill="none" stroke="var(--rule-strong)"/>
+      ${Array.from({length:9},(_,i)=>`<path d="M${at(i/10)} 42v6" stroke="var(--rule-strong)"/>`).join('')}
+      <text x="${cut+4}" y="17" fill="var(--muted)" font-size="12" text-anchor="middle">return</text>
+      <path d="M${cut-1} 70q12 0 12 14v68q0 17 12 17-12 0-12 17v80q0 14-12 14" fill="none" stroke="var(--rule-strong)" stroke-width="1.4"/>
+      <path d="M${cut+11} 293v47" stroke="var(--rule-strong)" stroke-dasharray="2 5"/>
+      <path d="M19 88h-5v75h5M19 201h-5v64h5M19 309h-5v26h5" fill="none" stroke="var(--rule-strong)"/>
+      <text class="score-region" x="8" y="125" transform="rotate(-90 8 125)">栈</text>
+      <text class="score-region" x="8" y="233" transform="rotate(-90 8 233)">动态</text>
+      <text class="score-region" x="8" y="322" transform="rotate(-90 8 322)">静态</text>
+      <text class="score-name" x="30" y="104">count</text>
+      <text class="score-name" x="30" y="153" style="fill:var(--blue)">values</text>
+      <text class="score-name" x="30" y="233" style="fill:var(--blue)">元素</text>
+      <g fill="none" stroke-linecap="round">
+        <g opacity=".12">${tracks}</g>
+        <g clip-path="url(#score-past)">
+          ${tracks}
+          <circle cx="${countBorn}" cy="104" r="3" fill="var(--score-ink)"/>
+          <circle cx="${valuesBorn}" cy="153" r="3" fill="var(--score-blue)"/>
+          <path class="score-fork" d="M${valuesBorn+3} 153v63q0 17 12 17h${Math.max(0,elementsBorn-valuesBorn-15)}M${elementsBorn-5} 211v44${[211,233,255].map(y=>`M${elementsBorn-5} ${y}h5`).join('')}" stroke="var(--score-blue)" stroke-width="1.2" opacity=".6"/>
+          <path d="M${start-12} 322H${end}" stroke="var(--amber)" stroke-width="2.5"/>
+        </g>
+      </g>
+      <g class="score-ends" fill="var(--bg)" stroke="var(--rule-strong)">${[104,153,211,233,255].map(y=>`<circle cx="${cut-10}" cy="${y}" r="3"/>`).join('')}</g>
+      <text class="score-name" x="30" y="322" style="fill:var(--amber)">calls</text>
+      <path d="M${start-12} 322H${end+8}m-4-3 4 3-4 3" stroke="var(--amber)" fill="none" stroke-width="1.5" opacity=".3"/>
+      <g class="score-previous"><circle cx="${start-5}" cy="322" r="9" fill="var(--bg)"/><text class="score-previous-value" x="${start-5}" y="323" fill="var(--amber)" font-size="12" text-anchor="middle"></text></g>
+      <g class="score-present">
+        <path d="M0 58V341" stroke="var(--text)" stroke-width="1" opacity=".22"/>
+        <g class="score-count">${bead(104,3,'var(--text)')}</g>
+        <circle class="score-values" cy="153" r="5" fill="var(--blue)"/>
+        <g class="score-elements">${[211,233,255].map(y=>bead(y,7,'var(--blue)')).join('')}</g>
+        <circle cy="322" r="16" fill="var(--amber-soft)" stroke="var(--amber)"/>
+        <text class="score-call-value" y="323" fill="var(--amber)" font-size="19" text-anchor="middle"></text>
+      </g>
     </svg>`;
+    nodes = Object.fromEntries(['clip','present','count','values','elements','fork','ends','previous','previous-value','call-value','invocation'].map(name=>[name,scene.querySelector('.score-'+name)]));
+    nodes.svg = scene.querySelector('svg');
+    scrub.style.left = `${start-7}px`;
+    scrub.style.width = `${span+14}px`;
+    stateKey = '';
+    update();
   }
-  function refresh() {
-    lab.dataset.returned=String(returned);
-    document.querySelector('.lifetime-call').textContent=calls;
-    document.querySelector('.lifetime-phase').textContent=returned?'已经返回':'即将返回';
-    next.textContent=returned?'再次调用':'函数返回';
-    document.querySelector('output').textContent=returned?'values 析构 → 元素生命周期结束 → 存储归还分配器。':calls===1?'沿着箭头看：values 拥有另一片存储中的三个元素。':'本次局部对象重新创建；calls 在旧值上加一。';
+  function update() {
+    const now = start + span*time, dead = time >= .8;
+    const calls = invocation - (time < .16 ? 1 : 0);
+    nodes.present.style.transform = `translate3d(${now}px,0,0)`;
+    nodes.clip.setAttribute('width', now-start+12);
+    scrub.value = Math.round(time*1000);
+    const phase = `${invocation}:${calls}:${time>=.06}:${time>=.24}:${time>=.32}:${dead}`;
+    if (phase === stateKey) return;
+    stateKey = phase;
+    lab.dataset.ended = String(dead);
+    nodes.count.style.visibility = !dead && time>=.06 ? 'visible' : 'hidden';
+    nodes.values.style.visibility = !dead && time>=.24 ? 'visible' : 'hidden';
+    nodes.elements.style.visibility = !dead && time>=.32 ? 'visible' : 'hidden';
+    nodes.fork.style.visibility = time>=.24 ? 'visible' : 'hidden';
+    nodes.ends.style.visibility = dead ? 'visible' : 'hidden';
+    nodes.previous.style.visibility = invocation>1 ? 'visible' : 'hidden';
+    nodes['previous-value'].textContent = invocation-1;
+    nodes['call-value'].textContent = calls;
+    nodes.invocation.textContent = '#'+invocation;
+    nodes.svg.setAttribute('aria-label', `第 ${invocation} 次 work 调用；${dead?'局部对象与元素的生命线止于返回处，':'函数尚未返回，'}calls 为 ${calls}，跨调用保留`);
+    scrub.setAttribute('aria-valuetext', `第 ${invocation} 次调用，${dead?'返回后':'调用中'}，calls = ${calls}`);
+    actionLabel.textContent = dead ? '再次调用' : '函数返回';
+    actionIcon.setAttribute('d', dead ? 'M4 3l9 5-9 5Z' : 'M13 3v6H3m4-4L3 9l4 4');
   }
-  next.addEventListener('click',()=>{ if(returned)calls++; returned=!returned; refresh(); draw(); });
-  document.querySelector('.lifetime-reset').addEventListener('click',()=>{ calls=1; returned=false; refresh(); draw(); });
-  new ResizeObserver(draw).observe(scene);
-  refresh();
+  function announce() {
+    lab.querySelector('output').textContent = scrub.getAttribute('aria-valuetext');
+  }
+  function animate(to) {
+    const from = time, began = performance.now(), duration = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 900;
+    next.disabled = reset.disabled = scrub.disabled = true;
+    function frame(now) {
+      const p = duration ? Math.min(1,(now-began)/duration) : 1;
+      time = from + (to-from)*(p*p*(3-2*p));
+      update();
+      if (p<1) requestAnimationFrame(frame);
+      else { next.disabled = reset.disabled = scrub.disabled = false; announce(); }
+    }
+    requestAnimationFrame(frame);
+  }
+  next.addEventListener('click', () => {
+    if (time >= .8) { invocation++; time = 0; animate(.62); }
+    else animate(1);
+  });
+  scrub.addEventListener('input', () => {
+    time = Number(scrub.value)/1000;
+    if (inputFrame) return;
+    inputFrame = requestAnimationFrame(() => { inputFrame = 0; update(); });
+  });
+  reset.addEventListener('click', () => { invocation = 1; time = .62; update(); announce(); });
+  new ResizeObserver(([entry]) => {
+    if (entry.contentRect.width !== width) layout(entry.contentRect.width);
+  }).observe(scene);
 </script>
 ```
 
