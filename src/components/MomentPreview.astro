@@ -3,10 +3,9 @@ import { Image } from 'astro:assets';
 import Icon from './Icon.astro';
 import { formatDate } from '../lib/posts';
 import {
-  momentCounts,
   momentDate,
   momentExcerpt,
-  momentImages,
+  momentMedia,
   type Moment,
 } from '../lib/life';
 
@@ -16,8 +15,8 @@ interface Props {
 const { moment } = Astro.props;
 const date = formatDate(moment.data.date);
 const { weekday } = momentDate(moment);
-const images = momentImages(moment).slice(0, 3);
-const { photos, videos } = momentCounts(moment);
+const { images, photos, videos } = momentMedia(moment);
+const previews = images.slice(0, 3);
 const media = [photos && `${photos} 张照片`, videos && `${videos} 段视频`]
   .filter(Boolean)
   .join('，');
@@ -48,8 +47,8 @@ const media = [photos && `${photos} 张照片`, videos && `${videos} 段视频`]
   </div>
   {
     images.length > 0 && (
-      <div class="moment-preview-prints" data-count={images.length}>
-        {images.map((image) => (
+      <div class="moment-preview-prints" data-count={previews.length}>
+        {previews.map((image) => (
           <div class="moment-print">
             <Image
               src={image}

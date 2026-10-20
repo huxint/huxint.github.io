@@ -1,8 +1,4 @@
-import {
-  exportToSvg,
-  getNonDeletedElements,
-  restoreElements,
-} from '@excalidraw/excalidraw';
+import { exportScene } from '@excalidraw/utils';
 
 export async function render(
   target: HTMLElement,
@@ -11,7 +7,6 @@ export async function render(
   const scene = JSON.parse(source);
   if (!Array.isArray(scene.elements))
     throw new Error('Excalidraw 场景需要包含 elements 数组。');
-  const elements = getNonDeletedElements(restoreElements(scene.elements, null));
   const svgs = new Map<string, Promise<SVGSVGElement>>();
   let revision = 0;
 
@@ -20,13 +15,12 @@ export async function render(
     const theme = document.documentElement.dataset.theme!;
     const pendingSvg =
       svgs.get(theme) ??
-      exportToSvg({
-        elements,
-        files: scene.files ?? null,
-        appState: {
-          ...scene.appState,
-          exportBackground: false,
-          exportWithDarkMode: theme === 'dark',
+      exportScene({
+        type: 'svg',
+        data: scene,
+        config: {
+          canvasBackgroundColor: false,
+          theme: theme === 'dark' ? 'dark' : 'light',
         },
       });
     svgs.set(theme, pendingSvg);

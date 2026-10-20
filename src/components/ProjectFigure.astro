@@ -11,11 +11,10 @@ interface Props {
 const { figure } = Astro.props;
 ---
 
-<figure class="project-figure" data-figure>
+<figure class="project-figure">
   <button
     class="figure-frame"
     type="button"
-    data-figure-open
     aria-label={`放大图片：${figure.alt}`}
   >
     <img
@@ -27,6 +26,5 @@ const { figure } = Astro.props;
       decoding="async"
     />
   </button>
-  <p class="figure-missing">图片暂时无法加载。{figure.alt}。</p>
   <figcaption>{figure.caption}</figcaption>
 </figure>

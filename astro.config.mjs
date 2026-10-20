@@ -23,8 +23,29 @@ export default defineConfig({
     '/tags/C%2B%2B/': '/tags/C++/',
   },
   vite: {
+    plugins: [
+      {
+        name: 'excalidraw-font-assets',
+        apply: 'build',
+        transform(code, id) {
+          if (!id.includes('/@excalidraw/utils/')) return;
+          // The exporter embeds every font. Keep them as assets loaded on demand.
+          return code.replace(
+            /"data:font\/woff2;base64,([^"]+)"/g,
+            (_, data) => {
+              const file = this.emitFile({
+                type: 'asset',
+                name: 'excalidraw.woff2',
+                source: Buffer.from(data, 'base64'),
+              });
+              return `import.meta.ROLLUP_FILE_URL_${file}`;
+            },
+          );
+        },
+      },
+    ],
     optimizeDeps: {
-      include: ['mermaid', '@excalidraw/excalidraw'],
+      include: ['mermaid', '@excalidraw/utils'],
     },
     build: {
       // Astro can inline scripts before Vite resolves their dynamic-import preload markers.

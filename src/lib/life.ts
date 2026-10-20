@@ -20,13 +20,9 @@ export async function getMoments(): Promise<Moment[]> {
 const dateParts = new Intl.DateTimeFormat('zh-CN', {
   timeZone: 'Asia/Shanghai',
   year: 'numeric',
-  month: 'numeric',
-  day: 'numeric',
   weekday: 'short',
 });
-const MONTHS = '一二三四五六七八九十'.split('').concat(['十一', '十二']);
 
-// Calendar fields as seen in China, e.g. { year: 2026, month: '九月', day: 22, weekday: '周二' }.
 export function momentDate(moment: Moment) {
   const parts = Object.fromEntries(
     dateParts
@@ -35,8 +31,6 @@ export function momentDate(moment: Moment) {
   );
   return {
     year: Number(parts.year),
-    month: `${MONTHS[Number(parts.month) - 1]}月`,
-    day: Number(parts.day),
     weekday: parts.weekday,
   };
 }
@@ -46,38 +40,33 @@ const stills = import.meta.glob<{ default: ImageMetadata }>(
   { eager: true },
 );
 const videoFile = /\.(?:mp4|webm|mov)$/i;
+const posters = new Map(
+  Object.entries(stills).map(([path, image]) => [
+    path.replace(/\.[^.]+$/, ''),
+    image.default,
+  ]),
+);
 
-function mediaUrls(moment: Moment): string[] {
+export function momentMedia(moment: Moment) {
   const directory = posix.join('/', posix.dirname(moment.filePath ?? ''));
-  return [...(moment.body ?? '').matchAll(/!\[[^\]]*\]\(([^)\s]+)/g)].map(
+  const urls = [...(moment.body ?? '').matchAll(/!\[[^\]]*\]\(([^)\s]+)/g)].map(
     ([, url]) => posix.join(directory, decodeURI(url)),
   );
-}
-
-// A record's photos and video posters, in the order they were written.
-export function momentImages(moment: Moment): ImageMetadata[] {
   const images: ImageMetadata[] = [];
-  for (const path of mediaUrls(moment)) {
-    const stem = path.replace(videoFile, '');
-    const source = videoFile.test(path)
-      ? Object.keys(stills).find(
-          (candidate) => candidate.replace(/\.[^.]+$/, '') === stem,
-        )
-      : path;
-    const image = source && stills[source]?.default;
+  let videos = 0;
+  for (const path of urls) {
+    const isVideo = videoFile.test(path);
+    if (isVideo) videos++;
+    const image = isVideo
+      ? posters.get(path.replace(videoFile, ''))
+      : stills[path]?.default;
     if (image) images.push(image);
   }
-  return images;
+  return { images, photos: urls.length - videos, videos };
 }
 
 export function momentCover(moment: Moment): ImageMetadata | undefined {
-  return momentImages(moment)[0];
-}
-
-export function momentCounts(moment: Moment) {
-  const urls = mediaUrls(moment);
-  const videos = urls.filter((url) => videoFile.test(url)).length;
-  return { photos: urls.length - videos, videos };
+  return momentMedia(moment).images[0];
 }
 
 export function momentExcerpt(moment: Moment, limit = 60): string {

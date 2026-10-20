@@ -1,25 +1,7 @@
-import { openImageViewer } from './image-viewer';
+import './image-viewer';
 import './article-enhancements';
 import './render-blocks';
 import './math';
-
-document
-  .querySelectorAll<HTMLImageElement>('.prose .article-image img')
-  .forEach((image) => {
-    const trigger = document.createElement('button');
-    trigger.type = 'button';
-    trigger.className = 'image-trigger';
-    trigger.setAttribute('aria-label', `放大图片：${image.alt}`);
-    image.before(trigger);
-    trigger.append(image);
-    trigger.addEventListener('click', () => {
-      openImageViewer(
-        image,
-        image.closest('figure')?.querySelector('figcaption')?.textContent ||
-          image.alt,
-      );
-    });
-  });
 
 const tocLinks = [
   ...document.querySelectorAll<HTMLAnchorElement>('[data-toc-link]'),

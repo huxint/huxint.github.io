@@ -18,8 +18,6 @@
   --hairline: rgb(255 255 255 / 0.58);
   --shadow:
     0 1px 2px rgb(40 30 10 / 0.05), 0 18px 46px -32px rgb(40 30 10 / 0.32);
-  --shadow-hover:
-    0 2px 3px rgb(40 30 10 / 0.06), 0 24px 54px -30px rgb(40 30 10 / 0.34);
   --font-sans:
     'Inter Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI',
     'PingFang SC', 'Hiragino Sans GB', 'Noto Sans CJK SC', 'Source Han Sans SC',
@@ -60,8 +58,6 @@
   --portrait-border: #35343b;
   --hairline: rgb(255 255 255 / 0.07);
   --shadow: 0 1px 2px rgb(0 0 0 / 0.38), 0 20px 48px -32px rgb(0 0 0 / 0.82);
-  --shadow-hover:
-    0 2px 4px rgb(0 0 0 / 0.42), 0 28px 58px -30px rgb(0 0 0 / 0.9);
 }
 
 *,
@@ -73,6 +69,7 @@ html {
   scroll-behavior: smooth;
   scroll-padding-top: calc(var(--header-height) + 24px);
   scrollbar-gutter: stable;
+  scrollbar-color: var(--rule-strong) transparent;
   -webkit-text-size-adjust: 100%;
 }
 body {
@@ -90,9 +87,6 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-html {
-  scrollbar-color: var(--rule-strong) transparent;
-}
 strong {
   font-weight: 650;
 }

@@ -1,19 +1,6 @@
 ---
 interface Props {
-  name:
-    | 'search'
-    | 'sun'
-    | 'moon'
-    | 'arrow'
-    | 'external'
-    | 'github'
-    | 'rss'
-    | 'close'
-    | 'rotate'
-    | 'pause'
-    | 'play'
-    | 'chevron'
-    | 'pin';
+  name: keyof typeof paths;
   size?: number;
 }
 const { name, size = 20 } = Astro.props;

@@ -287,20 +287,6 @@
   font-size: 14px;
   line-height: 1.7;
 }
-.project-figure .figure-missing {
-  display: none;
-  padding: 24px;
-  color: var(--muted);
-  font-size: 15px;
-}
-.project-figure.is-missing .figure-frame {
-  display: none;
-}
-.project-figure.is-missing .figure-missing {
-  display: block;
-  border: 1px dashed var(--rule-strong);
-  border-radius: 12px;
-}
 .example-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
