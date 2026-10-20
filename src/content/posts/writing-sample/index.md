@@ -1,7 +1,8 @@
 ---
 title: "Markdown 排版样例"
-description: "写作时可参考的公式、代码、图片与 Markdown 语法。"
+description: "写作时可参考的公式、代码、内嵌图示与 Markdown 语法。"
 pubDate: 2026-09-06
+updatedDate: 2026-10-20
 tags: ["写作"]
 draft: true
 ---
@@ -67,7 +68,6 @@ A=\begin{bmatrix}1&2\\3&4\end{bmatrix},
 g(x)=\begin{cases}x,&x\ge0,\\-x,&x<0.\end{cases}
 \tag{1}
 $$
-
 
 ### arraystretch 与矩阵行距
 
@@ -367,11 +367,11 @@ SVG 可以使用 `currentColor` 和文章的 CSS 变量，随主题一起变化�
 }
 ```
 
-## 图片
+## 图示跟文章放在一起
 
-Markdown 图片的替代文本用于描述内容，标题会显示为图注。
+技术图示优先直接写在上面的 `render svg`、`render html` 或 `mermaid` 围栏里。图形、样式和交互脚本都跟着文章保存，不再单独放图片、HTML、JS 或 CSS 附件；普通 `svg` / `html` 围栏仍表示展示源码。
 
-![Transformer 编码器与解码器结构](../transformer/architecture.svg "图片支持点击放大，也可以用键盘打开与关闭。")
+生活照片和实况视频继续使用生活记录自己的媒体语法。
 
 ## 表格与列表
 

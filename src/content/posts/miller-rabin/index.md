@@ -2,12 +2,11 @@
 title: "米勒–拉宾素性测试：从原理到 64 位实现"
 description: "从费马小定理出发，再把平方链看一遍，就能解释 561 这种合数为什么会被抓住。"
 pubDate: 2026-09-06T09:00:00+08:00
+updatedDate: 2026-10-20
 tags: ["算法", "数论", "C++"]
 ---
 
-判断素数，最直接的办法是试除。数小的时候没什么问题，到了 64 位就有点顶不住了。Miller–Rabin 换了个角度：不找因子，而是试着抓住一个“素数不该有的表现”。
-
-它从费马小定理出发。不过只看最后一步还不够，中间平方的过程也得一起看。
+Miller–Rabin 通过幂运算寻找“素数不该有的表现”。它能快速判断 64 位整数是否为素数，不需要先找到因子。
 
 ## 从费马小定理开始
 
@@ -17,13 +16,11 @@ $$
 a^{p-1}\equiv1\pmod p.
 $$
 
-所以，只要能找到一个不满足这个式子的 $a$，就能排除素数。麻烦的是，有些合数也能混过去，比如
+不满足就能判合数，但满足不一定是素数：
 
 $$
 561=3\times11\times17,\qquad 2^{560}\equiv1\pmod{561}.
 $$
-
-所以只靠这个式子，还不太够。
 
 ## 看看平方是怎么走到 1 的
 
@@ -41,33 +38,76 @@ $$
 n-1=d\,2^s,\qquad d\text{ 为奇数}.
 $$
 
-先算 $x_0=a^d\bmod n$，再不断平方。若 $n$ 是素数，要么一开始就得到 $1$，要么在最后走到 $1$ 之前，出现过 $n-1$。否则，这个基底就找到了合数的证据。
+先算 $a^d\bmod n$，再最多平方 $s-1$ 次。素数必须满足：起点为 $1$，或途中出现 $n-1$（即 $-1$）。否则判合数。
 
-拿 $561$ 试一下。$560=35\times2^4$，以 $2$ 为基底，平方链是
+点选下面三个数，对照一次检查：
 
-$$
-263\longrightarrow166\longrightarrow67\longrightarrow1.
-$$
-
-![561 的平方链](./witness.svg "67 平方后模 561 得到 1，前面却没有出现 560。")
-
-$67$ 既不是 $1$ 也不是 $560$，下一步却到了 $1$，所以 $561$ 是合数。只看费马小定理的最后一步，就会漏掉这里的问题。
+```render html
+<style>
+  .mr-lab { padding-block: 8px; }
+  .mr-cases { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 20px; }
+  .mr-cases button { min-height: 44px; padding: 6px 0; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--muted); font: 16px var(--font-mono); cursor: pointer; }
+  .mr-cases button[aria-pressed="true"] { border-color: var(--accent); color: var(--text); }
+  .mr-cases small { margin-left: auto; color: var(--muted); font-size: 12px; }
+  .mr-setup { margin: 22px 0 0; color: var(--muted); font: 13px var(--font-mono); }
+  .mr-drawing svg { display: block; width: 100%; }
+  .mr-result { display: block; font-size: 15px; line-height: 1.8; }
+  .mr-result strong { margin-right: 12px; color: var(--accent-ink); font-weight: 600; }
+</style>
+<section class="mr-lab" aria-label="Miller–Rabin 平方链">
+  <div class="mr-cases"><button type="button" data-n="561" aria-pressed="true">561</button><button type="button" data-n="17" aria-pressed="false">17</button><button type="button" data-n="2047" aria-pressed="false">2047</button><small>基底 a = 2</small></div>
+  <p class="mr-setup"></p><div class="mr-drawing"></div><output class="mr-result" aria-live="polite"></output>
+</section>
+<script>
+  let n = 561;
+  const drawing = document.querySelector('.mr-drawing');
+  function draw() {
+    let d = n - 1, s = 0;
+    while (d % 2 === 0) { d /= 2; s += 1; }
+    let x = 1;
+    for (let i = 0; i < d; i += 1) x = x * 2 % n;
+    const chain = [x];
+    for (let i = 1; i < s && x !== 1 && x !== n - 1; i += 1) { x = x * x % n; chain.push(x); }
+    const w = drawing.clientWidth, folded = w < 420 && chain.length === 4;
+    const points = chain.map((_, i) => folded ? [{x:w*.23,y:64},{x:w*.77,y:64},{x:w*.77,y:196},{x:w*.23,y:196}][i] : {x:w*(i+.5)/chain.length,y:85});
+    const h = folded ? 260 : 158;
+    const edges = points.slice(1).map((to, i) => {
+      const from = points[i], dx = to.x-from.x, dy = to.y-from.y, len = Math.hypot(dx,dy);
+      const a = {x:from.x+dx/len*36,y:from.y+dy/len*(dy?64:36)}, b = {x:to.x-dx/len*36,y:to.y-dy/len*36};
+      return `<path d="M${a.x} ${a.y}L${b.x} ${b.y}" stroke="var(--rule-strong)" stroke-width="1.5" marker-end="url(#mr-arrow)"/>`;
+    }).join('');
+    drawing.innerHTML = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${n} 的平方链：${chain.join('，')}。每次平方并模 ${n}">
+      <defs><marker id="mr-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M1 1L8 5L1 9" fill="none" stroke="var(--muted)" stroke-width="1.5"/></marker></defs>
+      ${edges}${points.map((p,i) => `${i===chain.length-1?`<circle cx="${p.x}" cy="${p.y}" r="32" fill="var(--accent-soft)"/>`:''}<text x="${p.x}" y="${p.y+10}" text-anchor="middle" fill="${i===chain.length-1?'var(--accent-ink)':'var(--text)'}" font-family="var(--font-mono)" font-size="${w<420?28:34}">${chain[i]}</text><text x="${p.x}" y="${p.y+52}" text-anchor="middle" fill="var(--muted)" font-size="12">2<tspan dy="-5" font-size="12">${d*2**i}</tspan></text>`).join('')}
+    </svg>`;
+    document.querySelector('.mr-setup').textContent = `${n} − 1 = ${d} × 2^${s}　·　沿箭头平方取模`;
+    document.querySelector('output').innerHTML = n===561 ? '<strong>发现合数</strong>67 ≠ ±1，平方却得到 1。' : n===17 ? '<strong>本轮通过</strong>出现 −1 ≡ 16，即可停下。' : '<strong>本轮通过，但仍是合数</strong>起点为 1；2047 = 23 × 89。';
+  }
+  document.querySelectorAll('[data-n]').forEach(button => button.addEventListener('click', () => {
+    n = Number(button.dataset.n);
+    document.querySelectorAll('[data-n]').forEach(item => item.setAttribute('aria-pressed', String(item===button)));
+    draw();
+  }));
+  new ResizeObserver(draw).observe(drawing);
+</script>
+```
 
 ## 多换几个基底
 
-一个基底通过了，也还不能下结论。比如 $2047=23\times89$，就能通过基底 $2$ 的检查。
-
-我平时用的模板对 `uint64_t` 选了这七个基底：
+通过一个基底还不能下结论。对 `uint64_t`，依次检查这七个基底：
 
 $$
 \{2,325,9375,28178,450775,9780504,1795265022\}.
 $$
 
-依次检查，只要有一个不通过就直接判合数。模乘用 `__uint128_t` 先接住乘积，代码写起来比较直接。
+在 $0\le n<2^{64}$ 范围内，这组固定基底足以做确定性判定；不能把这个结论直接推广到任意大整数。模乘用 `__uint128_t` 先接住两个 64 位数的乘积，避免取模前就溢出；这是 GCC / Clang 常见的扩展类型。
 
 ## 代码
 
-~~~cpp title="miller-rabin.cpp"
+<details>
+<summary>展开可直接编译的 C++20 实现</summary>
+
+```cpp
 #include <array>
 #include <bit>
 #include <cstdint>
@@ -130,9 +170,11 @@ int main() {
         std::cout << (isPrime(n) ? "Prime" : "Composite") << '\n';
     }
 }
-~~~
+```
 
-把 $561$ 的平方链自己算一遍，比盯着定义看有用得多。真正容易忘的不是七个基底，而是“平方后第一次出现 $n-1$ 就可以停”这个细节。
+</details>
+
+每个基底只需要一次快速幂和少量平方；七个基底固定，按一次模乘为常数计，时间是 $O(\log n)$，额外空间 $O(1)$。
 
 ## 参考
 

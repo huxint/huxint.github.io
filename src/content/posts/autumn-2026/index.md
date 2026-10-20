@@ -2,6 +2,7 @@
 title: "9 月秋招总结"
 description: "9 月秋招基本没有收获：1 个小厂面试，2 个笔试，其他基本全是测评。趁着还记得，记录一下。"
 pubDate: 2026-09-30
+updatedDate: 2026-10-20
 tags: ["秋招", "面试复盘", "并查集", "模拟"]
 ---
 
@@ -31,15 +32,47 @@ tags: ["秋招", "面试复盘", "并查集", "模拟"]
 
 同一条边可能被好几个三角形共用，但没必要两两合并，都跟第一次记录的那个合并就行了。
 
-例如，四个三角形分别为 `(0, 1, 2)`、`(2, 1, 3)`、`(2, 3, 4)`、`(5, 6, 7)`。前两个共享边 `(1, 2)`，中间两个共享边 `(2, 3)`，所以前三个属于同一个集合，答案为 `3`。
+蓝色标出共享的边。连通性可以传递，只共享一个顶点则不算：
+
+```render html
+<style>.triangle-scene svg { display: block; width: 100%; } .triangle-scene { --edge: #386f9b; } :root[data-theme="dark"] .triangle-scene { --edge: #8ebce2; }</style>
+<div class="triangle-scene"></div>
+<script>
+  const scene=document.querySelector('.triangle-scene');
+  function draw() {
+    const w=scene.clientWidth, narrow=w<500, scale=narrow?(w-40)/240:1.25, ox=narrow?20:24, oy=28;
+    const points=[[0,200],[150,200],[70,80],[230,120],[200,0]].map(([x,y])=>({x:ox+x*scale,y:oy+y*scale}));
+    const baseline=oy+200*scale;
+    const dX=narrow?w/2:w*.79,dY=narrow?baseline+114:164;
+    const d=[{x:dX-55,y:dY+32},{x:dX+55,y:dY+32},{x:dX,y:dY-48}];
+    const polygon=(ids,label)=>`<polygon points="${ids.map(i=>`${points[i].x},${points[i].y}`).join(' ')}" fill="var(--edge)" fill-opacity=".07" stroke="var(--rule-strong)"/><text x="${ids.reduce((sum,i)=>sum+points[i].x,0)/3}" y="${ids.reduce((sum,i)=>sum+points[i].y,0)/3+5}" text-anchor="middle" fill="var(--text)" font-size="20">${label}</text>`;
+    scene.innerHTML=`<svg viewBox="0 0 ${w} ${narrow?baseline+210:330}" role="img" aria-label="A 与 B 共享边 1、2，B 与 C 共享边 2、3，三个连成一组。D 独立，最大集合大小为 3">
+      ${polygon([0,1,2],'A')}${polygon([2,1,3],'B')}${polygon([2,3,4],'C')}
+      ${[[1,2],[2,3]].map(([a,b])=>`<path d="M${points[a].x} ${points[a].y}L${points[b].x} ${points[b].y}" stroke="var(--edge)" stroke-width="3"/>`).join('')}
+      ${points.map((p,i)=>`<circle cx="${p.x}" cy="${p.y}" r="3" fill="var(--text)"/><text x="${p.x+(i===0?-10:9)}" y="${p.y+(i===4?-10:18)}" fill="var(--muted)" font-size="12">${i}</text>`).join('')}
+      <polygon points="${d.map(p=>`${p.x},${p.y}`).join(' ')}" fill="none" stroke="var(--rule-strong)"/><text x="${dX}" y="${dY+10}" text-anchor="middle" fill="var(--muted)" font-size="20">D</text>
+      <text x="${ox+100*scale}" y="${narrow?baseline+30:318}" text-anchor="middle" fill="var(--edge)" font-size="14">共边连成一组 · 3 个</text>
+      <text x="${dX}" y="${dY+74}" text-anchor="middle" fill="var(--muted)" font-size="13">独立一组 · 1 个</text>
+    </svg>`;
+  }
+  new ResizeObserver(draw).observe(scene);
+</script>
+```
 
 ### 代码
 
 代码就是按这个思路写的：先读三角形数量 `n`，再读 `n` 行，每行三个顶点。
 
-```cpp title="triangle_groups.cpp"
-#include <bits/stdc++.h>
+<details>
+<summary>展开并查集实现</summary>
+
+```cpp
+#include <algorithm>
 #include <array>
+#include <iostream>
+#include <map>
+#include <numeric>
+#include <vector>
 
 std::vector<int> fa, sz;
 
@@ -91,6 +124,8 @@ int main() {
 }
 ```
 
+</details>
+
 设三角形数量为 $N$。这份代码用 `std::map` 存边，时间复杂度为 $O(N\log N)$，空间复杂度为 $O(N)$。如果改用哈希表，配合路径压缩和按大小合并，期望时间复杂度可以做到 $O(N\alpha(N))$。
 
 ## 模拟题
@@ -130,13 +165,23 @@ int main() {
 
 时刻 `0` 只有 A 到达，立即执行，到 `5` 结束。B 和 C 到达时，设备正在执行 A，不能抢占，只能进入等待队列。
 
-时刻 `5`，B 和 C 都已经到达，要先执行优先级更高的 C，再执行 B。按输入顺序输出的结果是：
+时刻 `5`，B 和 C 都已经到达，要先执行优先级更高的 C，再执行 B。
 
-| 任务 | 开始时间 | 结束时间 |
-| --- | --- | --- |
-| A | 0 | 5 |
-| B | 6 | 8 |
-| C | 5 | 6 |
+```render html
+<style>
+  .schedule-plot { padding-block: 8px; }
+  .schedule-bar { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); min-height: 52px; }
+  .schedule-bar span { display: grid; place-items: center; border: 1px solid var(--rule); font-size: 17px; }
+  .schedule-bar .schedule-first { grid-column: 1 / 6; }
+  .schedule-bar .schedule-priority { grid-column: 6 / 7; border-color: var(--accent); background: var(--accent-soft); }
+  .schedule-bar .schedule-last { grid-column: 7 / 9; }
+  .schedule-ticks { display: flex; justify-content: space-between; margin-top: 6px; color: var(--muted); font: 12px var(--font-mono); }
+</style>
+<div class="schedule-plot" role="img" aria-label="A 从 0 执行到 5，C 从 5 执行到 6，B 从 6 执行到 8">
+  <div class="schedule-bar"><span class="schedule-first">A</span><span class="schedule-priority">C</span><span class="schedule-last">B</span></div>
+  <div class="schedule-ticks"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span></div>
+</div>
+```
 
 按到达时间直接分配，会错误地让 B 先于 C 执行；把所有任务直接按优先级排序，又会把尚未到达的任务算进去。优先级比较的范围必须是当前已经到达、尚未开始执行的同类型任务。
 
@@ -163,12 +208,20 @@ int main() {
 
 ### 代码
 
-代码先读 `m n`，再读 `m` 个设备类型，最后读 `n` 行 `t c d p`。任务编号按输入顺序记下来，最后也按这个顺序输出。
+这份实现假设每种有任务的类型至少有一台对应设备，执行时长为正。代码先读 `m n`，再读 `m` 个设备类型，最后读 `n` 行 `t c d p`。任务编号按输入顺序记下来，最后也按这个顺序输出。
 
-```cpp title="task_schedule.cpp"
-#include <bits/stdc++.h>
+<details>
+<summary>展开事件模拟实现</summary>
+
+```cpp
+#include <algorithm>
 #include <array>
 #include <cstdint>
+#include <functional>
+#include <iostream>
+#include <queue>
+#include <tuple>
+#include <vector>
 
 int main() {
     std::ios::sync_with_stdio(false);
@@ -231,6 +284,8 @@ int main() {
     }
 }
 ```
+
+</details>
 
 设任务总数为 $n$、设备总数为 $m$。排序和等待队列需要 $O(n\log n)$，设备堆的初始化和更新需要 $O(m+n\log(m+1))$，总空间是 $O(n+m)$。时间用 `std::int64_t`，免得任务连起来跑太久把 `int` 撑爆。
 

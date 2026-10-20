@@ -2,54 +2,45 @@
 title: "C++ 内存区：把位置、生命周期和所有权串起来"
 description: "用一张内存地图和一个函数调用演示，理解栈、堆、静态存储，以及对象和它管理的数据为什么可能在不同地方。"
 pubDate: 2026-09-09T10:00:00+08:00
-updatedDate: 2026-10-19
+updatedDate: 2026-10-20
 tags: ["C++", "操作系统", "计算机基础"]
 ---
 
-刚学 C++ 时，我也背过那张“五区图”：代码区、常量区、全局区、堆区、栈区。但写到 `std::vector` 就有点解释不通了：局部变量在栈上，它为什么能装下几百万个元素？函数返回后，这些元素又是谁释放的？
-
-要回答这件事，先把**对象本身、它管理的数据、它们各自能活多久**分开。内存区的名字才会和实际代码对应起来。
+局部 `std::vector` 为什么能装下几百万个元素，又能在函数返回时自动释放？先分清**对象本身、它管理的数据，以及谁负责销毁它们**。
 
 ## 先看内存区的整体分工
 
-程序运行时，机器指令、长期保存的数据、函数调用中的临时状态，需要不同的存放和管理方式。下面按 Linux 常见实现画一张地图；它表示进程的**虚拟地址空间**，区域不按比例，也不一定紧挨着。
+下面按 Linux 常见实现画出虚拟地址空间：指针中的地址是进程看到的编号，不是物理内存条的位置。
 
-```render html title="一种常见布局。右侧说明用途，纵向只表示地址的大致次序。"
+```render html title="常见虚拟地址布局示意，区域不按比例。页表再把这些地址映射到物理页。"
 <style>
-  .address-map { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 14px; padding-block: 8px; }
-  .address-axis { display: flex; flex-direction: column; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; line-height: 1.4; }
-  .address-axis span { writing-mode: vertical-rl; white-space: nowrap; }
-  .address-axis i { flex: 1; width: 1px; min-height: 60px; background: var(--rule); }
-  .address-regions { display: grid; gap: 8px; }
-  .address-region { display: grid; grid-template-columns: minmax(124px, 0.85fr) minmax(0, 1.4fr); align-items: center; gap: 16px; padding: 13px 16px; border-left: 3px solid var(--rule); background: color-mix(in srgb, var(--rule) 18%, transparent); }
-  .address-region.is-writable { border-left-color: var(--accent); }
-  .address-region.is-mapping { margin-block: 6px; border: 1px dashed var(--rule); background: transparent; }
-  .address-region strong { display: block; font-size: 16px; font-weight: 600; }
-  .address-region small { display: block; margin-top: 2px; color: var(--muted); font: 12px/1.6 var(--font-mono); }
-  .address-region p { margin: 0; font-size: 14px; line-height: 1.75; }
-  @media (max-width: 440px) {
-    .address-map { gap: 8px; }
-    .address-region { grid-template-columns: 1fr; gap: 5px; padding: 12px; }
-    .address-region small { display: inline; margin-left: 8px; }
-    .address-region strong { display: inline; }
-  }
+  .memory-map svg { display: block; width: 100%; }
 </style>
-<div class="address-map" role="img" aria-label="从高地址到低地址，示意栈、其他映射、堆、可写静态数据、只读数据和代码的常见布局">
-  <div class="address-axis" aria-hidden="true"><span>高地址</span><i></i><span>低地址</span></div>
-  <div class="address-regions">
-    <div class="address-region is-writable"><div><strong>栈</strong><small>通常可读写</small></div><p>保存函数调用现场和需要放进内存的局部对象。</p></div>
-    <div class="address-region is-mapping"><div><strong>其他映射</strong><small>权限依用途而定</small></div><p>动态库、文件、线程栈；动态分配也可能来自这里。</p></div>
-    <div class="address-region is-writable"><div><strong>堆</strong><small>通常可读写</small></div><p>分配器管理存储，让对象可以独立于某次调用存在。</p></div>
-    <div class="address-region is-writable"><div><strong>可写静态数据</strong><small>.data / .bss</small></div><p>全局变量、局部 static 等长期保留的数据。</p></div>
-    <div class="address-region"><div><strong>只读数据</strong><small>常见于 .rodata</small></div><p>字符串字面量等不允许修改的数据。</p></div>
-    <div class="address-region"><div><strong>代码</strong><small>常见于 .text</small></div><p>编译后的机器指令，通常可读、可执行。</p></div>
-  </div>
-</div>
+<div class="memory-map" aria-label="进程虚拟地址空间"></div>
+<script>
+  const scene = document.querySelector('.memory-map');
+  function draw() {
+    const w = scene.clientWidth, narrow = w < 430, x = narrow ? 22 : 100, width = narrow ? 116 : 200, label = x+width+24;
+    const regions = [
+      {y:40,h:58,name:'栈',detail:'局部对象',tone:'var(--accent)'},
+      {y:118,h:42,name:'其他映射',detail:'动态库、文件'},
+      {y:180,h:72,name:'堆',detail:'动态分配',tone:'var(--accent)'},
+      {y:276,h:54,name:'.data / .bss',detail:'全局 / static'},
+      {y:330,h:48,name:'.rodata',detail:'字符串字面量'},
+      {y:378,h:48,name:'.text',detail:'机器指令'}
+    ];
+    scene.innerHTML = `<svg viewBox="0 0 ${w} 466" role="img" aria-label="高地址一侧为栈，中间有映射和堆，低地址一侧有静态数据、只读数据和代码">
+      <text x="${x}" y="17" fill="var(--muted)" font-size="12">高地址</text><text x="${x}" y="451" fill="var(--muted)" font-size="12">低地址</text>
+      <path d="M${x-12} 36V426" stroke="var(--rule-strong)"/>
+      ${regions.map(r => `<rect x="${x}" y="${r.y}" width="${width}" height="${r.h}" fill="${r.tone||'var(--rule)'}" fill-opacity="${r.tone?'.12':'.24'}" stroke="${r.tone||'var(--rule-strong)'}" ${r.name==='其他映射'?'stroke-dasharray="4 4"':''}/><text x="${x+width/2}" y="${r.y+r.h/2+5}" text-anchor="middle" fill="var(--text)" font-size="${r.name.startsWith('.')?13:16}" font-family="${r.name.startsWith('.')?'var(--font-mono)':'var(--font-sans)'}">${r.name}</text><path d="M${x+width} ${r.y+r.h/2}h16" stroke="var(--rule-strong)"/><text x="${label}" y="${r.y+r.h/2+5}" fill="var(--muted)" font-size="${narrow?12:14}">${r.detail}</text>`).join('')}
+      <path d="M${x+width/2} 100v12m-4-4 4 4 4-4M${x+width/2} 178v-12m-4 4 4-4 4 4" fill="none" stroke="var(--accent)" stroke-width="1.5"/>
+    </svg>`;
+  }
+  new ResizeObserver(draw).observe(scene);
+</script>
 ```
 
-“虚拟”可以先这样理解：指针里的地址是进程看到的编号，操作系统通过页表把它对应到物理内存。**虚拟地址连续，物理页可以分散**；不同进程也可以看到相同的地址编号，背后却是不同的内存。
-
-这张图描述常见实现。C++ 规定的是对象的存储期和生命周期，并不要求内存固定分成五块。编译器也可以把局部值放进寄存器，甚至直接算出结果、消掉存储。后面说“在栈上”，都按通常需要实际存储的情况理解。
+C++ 规定存储期与生命周期，不要求固定的五区布局。局部值也可能放在寄存器中或被优化掉；下文按需要实际存储的情况理解。
 
 ## 跟着一个函数看：对象和数据各在哪
 
@@ -64,104 +55,63 @@ void work() {
 }
 ```
 
-`count` 是普通局部对象，这次调用结束就消失。`calls` 虽然也写在函数里，却由 `static` 指定了静态存储期：函数返回后仍然保留，下次调用接着累加。**名字在哪些地方能用，是作用域；存储保留多久，是存储期。** 写在同一个函数里，不代表两者相同。
+`count`、`values` 每次调用重新创建，`calls` 跨调用保留。vector 自身只存管理信息，元素另行分配；`sizeof(values)` 不包含那片元素。点“函数返回”看清理过程：
 
-`values` 要拆成两部分看。vector 对象本身保存元素地址、大小、容量等管理信息，是一个局部对象；三个整数则放在它另外申请的动态存储里。于是，局部 vector 可以很小，同时管理一大片元素。`sizeof(values)` 也只计算 vector 自身，不包含那片元素存储。
-
-下面从第一次调用即将返回的位置开始。点“函数返回”，看看哪些对象消失，哪些状态留下来。
-
-```render html title="示意默认分配器下的存储关系，不代表 vector 的具体内部布局。"
+```render html title="vector 对象与元素不在同一片存储里。函数返回会触发拥有者的析构。"
 <style>
-  .lifetime-lab { padding-block: 8px; }
-  .lifetime-heading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; align-items: baseline; margin-bottom: 18px; }
-  .lifetime-heading strong { font-size: 17px; font-weight: 600; }
-  .lifetime-heading span { color: var(--muted); font-size: 14px; }
-  .lifetime-scene { display: grid; grid-template-columns: minmax(0, 1fr) 44px minmax(0, 1fr); align-items: center; }
-  .lifetime-place { align-self: stretch; min-width: 0; }
-  .lifetime-place h3 { margin: 0 0 10px; color: var(--muted); font-size: 14px; font-weight: 500; }
-  .lifetime-object { display: flex; flex-direction: column; justify-content: center; gap: 12px; min-height: 132px; padding: 16px; border: 1px solid var(--accent); background: var(--accent-soft); }
-  .lifetime-object code { font-size: 15px; }
-  .lifetime-object small { color: var(--muted); font-size: 13px; line-height: 1.7; }
-  .lifetime-elements { display: flex; gap: 6px; }
-  .lifetime-elements span { display: grid; place-items: center; flex: 1; min-height: 38px; border: 1px solid var(--rule); font: 16px var(--font-mono); }
-  .lifetime-link { align-self: center; padding-top: 30px; color: var(--accent-ink); font-size: 26px; text-align: center; }
-  .lifetime-static { display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: baseline; margin-top: 20px; padding-block: 12px; border-block: 1px solid var(--rule); font-size: 14px; }
-  .lifetime-static span { color: var(--muted); }
-  .lifetime-static code { font-size: 15px; }
-  .lifetime-controls { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
-  .lifetime-controls button { min-height: 44px; padding: 7px 16px; border: 1px solid var(--rule); border-radius: 4px; background: transparent; font-size: 15px; cursor: pointer; }
-  .lifetime-controls .lifetime-next { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-ink); }
-  .lifetime-note { display: block; min-height: 3.6em; margin-top: 14px; font-size: 14px; line-height: 1.8; }
-  .lifetime-lab[data-returned="true"] .lifetime-object { border: 1px dashed var(--rule); background: transparent; }
-  .lifetime-lab[data-returned="true"] .lifetime-link { visibility: hidden; }
-  @media (max-width: 480px) {
-    .lifetime-scene { grid-template-columns: 1fr; gap: 10px; }
-    .lifetime-link { padding-top: 0; line-height: 1; transform: rotate(90deg); }
-    .lifetime-object { min-height: 112px; }
-    .lifetime-note { min-height: 5.4em; }
-  }
+  .lifetime-lab { --dynamic: #386f9b; padding-block: 8px; }
+  :root[data-theme="dark"] .lifetime-lab { --dynamic: #8ebce2; }
+  .lifetime-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 16px; font-size: 14px; }
+  .lifetime-phase { color: var(--muted); }
+  .lifetime-scene svg { display: block; width: 100%; }
+  .lifetime-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 22px; margin-top: 12px; }
+  .lifetime-controls button { min-height: 44px; border: 0; border-bottom: 1px solid var(--rule-strong); border-radius: 0; padding: 4px 0; background: transparent; font-size: 15px; cursor: pointer; }
+  .lifetime-controls .lifetime-next { color: var(--accent-ink); border-color: var(--accent); }
+  .lifetime-note { display: block; margin-top: 14px; min-height: 2em; color: var(--muted); font-size: 13px; }
 </style>
-<section class="lifetime-lab" data-returned="false" aria-label="局部 vector、动态元素和静态变量的生命周期演示">
-  <div class="lifetime-heading"><strong>第 <span class="lifetime-call">1</span> 次调用 work()</strong><span class="lifetime-phase">即将返回</span></div>
-  <div class="lifetime-scene">
-    <div class="lifetime-place">
-      <h3>自动存储 · 通常在栈上</h3>
-      <div class="lifetime-object lifetime-local"><code>count = 3</code><code>values → 三个元素</code><small>两个局部对象都还活着</small></div>
-    </div>
-    <div class="lifetime-link" aria-hidden="true">→</div>
-    <div class="lifetime-place">
-      <h3>动态存储 · 由 values 管理</h3>
-      <div class="lifetime-object lifetime-dynamic"><div class="lifetime-elements"><span>7</span><span>7</span><span>7</span></div><small>三个 int 元素都还活着</small></div>
-    </div>
-  </div>
-  <div class="lifetime-static"><span>静态存储 · 不随本次调用结束</span><code>calls = <b class="lifetime-count">1</b></code></div>
+<section class="lifetime-lab" data-returned="false" aria-label="函数调用中的局部对象、动态元素与静态对象">
+  <div class="lifetime-top"><span>第 <b class="lifetime-call">1</b> 次调用 work()</span><span class="lifetime-phase">即将返回</span></div>
+  <div class="lifetime-scene"></div>
   <div class="lifetime-controls"><button type="button" class="lifetime-next">函数返回</button><button type="button" class="lifetime-reset">重置</button></div>
-  <output class="lifetime-note" aria-live="polite">values 自身和三个元素在不同的存储中，由 values 负责管理这片元素存储。</output>
+  <output class="lifetime-note" aria-live="polite">沿着箭头看：values 拥有另一片存储中的三个元素。</output>
 </section>
 <script>
-  const lab = document.querySelector('.lifetime-lab');
-  const local = document.querySelector('.lifetime-local');
-  const dynamic = document.querySelector('.lifetime-dynamic');
+  const lab = document.querySelector('.lifetime-lab'), scene = document.querySelector('.lifetime-scene');
   const next = document.querySelector('.lifetime-next');
-  const note = document.querySelector('.lifetime-note');
-  let calls = 1;
-  let returned = false;
-
-  function refresh() {
-    lab.dataset.returned = String(returned);
-    document.querySelector('.lifetime-call').textContent = calls;
-    document.querySelector('.lifetime-count').textContent = calls;
-    document.querySelector('.lifetime-phase').textContent = returned ? '已经返回' : '即将返回';
-    next.textContent = returned ? '再次调用' : '函数返回';
-    local.innerHTML = returned
-      ? '<strong>局部对象已销毁</strong><small>栈空间可以被后续调用复用</small>'
-      : '<code>count = 3</code><code>values → 三个元素</code><small>两个局部对象都还活着</small>';
-    dynamic.innerHTML = returned
-      ? '<strong>元素生命周期已结束</strong><small>存储已归还分配器，可以再次分配</small>'
-      : '<div class="lifetime-elements"><span>7</span><span>7</span><span>7</span></div><small>三个 int 元素都还活着</small>';
-    note.textContent = returned
-      ? 'values 的析构函数结束元素的生命周期并释放元素存储。calls 保留当前值；释放不要求把旧字节清零。'
-      : calls === 1
-        ? 'values 自身和三个元素在不同的存储中，由 values 负责管理这片元素存储。'
-        : '本次重新创建 count、values 和元素；calls 沿用上一回的值再加一。地址即使被复用，局部对象也是新的一批。';
+  let calls = 1, returned = false;
+  function draw() {
+    const w = scene.clientWidth, narrow = w < 500, bx = narrow?12:24, bw = narrow?w-24:w*.37;
+    const dx = narrow?bx:w*.64, dy = narrow?228:82, dw = narrow?bw:w*.33;
+    const sy = narrow?364:228;
+    const text = (x,y,label,fill='var(--text)',size=14) => `<text x="${x}" y="${y}" fill="${fill}" font-size="${size}">${label}</text>`;
+    scene.innerHTML = `<svg viewBox="0 0 ${w} ${sy+76}" role="img" aria-label="${returned?'局部对象销毁，元素存储归还分配器，calls 保留':'局部 values 指向动态元素，静态 calls 独立保留'}">
+      <defs><marker id="owner-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M1 1L8 5L1 9" fill="none" stroke="var(--dynamic)" stroke-width="1.5"/></marker></defs>
+      ${text(bx,22,'本次调用 · 通常在栈上','var(--muted)',13)}
+      <path d="M${bx} 40v128h${bw}V40" stroke="${returned?'var(--rule)':'var(--rule-strong)'}" fill="none" ${returned?'stroke-dasharray="4 5"':''}/>
+      ${returned?`${text(bx+16,85,'局部对象已销毁','var(--muted)')}${text(bx+16,120,'栈空间可以复用','var(--muted)',13)}`:`${text(bx+16,76,'count = 3')}${text(bx+16,124,'values')}<circle cx="${bx+bw-24}" cy="120" r="3" fill="var(--dynamic)"/>`}
+      ${text(dx,dy-18,'动态存储','var(--dynamic)',13)}
+      ${returned?`<path d="M${dx} ${dy}h${dw}v60h-${dw}z" fill="none" stroke="var(--rule-strong)" stroke-dasharray="4 5"/>${text(dx+12,dy+36,'已归还分配器','var(--muted)',13)}`:[0,1,2].map(i=>`<rect x="${dx+i*dw/3}" y="${dy}" width="${dw/3}" height="60" fill="var(--dynamic)" fill-opacity=".09" stroke="var(--dynamic)"/><text x="${dx+(i+.5)*dw/3}" y="${dy+38}" text-anchor="middle" fill="var(--dynamic)" font-size="22">7</text>`).join('')}
+      ${!returned?`<path d="${narrow?`M${bx+bw-24} 120v78H${dx+dw/2}v26`:`M${bx+bw-24} 120H${dx-8}`}" fill="none" stroke="var(--dynamic)" stroke-width="1.5" marker-end="url(#owner-arrow)"/>`:''}
+      <path d="M${bx} ${sy}H${w-12}" stroke="var(--rule)"/>
+      ${text(bx,sy+30,'静态存储','var(--muted)',13)}${text(narrow?bx+94:bx+120,sy+30,`calls = ${calls}`,'var(--accent-ink)',18)}
+      ${text(bx,sy+59,'函数返回后继续保留','var(--muted)',13)}
+    </svg>`;
   }
-
-  next.addEventListener('click', () => {
-    if (returned) calls += 1;
-    returned = !returned;
-    refresh();
-  });
-  document.querySelector('.lifetime-reset').addEventListener('click', () => {
-    calls = 1;
-    returned = false;
-    refresh();
-  });
+  function refresh() {
+    lab.dataset.returned=String(returned);
+    document.querySelector('.lifetime-call').textContent=calls;
+    document.querySelector('.lifetime-phase').textContent=returned?'已经返回':'即将返回';
+    next.textContent=returned?'再次调用':'函数返回';
+    document.querySelector('output').textContent=returned?'values 析构 → 元素生命周期结束 → 存储归还分配器。':calls===1?'沿着箭头看：values 拥有另一片存储中的三个元素。':'本次局部对象重新创建；calls 在旧值上加一。';
+  }
+  next.addEventListener('click',()=>{ if(returned)calls++; returned=!returned; refresh(); draw(); });
+  document.querySelector('.lifetime-reset').addEventListener('click',()=>{ calls=1; returned=false; refresh(); draw(); });
+  new ResizeObserver(draw).observe(scene);
+  refresh();
 </script>
 ```
 
-这也解释了“堆上的数据怎么自动释放”：函数返回时，局部 `values` 会析构，它的析构函数再结束元素的生命周期、归还元素存储。**自动清理来自拥有者的析构，和数据是否位于堆上是两回事。**
-
-这里用到的就是 RAII：让一个对象拥有资源，在它析构时释放资源。vector 管理元素存储，`std::unique_ptr` 管理它拥有的动态对象。正常离开作用域，或异常传播导致栈展开时，已经构造完成的局部拥有者都会按规则清理资源。
+这就是 **RAII**：让对象拥有资源，在析构时释放。正常离开作用域，或异常传播引起栈展开时，已构造完成的局部拥有者都会按规则清理资源；数据放在堆上也能自动释放。
 
 ## 栈和堆，差在怎样安排生存时间
 
@@ -182,7 +132,7 @@ int* bad() {
 
 `value` 在函数返回时结束生命周期。返回的指针不会延长它的寿命，继续读取它是未定义行为：语言不再保证程序会怎样运行，即使这次碰巧读到了 42。
 
-回收栈空间通常不需要清零，旧字节可能暂时留着，随后被别的调用覆盖。**访问是否有效，要看对象是否仍然存在，不能看旧内容还在不在。** 这个函数只需返回 `int` 值；如果是一组数据，就返回拥有数据的 vector。返回它的 `data()` 裸指针没有同样的效果，因为裸指针不拥有元素。
+回收不要求清零。旧字节还在，也不能延长对象寿命。这里应返回 `int` 值；一组数据可以返回拥有元素的 vector，返回 `data()` 裸指针则不行。
 
 ## static 和 const，各自管什么
 
@@ -226,8 +176,6 @@ flowchart TB
 | 确实要在多次调用间保留状态 | 全局或局部 `static` | 存储长期保留，也要考虑共享状态 |
 
 例如，大数组放进局部变量可能耗尽线程栈，改用 vector 可以改变元素存储的来源。但它不会减少元素需要的总字节数，也不会修复悬空指针。
-
-再遇到“这个变量在哪个区”，先找清楚它指的是**对象本身，还是它指向的数据**；再沿着拥有关系，找到最后负责销毁它的人。这样再去看那张内存地图，就有落点了。
 
 ## 参考资料
 

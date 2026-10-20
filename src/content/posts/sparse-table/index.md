@@ -1,171 +1,136 @@
 ---
-title: "SparseTable 模板教程"
-description: "预处理时把长度为二的幂的区间都算好，查询时只合并两块，就能很快得到区间最值。"
+title: "Sparse Table：为什么两块区间就能查最值"
+description: "从两块重叠区间出发，理解 ST 表的预处理、常数时间查询，以及为什么求和不能直接套用。"
 pubDate: 2025-02-17T22:29:00+08:00
+updatedDate: 2026-10-20
 tags: ["数据结构", "模板", "C++"]
 ---
 
-如果数组建好之后不再修改，只是反复问区间最值，ST 表基本就是为这个场景准备的。预处理多做一点，后面每次查询只合并两块。
+数组不修改，只反复查询区间最值：ST 表预存长度为 $1,2,4,8,\ldots$ 的区间，每次查询只取两块。
 
-## 提前算好每一层
+## 先把短区间拼成长区间
 
-记 `table[k][i]` 为从 $i$ 开始、长度为 $2^k$ 的区间信息。把相邻的两小块合起来，就能得到上一层的大块：
+用零下标，记 $\text{st}[k][i]$ 为从 $i$ 开始、长度为 $2^k$ 的区间最小值。第 0 层就是原数组；之后每一层，把前一层相邻的两块合起来：
 
 $$
-\text{table}[k][i]
-=\operatorname{op}\left(
-\text{table}[k-1][i],
-\text{table}[k-1][i+2^{k-1}]
-\right).
+\text{st}[k][i]=\min\bigl(\text{st}[k-1][i],\text{st}[k-1][i+2^{k-1}]\bigr).
 $$
 
-查询时，一块贴着左端点，一块贴着右端点，让它们一起覆盖整个区间。两块可能重叠，但求最大值、最小值、GCD、按位与或按位或时，重复算一遍不会改变结果。
+每层合并相邻的两块，共 $O(\log n)$ 层，预处理的时间、空间都是 $O(n\log n)$。
 
-这就是合并操作要满足结合律和幂等性的原因。求和会把重叠部分多算一次，不能直接套这个查询方法。
+## 查询为什么可以重叠
 
-这些合并操作本身都很快，所以总共是预处理 $O(n\log n)$、单次查询 $O(1)$。
+查询闭区间 $[l,r]$，先选出不超过区间长度的最大二次幂：
 
-## 模板
+$$
+k=\lfloor\log_2(r-l+1)\rfloor.
+$$
 
-~~~cpp title="SparseTable.hpp"
-template <typename T, auto op, std::size_t level = 25>
+两块长度都为 $2^k$，分别贴着左右端点。试着调整下面的区间：
+
+```render html
+<style>
+  .st-lab { --left: #386f9b; --right: #36755d; padding-block: 10px; }
+  :root[data-theme="dark"] .st-lab { --left: #8ebce2; --right: #8ac9ab; }
+  .st-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 28px; margin-bottom: 16px; }
+  .st-controls label { display: grid; grid-template-columns: 1fr auto; align-items: center; color: var(--muted); font-size: 13px; }
+  .st-controls input { grid-column: 1 / -1; width: 100%; min-height: 44px; margin: 0; cursor: pointer; accent-color: var(--left); }
+  .st-controls label:last-child input { accent-color: var(--right); }
+  .st-controls output { color: var(--text); font: 16px var(--font-mono); }
+  @media (max-width: 420px) { .st-controls { grid-template-columns: 1fr; gap: 0; } }
+  .st-drawing svg { display: block; width: 100%; }
+  .st-answer { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; margin-top: 14px; font-size: 14px; }
+  .st-answer strong { font: 24px var(--font-mono); }
+  .st-answer span { color: var(--muted); }
+</style>
+<section class="st-lab" aria-label="两块预处理区间覆盖一次查询">
+  <div class="st-controls"><label>左端点 l <output class="st-l-value">1</output><input type="range" class="st-left" min="0" max="7" value="1" aria-label="左端点"></label><label>右端点 r <output class="st-r-value">6</output><input type="range" class="st-right" min="0" max="7" value="6" aria-label="右端点"></label></div>
+  <div class="st-drawing"></div><output class="st-answer" aria-live="polite"></output>
+</section>
+<script>
+  const values = [3, 1, 4, 1, 5, 9, 2, 6];
+  const left = document.querySelector('.st-left'), right = document.querySelector('.st-right');
+  const drawing = document.querySelector('.st-drawing');
+  function draw() {
+    const l = Number(left.value), r = Number(right.value), length = r - l + 1;
+    const size = 2 ** Math.floor(Math.log2(length)), end = l + size - 1, start = r - size + 1;
+    const w = drawing.clientWidth, step = (w - 24) / 8, x = i => 12 + i * step;
+    const a = Math.min(...values.slice(l, end + 1)), b = Math.min(...values.slice(start, r + 1));
+    const text = (x, y, value, fill = 'var(--text)', size = 13, anchor = 'middle') => `<text x="${x}" y="${y}" fill="${fill}" font-size="${size}" text-anchor="${anchor}">${value}</text>`;
+    const band = (from, to, y, color, label) => `<rect x="${x(from)}" y="${y}" width="${step * size}" height="18" fill="${color}" opacity=".17"/><path d="M${x(from)} ${y}v18h${step * size}v-18" fill="none" stroke="${color}" stroke-width="1.5"/>${text((x(from) + x(to + 1)) / 2, y + 39, label, color)}`;
+    drawing.innerHTML = `<svg viewBox="0 0 ${w} 270" role="img" aria-label="查询 ${l} 到 ${r}，使用长度 ${size} 的两块，最小值 ${Math.min(a,b)}">
+      <defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse"><path d="M0 6L6 0" stroke="var(--muted)" opacity=".2"/></pattern></defs>
+      <path d="M${x(l)} 36v-8h${step * length}v8" fill="none" stroke="var(--text)"/>${text((x(l)+x(r+1))/2, 16, `查询 [${l}, ${r}]`)}
+      <rect x="${x(l)}" y="49" width="${step * length}" height="42" fill="var(--accent)" opacity=".08"/>
+      ${values.map((value,i) => `${text(x(i)+step/2,78,value,i>=l&&i<=r?'var(--text)':'var(--faint)',20)}${text(x(i)+step/2,113,i,'var(--muted)',12)}`).join('')}
+      <path d="M12 94H${w-12}" stroke="var(--rule-strong)"/>
+      ${band(l,end,140,'var(--left)',`[${l}, ${end}] → ${a}`)}
+      ${band(start,r,210,'var(--right)',`[${start}, ${r}] → ${b}`)}
+      <rect x="${x(start)}" y="140" width="${step * Math.max(0,end-start+1)}" height="88" fill="url(#hatch)"/>
+    </svg>`;
+    document.querySelector('.st-l-value').textContent=l;
+    document.querySelector('.st-r-value').textContent=r;
+    document.querySelector('.st-answer').innerHTML = `<strong>min(${a}, ${b}) = ${Math.min(a,b)}</strong><span>${size + size - length ? '斜线部分重复取最小值，结果不变' : '两块恰好覆盖查询'} · 每块长度 ${size}</span>`;
+  }
+  left.addEventListener('input', () => { if (+left.value > +right.value) right.value = left.value; draw(); });
+  right.addEventListener('input', () => { if (+right.value < +left.value) left.value = right.value; draw(); });
+  new ResizeObserver(draw).observe(drawing);
+</script>
+```
+
+查询式就是：
+
+$$
+\min\bigl(\text{st}[k][l],\text{st}[k][r-2^k+1]\bigr).
+$$
+
+这要求合并操作满足结合律，而且重复合并同一份信息不改变结果，也就是**幂等性**。最大值、最小值、GCD、按位与或都可以；求和会重复计算重叠元素，不能直接套这个查询式。数组若会修改，也更适合考虑线段树。
+
+## 代码
+
+下面只保留建表和查询。约定数组非空，查询使用合法的零下标闭区间；`bit_width(len) - 1` 就是 $\lfloor\log_2 len\rfloor$，不需要浮点运算。代码按 C++20 编译。
+
+<details>
+<summary>展开 ST 表实现与用法</summary>
+
+```cpp
+#include <algorithm>
+#include <bit>
+#include <vector>
+
+template <class T, class Op>
 class SparseTable {
-    using size_type = unsigned;
+    std::vector<std::vector<T>> st;
+    Op op;
+
 public:
-    constexpr SparseTable(std::integral auto n) : SparseTable(n, [](auto x) {
-        return T{};
-    }) {}
-
-    constexpr SparseTable(const std::ranges::range auto &container) : SparseTable(container.begin(), container.end()) {}
-
-    template <typename Iterator>
-    constexpr SparseTable(Iterator begin, Iterator end) : SparseTable(end - begin, [&](const auto &index) {
-        return *(begin + index);
-    }) {}
-
-    constexpr SparseTable(std::integral auto n, auto &&mapping) : max_range(n) {
-        if (max_range == 0) {
-            return;
-        }
-        size_type log_size = max_range == 1 ? 1 : std::bit_width(max_range - 1);
-        for (size_type i = 0; i < log_size; ++ i) {
-            table[i].resize(max_range - (1 << i) + 1);
-        }
-        auto &value = table[0];
-        for (size_type i = 0; i < max_range; ++ i) {
-            value[i] = mapping(i);
-        }
-        for (size_type i = 1; i < log_size; ++ i) {
-            auto &current = table[i];
-            auto &previous = table[i - 1];
-            size_type _ = max_range - (1 << i) + 1;
-            for (size_type start = 0, end = 1 << (i - 1); start < _; ++ start, ++ end) {
-                current[start] = op(previous[start], previous[end]);
+    SparseTable(const std::vector<T>& a, Op combine) : op(combine) {
+        int n = a.size();
+        int levels = std::bit_width(static_cast<unsigned>(n));
+        st.resize(levels);
+        st[0] = a;
+        for (int k = 1; k < levels; ++k) {
+            int len = 1 << k, half = len / 2;
+            st[k].resize(n - len + 1);
+            for (int i = 0; i + len <= n; ++i) {
+                st[k][i] = op(st[k - 1][i], st[k - 1][i + half]);
             }
         }
     }
 
-    constexpr auto size() const -> size_type {
-        return max_range;
-    }
-
-    constexpr auto query_all() const -> T {
-        return query(0, max_range - 1);
-    }
-
-    constexpr auto query(size_type index) const -> T {
-        return table[0][index];
-    }
-
-    constexpr auto query(size_type left, size_type right) const -> T {
-        size_type depth = std::bit_width((right - left) >> 1);
-        return op(table[depth][left], table[depth][right - (1 << depth) + 1]);
-    }
-
-    constexpr auto min_left(size_type right, auto &&check) -> size_type {
-        if (right < 0 or right >= max_range or not check(query(right))) {
-            return -1;
-        }
-        return right == 0 ? right : binary_search(right, -1, [&](auto left) {
-            return check(query(left, right));
-        });
-    }
-
-    constexpr auto max_right(size_type left, auto &&check) -> size_type {
-        if (left < 0 or left >= max_range or not check(query(left))) {
-            return -1;
-        }
-        return left == max_range - 1 ? left : binary_search(left, max_range, [&](auto right) {
-            return check(query(left, right));
-        });
-    }
-
-    template <typename Ostream>
-    friend constexpr auto operator <<(Ostream &ostream, const SparseTable &value) -> Ostream & {
-        for (size_type i = 0; i < value.size(); ++ i) {
-            ostream << value.query(i) << ' ';
-        }
-        return ostream;
-    }
-
-private:
-    size_type max_range;
-    std::array<std::vector<T>, level> table;
-    constexpr auto binary_search(int ok, int ng, auto &&check) -> size_type {
-        while (std::abs(ok - ng) > 1) {
-            auto x = ok + (ng - ok) / 2;
-            (check(x) ? ok : ng) = x;
-        }
-        return ok;
+    T query(int l, int r) const {
+        unsigned len = r - l + 1;
+        int k = std::bit_width(len) - 1;
+        return op(st[k][l], st[k][r - (1 << k) + 1]);
     }
 };
-~~~
 
-## 怎么用
-
-直接传入容器，再指定合并操作：
-
-```cpp
-std::vector<int> nums = {3, 1, 4, 1, 5};
-SparseTable<int, std::ranges::min> st(nums);
-
-int value = st.query(2);       // 下标 2 的值。
-int result = st.query(1, 3);   // 闭区间 [1, 3] 的最小值。
-int all = st.query_all();     // 整个数组的最小值。
+// 用法：
+// std::vector<int> a{3, 1, 4, 1, 5, 9, 2, 6};
+// SparseTable st(a, [](int x, int y) { return std::min(x, y); });
+// st.query(1, 6) == 1;
 ```
 
-也可以传迭代器，或者用映射函数生成初始值。比如边读入边建表，就不用再存一份数组：
+</details>
 
-```cpp
-SparseTable<int, std::ranges::max> st(n, [](auto ...) {
-    int x;
-    std::cin >> x;
-    return x;
-});
-```
-
-合并操作也可以自己写：
-
-```cpp
-constexpr auto op = [](auto a, auto b) {
-    return std::gcd(a, b);
-};
-SparseTable<int, op> st(nums);
-```
-
-## 顺便二分边界
-
-`max_right` 固定左端点向右找，`min_left` 固定右端点向左找。比如想找一段最大值不超过 $10$ 的区间：
-
-```cpp
-std::vector<int> nums = {3, 1, 4, 9, 12};
-SparseTable<int, std::ranges::max> st(nums);
-auto right = st.max_right(2, [](int x) {
-    return x <= 10;
-});
-// right == 3，对应区间 [2, 3]。
-```
-
-这里能二分，是因为区间扩大后，最大值只会变大或不变。一旦超过 $10$，继续扩大也不会重新满足条件。这两个接口会做 $O(\log n)$ 次查询。
-
-ST 表的代码量不算大，麻烦的是下标。写的时候把 $2^k$ 和区间长度对齐，基本就没什么坑了。
+按一次合并为常数计，查询 $O(1)$；GCD 的具体整数运算成本另算。

@@ -1,120 +1,109 @@
 ---
-title: "CF1114F 题解：Please, another Queries on Array?"
-description: "欧拉函数只关心区间里出现过哪些质因子。把它们压成位掩码，剩下的交给线段树。"
+title: "CF1114F 题解：用乘积和质因子集合维护欧拉函数"
+description: "拆开欧拉函数公式，用乘积余数和 62 位质因子集合，维护区间乘法与区间积的欧拉函数。"
 pubDate: 2024-10-28T20:30:00+08:00
+updatedDate: 2026-10-20
 tags: ["题解", "线段树", "数论", "C++"]
 ---
 
-[题目链接](https://www.luogu.com.cn/problem/CF1114F)
+[题目链接](https://www.luogu.com.cn/problem/CF1114F)。数组支持区间乘 $x$，查询一段乘积的欧拉函数，答案模 $M=10^9+7$。
 
-这题要维护区间乘，还要查询区间积的欧拉函数。刚看到 $\varphi$ 的时候有点懵，后来把公式拆开，才知道线段树该存什么。
+一般情况下，$\varphi(ab)\ne\varphi(a)\varphi(b)$。把公式拆开，才能找到可合并的信息。
 
-## 乘积和质因子分开存
+## 乘积记数值，质因子只记有没有
 
-记区间积为 $P$，它的不同质因子为 $p_1,p_2,\ldots,p_k$，那么
+设区间真实乘积为 $P$，不同质因子的集合为 $S$，则
 
 $$
-\varphi(P)=P\prod_{i=1}^{k}\frac{p_i-1}{p_i}.
+\varphi(P)=P\prod_{p\in S}\frac{p-1}{p}.
 $$
 
-这样一来，除了乘积，只要知道区间里出现过哪些质因子就行了。具体出现了几次，反而不用记。
+保存 $P\bmod M$ 和取模前的质因子集合。同一个质数的修正系数只乘一次：
 
-题目的初始值和乘数都不超过 $300$，质数一共只有 $62$ 个。把它们编个号，一个 `long long` 正好塞得下；合并两个区间时，质因子集合直接按位或。
+```render html
+<style>
+  .mask-lab { --bit: #386f9b; padding-block: 8px; }
+  :root[data-theme="dark"] .mask-lab { --bit: #8ebce2; }
+  .mask-heading { margin: 0 0 20px; font: 22px var(--font-mono); }
+  .mask-grid { display: grid; grid-template-columns: 72px repeat(4, minmax(0, 1fr)); gap: 8px; align-items: center; text-align: center; }
+  .mask-grid span { font: 17px var(--font-mono); padding-block: 12px; }
+  .mask-grid .mask-prime { color: var(--muted); font-size: 13px; }
+  .mask-grid .mask-label { text-align: left; color: var(--muted); font-size: 13px; }
+  .mask-grid .on { color: var(--bit); background: color-mix(in srgb, var(--bit) 10%, transparent); border-bottom: 2px solid var(--bit); }
+  .mask-grid .off { color: var(--faint); border-bottom: 1px solid var(--rule); }
+  .mask-grid .mask-union { border-top: 1px solid var(--rule-strong); margin-top: 8px; }
+  .mask-answer { display: block; margin-top: 22px; font-size: 17px; line-height: 1.8; }
+  .mask-answer em { font-style: normal; color: var(--bit); }
+  .mask-controls { display: flex; gap: 24px; margin-top: 14px; }
+  .mask-controls button { min-height: 44px; border: 0; border-bottom: 2px solid transparent; border-radius: 0; padding: 4px 0; background: none; color: var(--muted); font-size: 14px; cursor: pointer; }
+  .mask-controls button[aria-pressed="true"] { border-color: var(--accent); color: var(--text); }
+</style>
+<section class="mask-lab" aria-label="质因子掩码按位或，不重复修正同一质因子">
+  <p class="mask-heading"></p><div class="mask-grid"></div><output class="mask-answer" aria-live="polite"></output>
+  <div class="mask-controls"><button type="button" data-b="18" aria-pressed="true">12 × 18</button><button type="button" data-b="35" aria-pressed="false">12 × 35</button></div>
+</section>
+<script>
+  let b=18;
+  const primes=[2,3,5,7], grid=document.querySelector('.mask-grid');
+  function draw() {
+    const first=primes.map(p=>12%p===0), second=primes.map(p=>b%p===0), union=first.map((x,i)=>x||second[i]);
+    const row=(label,bits,isUnion=false)=>`<span class="mask-label ${isUnion?'mask-union':''}">${label}</span>`+bits.map(on=>`<span class="${on?'on':'off'} ${isUnion?'mask-union':''}">${on?1:0}</span>`).join('');
+    grid.innerHTML='<span class="mask-prime">质数</span>'+primes.map(p=>`<span class="mask-prime">${p}</span>`).join('')+row('12',first)+row(String(b),second)+row('按位或',union,true);
+    document.querySelector('.mask-heading').textContent=`P = 12 × ${b} = ${12*b}`;
+    const factors=primes.filter((_,i)=>union[i]);
+    const phi=factors.reduce((value,p)=>value/p*(p-1),12*b);
+    document.querySelector('output').innerHTML=`φ(P) = ${12*b}${factors.map(p=>` × <em>${p-1}/${p}</em>`).join('')} = ${phi}`;
+  }
+  document.querySelectorAll('[data-b]').forEach(button=>button.addEventListener('click',()=>{b=Number(button.dataset.b);document.querySelectorAll('[data-b]').forEach(item=>item.setAttribute('aria-pressed',String(item===button)));draw();}));
+  draw();
+</script>
+```
 
-每个节点再存一个区间长度。整段乘上 $x$ 时，乘积要乘上 $x^{\text{count}}$，顺手把 $x$ 的质因子并进去。
+初始值和乘数都不超过 $300$，可能出现的质数只有 $62$ 个，一个 `uint64_t` 就能保存集合。
+
+合并时乘积相乘、掩码取或。**不能重新分解取模后的乘积来恢复集合**。
+
+## 整段乘 x 时，两个部分分别怎样变
+
+如果区间长度为 $L$，每个元素都乘 $x$，那么区间乘积需要乘 $x^L$，集合则并入 $x$ 的所有质因子。所以节点保存 `(product, mask, length)`，懒标记保存 `(multiplier, mask)`。
+
+两个懒标记合并：乘数相乘，集合取或。这里没有赋值，操作顺序也不影响结果。
+
+查询得到节点后，枚举掩码中存在的质数，补乘 $(p-1)\cdot p^{-1}\bmod M$。这里每个 $p<M$，与质数模数 $M$ 互质，逆元存在。
 
 ## 代码
 
-先把质数编好号，顺便算出 $\dfrac{p_i-1}{p_i}$。这里的除法用模逆元处理。
+下面只列节点操作；`power` 是普通的模快速幂。预处理出 62 个质数、每个 $x\le300$ 的掩码，以及每个质数的修正系数后，线段树递归部分就不再需要分解整数。
 
-~~~cpp title="preprocess.cpp"
-for (int i{}; const auto & x : sieve.all()) {
-    euler[i] = 1 - modint(1) / sieve.kth(i);
-    index[x] = i ++;
+```cpp
+#include <cstdint>
+
+using u64 = std::uint64_t;
+const long long MOD = 1'000'000'007;
+long long power(long long x, int e); // 模 MOD 的快速幂
+
+struct Info {
+    long long product = 1;
+    u64 mask = 0;
+    int length = 0;
+};
+struct Tag { long long multiplier = 1; u64 mask = 0; };
+
+Info merge(Info a, Info b) {
+    return {a.product * b.product % MOD,
+            a.mask | b.mask, a.length + b.length};
 }
-~~~
 
-对一个数试除，把出现过的质因子标到对应的位上：
-
-~~~cpp title="get.cpp"
-auto get = [&](int x) -> i64 {
-    i64 data = 0;
-    for (int i = 2; i * i <= x; ++ i) {
-        for (; x % i == 0; x /= i) {
-            data |= 1LL << index[i];
-        }
-    }
-    if (x != 1) {
-        data |= 1LL << index[x];
-    }
-    return data;
-};
-~~~
-
-`Info` 存乘积、质因子掩码和区间长度，懒标记存乘数及其掩码。合并时，乘积相乘，掩码按位或，长度相加。
-
-~~~cpp title="segtree.cpp"
-using Info = std::tuple<modint, i64, int>;
-// 区间积、质因子掩码、区间长度
-using Function = std::pair<modint, i64>;
-auto mapping = [&](Function f, Info x) -> Info {
-    auto &[res, data, count] = x;
-    res *= f.first.power(count);
-    for (int i = 0; i < 62; ++ i) {
-        data |= f.second & (1LL << i);
-    }
-    return x;
-};
-auto composition = [&](Function f, Function g) -> Function {
-    f.first *= g.first;
-    for (int i = 0; i < 62; ++ i) {
-        f.second |= g.second & (1LL << i);
-    }
-    return f;
-};
-auto op = [&](Info lhs, Info rhs) -> Info {
-    auto &[res1, data1, count1] = lhs;
-    auto &[res2, data2, count2] = rhs;
-    res1 *= res2;
-    count1 += count2;
-    for (int i = 0; i < 62; ++ i) {
-        data1 |= data2 & (1LL << i);
-    }
-    return lhs;
-};
-auto e = [&]() -> Info {
-    return Info{1, 0, 0};
-};
-auto id = [&]() -> Function {
-    return Function{1, 0};
-};
-SegmentTree::LazySegTree<Info, Function, mapping, composition, op, e, id> seg(n, [&](auto ...) {
-    int x;
-    std::cin >> x;
-    return Info{x, get(x), 1};
-});
-~~~
-
-查询的时候，把区间积和质因子掩码一起拿出来，再补乘每个质因子对应的系数：
-
-~~~cpp title="query.cpp"
-const auto &[res, data, count] = seg.prod(l, r);
-modint ans = res;
-for (int i = 0; i < 62; ++ i) {
-    if ((data >> i & 1) == 0) {
-        continue;
-    }
-    ans *= euler[i];
+void apply(Info& node, Tag tag) {
+    node.product = node.product * power(tag.multiplier, node.length) % MOD;
+    node.mask |= tag.mask;
 }
-std::cout << ans << "\n";
-~~~
 
-修改就把乘数和它的质因子掩码一起下传：
+Tag compose(Tag a, Tag b) {
+    return {a.multiplier * b.multiplier % MOD, a.mask | b.mask};
+}
+```
 
-~~~cpp title="apply.cpp"
-int x;
-std::cin >> x;
-seg.apply(l, r, Function{x, get(x)});
-~~~
+位运算 `a.mask | b.mask` 一次就能合并整个集合，无需再循环 62 次。叶子用 `(a_i, mask[a_i], 1)` 初始化，空查询结果是 `(1,0,0)`，无修改标记是 `(1,0)`。
 
-这题挺有意思。欧拉函数只关心质因子有没有出现过，正好能塞进位运算里。写起来不算长，关键是别把乘积和质因子混在一起维护。
+这份写法在每次节点更新时计算 $x^L$，因此一次区间修改上界为 $O(\log^2 n)$；查询加上枚举质因子的修正为 $O(\log n+62)$，空间 $O(n)$。位掩码把集合操作变得很便宜，但不会省掉快速幂的开销。

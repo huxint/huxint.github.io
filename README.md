@@ -28,6 +28,8 @@ tags: ['算法']
 
 `==高亮==`、`++下划线++` 和 `~~删除线~~` 可以和公式、链接混用。提示用 `> [!NOTE]`、`TIP`、`IMPORTANT`、`WARNING` 或 `CAUTION`；围栏代码块支持 `diff` 和 `mermaid`。完整示例在本地的 `/posts/writing-sample/`。
 
+技术文章的图示直接内嵌在 Markdown：`render svg` 写矢量图，`render html` 写局部演示（样式和脚本也放在块内），`mermaid` 写关系图。不另存图片或演示的 HTML、JS、CSS 附件。生活照片和视频仍放在对应记录目录。
+
 Markdown 交由页面按需渲染，内容集合不再缓存完整 HTML。修改渲染插件后，重启本地开发服务即可。
 
 ## 写生活

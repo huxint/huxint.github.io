@@ -2,6 +2,7 @@
 title: "美团笔试：两数乘积的最大因子数"
 description: "10 道大模型题、1 道算法题、1 道 AI Coding。记录一下那道求两数乘积最大因子数的题。"
 pubDate: 2026-10-14
+updatedDate: 2026-10-20
 tags: ["秋招", "面试复盘", "算法", "数论", "C++"]
 ---
 
@@ -39,14 +40,41 @@ $n\le 1000$，枚举所有数对完全来得及。关键不是枚举，而是别
 
 乘积最大能到 $10^{18}$，但每个原数最多只有 $10^9$。先把每个 $a_i$ 分解好，后面只合并指数，就省掉了分解大数这一步。
 
-我写的时候是这么做的：
+按原记录允许 $i=j$，枚举 $0\le i\le j<n$；合并两份指数表，取最大计数。
 
-1. 对每个 $a_i$ 用试除法做质因数分解，保存按质数递增排列的 `(质数, 指数)` 列表。
-2. 枚举所有 $i,j$，两个循环都从 $0$ 到 $n-1$，自然包含 $i=j$。
-3. 用双指针合并两份列表。
-4. 取所有组合中因子个数的最大值。
+以 $12\times18=2^3\times3^3$ 为例。点选表中一个因子，看它对应哪组指数：
 
-比如 $12$ 和 $18$ 的分解列表分别是 `[(2, 2), (3, 1)]`、`[(2, 1), (3, 2)]`。合并后，质数 $2$ 的指数是 $3$，质数 $3$ 的指数也是 $3$，所以得到 $(3+1)(3+1)=16$。
+```render html
+<style>
+  .divisor-lab { --two: #386f9b; --three: #36755d; padding-block: 8px; }
+  :root[data-theme="dark"] .divisor-lab { --two: #8ebce2; --three: #8ac9ab; }
+  .divisor-product { margin: 0 0 20px; text-align: center; font: 22px var(--font-mono); }
+  .divisor-product .two { color: var(--two); } .divisor-product .three { color: var(--three); }
+  .divisor-choices { display: grid; grid-template-columns: 48px repeat(4, minmax(0, 1fr)); gap: 4px; width: min(100%, 420px); margin-inline: auto; }
+  .divisor-choices small { display: flex; align-items: baseline; justify-content: center; min-height: 34px; padding-top: 10px; color: var(--three); font: 13px var(--font-mono); }
+  .divisor-choices .divisor-row { color: var(--two); }
+  .divisor-choices sup { font-size: 12px; position: relative; top: -.35em; }
+  .divisor-choices button { min-height: 44px; padding: 0; border: 0; border-bottom: 1px solid var(--rule); border-radius: 0; background: none; font: 16px var(--font-mono); cursor: pointer; }
+  .divisor-choices button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent-ink); border-color: var(--accent); }
+  .divisor-choice { display: block; margin-top: 22px; text-align: center; font-size: 15px; }
+</style>
+<section class="divisor-lab" aria-label="从质因子指数的选择枚举 216 的因子">
+  <p class="divisor-product">12 × 18 = <span class="two">2³</span> × <span class="three">3³</span></p>
+  <div class="divisor-choices"></div><output class="divisor-choice" aria-live="polite"></output>
+</section>
+<script>
+  const grid=document.querySelector('.divisor-choices');
+  let row=2, column=1;
+  function draw() {
+    grid.innerHTML='<span></span>'+[0,1,2,3].map(j=>`<small>3<sup>${j}</sup></small>`).join('')+[0,1,2,3].map(i=>`<small class="divisor-row">2<sup>${i}</sup></small>`+[0,1,2,3].map(j=>`<button type="button" data-cell="${i}:${j}" aria-pressed="${i===row&&j===column}" aria-label="2 的 ${i} 次方乘 3 的 ${j} 次方">${2**i*3**j}</button>`).join('')).join('');
+    document.querySelector('output').innerHTML=`2<sup>${row}</sup> × 3<sup>${column}</sup> = ${2**row*3**column}　·　4 × 4 = 16 个因子`;
+    grid.querySelectorAll('button').forEach(button=>button.addEventListener('click',()=>{[row,column]=button.dataset.cell.split(':').map(Number);draw();grid.querySelector(`[data-cell="${row}:${column}"]`).focus({preventScroll:true});}));
+  }
+  draw();
+</script>
+```
+
+分解表按质数排序，用双指针合并；相同质数的指数相加。
 
 每个分解表其实都很短。前 $9$ 个质数乘起来是 $223092870$，再乘上 $29$ 就超过 $10^9$ 了，所以一个数最多只有 $9$ 种不同质因子。两两合并时，最多也就扫 $18$ 项。
 
@@ -54,7 +82,10 @@ $n\le 1000$，枚举所有数对完全来得及。关键不是枚举，而是别
 
 下面按先读入 $n$，再读入 $n$ 个正整数的格式实现，输出最大的因子个数。
 
-```cpp title="meituan_divisors.cpp"
+<details>
+<summary>展开完整实现</summary>
+
+```cpp
 #include <algorithm>
 #include <cstdint>
 #include <iostream>
@@ -119,13 +150,15 @@ int main() {
 
     std::int64_t ans = 0;
     for (int i = 0; i < n; ++i) {
-        for (int j = 0; j < n; ++j) {
+        for (int j = i; j < n; ++j) {
             ans = std::max(ans, merge(factors[i], factors[j]));
         }
     }
     std::cout << ans << '\n';
 }
 ```
+
+</details>
 
 试除会把较小的质因子全部除干净。循环结束后如果还剩 $x>1$，它一定是质数，记一次就行。原数为 $1$ 时分解表为空，计数从 $1$ 开始，正好符合 $d(1)=1$。
 
@@ -138,5 +171,3 @@ int main() {
 - 保存分解结果的空间复杂度为 $O(nk)$。
 
 在这道题的范围里，$\sqrt A\le 31623$、$k\le 9$，直接试除加双指针完全够用。
-
-当然也可以使用 `map` 来合并指数，这种比较简单。
