@@ -159,12 +159,14 @@ test('文章目录点击后立即定位并高亮目标', async ({ page }) => {
   await page.evaluate(() => document.fonts.ready);
 
   const toc = page.locator('.toc-sidebar');
-  await toc.getByRole('link', { name: '代码', exact: true }).click();
+  await toc.getByRole('link', { name: '先把每个数拆开', exact: true }).click();
 
-  await expect(toc.locator('[aria-current="location"]')).toHaveText('代码');
+  await expect(toc.locator('[aria-current="location"]')).toHaveText(
+    '先把每个数拆开',
+  );
   await expect
     .poll(async () =>
-      page.locator('#代码').evaluate((heading) => {
+      page.locator('#先把每个数拆开').evaluate((heading) => {
         const top = heading.getBoundingClientRect().top;
         return top >= 0 && top <= 160;
       }),

@@ -121,6 +121,13 @@ test('手机视口下生活页没有横向溢出', async ({ page }) => {
 
 test('公式在桌面和窄屏下完整显示，编号与正文保持间距', async ({ page }) => {
   await page.goto('/posts/writing-sample/');
+  await expect(page.locator('.prose u .katex annotation')).toHaveText(
+    'a^2+b^2=c^2',
+  );
+  await expect(page.locator('.prose u').first()).toHaveCSS(
+    'text-decoration-line',
+    'underline',
+  );
   for (const width of [1280, 390, 320]) {
     await page.setViewportSize({ width, height: 900 });
     await page.evaluate(() => document.fonts.ready);
@@ -176,9 +183,9 @@ test('写作样例的 diff 区分上下文和行内改动，Mermaid 直接显示
     .first()
     .getAttribute('href');
   expect((await page.request.get(stylesheet!)).ok()).toBe(true);
-  const image = page.locator('.article-image img');
-  await image.scrollIntoViewIfNeeded();
-  await image.evaluate((element: HTMLImageElement) => element.decode());
+  const figure = page.locator('.render-block[data-renderer="svg"]');
+  await figure.scrollIntoViewIfNeeded();
+  await expect(figure.locator('svg')).toBeVisible();
   const diff = page.locator('.expressive-code pre[data-language="diff"]');
   await expect(diff.locator('.ec-line:not(.ins):not(.del)')).toHaveCount(2);
   await expect(diff.locator('.ec-line.del')).toHaveCount(1);

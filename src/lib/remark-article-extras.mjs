@@ -1,5 +1,3 @@
-import { visit } from 'unist-util-visit';
-
 /**
  * Small extensions to Markdown: ==highlight== and ++underline++.
  * Wrap inline nodes as well as text, so links, emphasis and math can nest.
@@ -87,15 +85,5 @@ function transformChildren(parent) {
 export function remarkArticleExtras() {
   return (tree) => {
     transformChildren(tree);
-    visit(
-      tree,
-      (node) => node.data?.hName === 'u',
-      (underline) => {
-        visit(underline, 'inlineMath', (math) => {
-          // remark-math stores the TeX passed to rehype in hChildren.
-          math.data.hChildren[0].value = `\\underline{${math.value}}`;
-        });
-      },
-    );
   };
 }

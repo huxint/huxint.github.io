@@ -81,8 +81,9 @@
   box-decoration-break: clone;
 }
 .prose u {
-  text-decoration-thickness: from-font;
+  text-decoration-thickness: 1px;
   text-underline-offset: 0.2em;
+  text-decoration-skip-ink: none;
 }
 .prose del,
 .prose s {
