@@ -1,13 +1,9 @@
 ---
-import 'katex/dist/katex.min.css';
-import '../../styles/prose.css';
 import '../../styles/life.css';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import Moment from '../../components/Moment.astro';
-import LifeViewer from '../../components/LifeViewer.astro';
+import MomentPreview from '../../components/MomentPreview.astro';
 import {
   getMoments,
-  momentCounts,
   momentDate,
   type Moment as MomentEntry,
 } from '../../lib/life';
@@ -22,31 +18,16 @@ const groups = moments.reduce<{ year: number; moments: MomentEntry[] }[]>(
   },
   [],
 );
-const totals = moments.map(momentCounts).reduce(
-  (sum, counts) => ({
-    photos: sum.photos + counts.photos,
-    videos: sum.videos + counts.videos,
-  }),
-  { photos: 0, videos: 0 },
-);
-const tally = [
-  `${moments.length} 条记录`,
-  totals.photos && `${totals.photos} 张照片`,
-  totals.videos && `${totals.videos} 段视频`,
-].filter(Boolean);
 ---
 
 <BaseLayout
   title="生活"
   description="huxint 的生活记录：照片、视频和随手写下的日常。"
 >
-  <main class="page life-page" id="main">
+  <main class="page life-page life-index" id="main">
     <header class="life-hero">
-      <div class="life-intro">
-        <h1>生活</h1>
-        <p class="life-lead">拍下来的日常，和随手写下的只言片语。</p>
-      </div>
-      {moments.length > 0 && <p class="life-tally">{tally.join(' · ')}</p>}
+      <h1>生活</h1>
+      <p class="life-lead">拍下来的日常。<br />随手写下的只言片语。</p>
     </header>
     {
       moments.length ? (
@@ -57,10 +38,10 @@ const tally = [
                 <span>{group.year}</span>
                 <small>{group.moments.length} 条</small>
               </h2>
-              <ol class="moment-timeline" aria-label={`${group.year} 年的记录`}>
+              <ol class="moment-previews" aria-label={`${group.year} 年的记录`}>
                 {group.moments.map((moment) => (
                   <li>
-                    <Moment moment={moment} />
+                    <MomentPreview moment={moment} />
                   </li>
                 ))}
               </ol>
@@ -77,6 +58,4 @@ const tally = [
       )
     }
   </main>
-  {moments.length > 0 && <LifeViewer />}
 </BaseLayout>
-{moments.length > 0 && <script>import '../../scripts/life';</script>}

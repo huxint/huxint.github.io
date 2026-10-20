@@ -54,8 +54,9 @@ function mediaUrls(moment: Moment): string[] {
   );
 }
 
-// Use the first available still as the cover, or a video's poster.
-export function momentCover(moment: Moment): ImageMetadata | undefined {
+// A record's photos and video posters, in the order they were written.
+export function momentImages(moment: Moment): ImageMetadata[] {
+  const images: ImageMetadata[] = [];
   for (const path of mediaUrls(moment)) {
     const stem = path.replace(videoFile, '');
     const source = videoFile.test(path)
@@ -64,8 +65,13 @@ export function momentCover(moment: Moment): ImageMetadata | undefined {
         )
       : path;
     const image = source && stills[source]?.default;
-    if (image) return image;
+    if (image) images.push(image);
   }
+  return images;
+}
+
+export function momentCover(moment: Moment): ImageMetadata | undefined {
+  return momentImages(moment)[0];
 }
 
 export function momentCounts(moment: Moment) {

@@ -17,14 +17,14 @@ const PLAY_ICON =
   '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg>';
 
 // Keep in step with life.css: the media column width, the tallest a row may
-// grow, and the combined aspect ratio a row aims for (about 260px tall).
-const COLUMN_WIDTH = 860;
+// grow, and the combined aspect ratio a row aims for (about 225px tall).
+const COLUMN_WIDTH = 720;
 const MAX_ROW_HEIGHT = 540;
 const ROW_ASPECT = 3.2;
 
-// In a life record, a paragraph made only of images becomes a block of media
-// laid out in justified rows. A still whose sibling video shares its name is a
-// Live Photo; a video whose sibling image shares its name gets it as the poster.
+// Keep text and media in their written order, including when they share a
+// paragraph. Adjacent images form justified rows; matching stills and videos
+// become Live Photos or provide a video's poster.
 export function remarkMoment() {
   return async (tree, file) => {
     if (
@@ -36,21 +36,33 @@ export function remarkMoment() {
     const id = basename(directory);
     const blocks = [];
     visit(tree, 'paragraph', (node, index, parent) => {
-      const items = node.children.filter(
-        (child) => !(child.type === 'text' && !child.value.trim()),
-      );
-      if (items.length && items.every((child) => child.type === 'image'))
-        blocks.push({ index, parent, items });
+      if (node.children.some((child) => child.type === 'image'))
+        blocks.push({ index, parent, node });
     });
-    for (const { index, parent, items } of blocks) {
-      const media = await Promise.all(
-        items.map((image) => inspect(image, { directory, id })),
+    for (const { index, parent, node } of blocks.reverse()) {
+      const segments = [];
+      for (const child of node.children) {
+        const previous = segments.at(-1);
+        if (child.type === 'text' && !child.value.trim() && previous?.media)
+          continue;
+        const media = child.type === 'image';
+        if (previous?.media === media) previous.children.push(child);
+        else segments.push({ media, children: [child] });
+      }
+      const content = await Promise.all(
+        segments.map(async ({ media, children }) => {
+          if (!media) return { ...node, children };
+          const items = await Promise.all(
+            children.map((image) => inspect(image, { directory, id })),
+          );
+          return element(
+            'div',
+            { className: ['moment-media'] },
+            partition(items).map(row),
+          );
+        }),
       );
-      parent.children[index] = element(
-        'div',
-        { className: ['moment-media'] },
-        partition(media).map(row),
-      );
+      parent.children.splice(index, 1, ...content);
     }
   };
 }
