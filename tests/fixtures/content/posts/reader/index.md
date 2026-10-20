@@ -7,8 +7,6 @@ tags: [FixtureTag, OtherTag]
 
 Orangutan is also mentioned on the project page. Search must return only this article.
 
-An ordinary code example may contain `/projects/`.
-
 ## First section
 
 Text before the target section.

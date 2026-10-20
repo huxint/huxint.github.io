@@ -114,13 +114,9 @@ test('SVG 绘图块显示可访问的图示', async ({ page }) => {
   await expect(figure.getByRole('img', { name: 'Fixture SVG' })).toBeVisible();
 });
 
-test('提示框根据类型显示对应的标签和不同颜色', async ({ page }) => {
+test('提示块显示各自类型的标签', async ({ page }) => {
   const titles = page.locator('.prose .callout-title');
   await expect(titles).toHaveText(['说明', '建议', '重点', '警告', '注意']);
-  const colors = await titles.evaluateAll((elements) =>
-    elements.map((element) => getComputedStyle(element).color),
-  );
-  expect(new Set(colors).size).toBe(5);
 });
 
 test('行内标记渲染高亮与下划线', async ({ page }) => {

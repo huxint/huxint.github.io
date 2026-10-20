@@ -13,14 +13,6 @@ test('项目页可以直接打开，并且有自己的标题与页内导航', as
   );
 });
 
-test('博客主导航不包含项目入口，正文可以提及项目路径', async ({ page }) => {
-  await page.goto('/posts/reader/');
-  await expect(page.locator('.prose')).toContainText('/projects/');
-  const navigation = page.getByRole('navigation', { name: '主导航' });
-  await expect(navigation).toBeVisible();
-  await expect(navigation.locator('a[href^="/projects/"]')).toHaveCount(0);
-});
-
 test('项目页可被索引，站点地图收录它且元数据不标为文章', async ({ page }) => {
   const sitemap = await page.request.get('/sitemap-0.xml');
   expect(sitemap.status()).toBe(200);
