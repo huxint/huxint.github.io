@@ -1,5 +1,26 @@
 import { expect, test, type Route } from '@playwright/test';
 
+test('搜索只返回文章，清空关键词后重置结果和地址', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('link', { name: '搜索文章', exact: true }).click();
+  const input = page.getByRole('searchbox');
+  await expect(page.getByRole('status')).toHaveText('输入关键词开始搜索。');
+
+  // The fixture article and the project page both contain this keyword.
+  await input.fill('Orangutan');
+  await expect(page.getByRole('status')).toHaveText('找到 1 篇文章');
+  await expect(page.locator('.search-results a')).toHaveCount(1);
+  await expect(page.locator('.search-results a')).toHaveAttribute(
+    'href',
+    '/posts/reader/',
+  );
+
+  await input.fill('');
+  await expect(page.locator('.search-results li')).toHaveCount(0);
+  await expect(page.getByRole('status')).toHaveText('输入关键词开始搜索。');
+  await expect(page).toHaveURL('/search/');
+});
+
 test('输入法组词期间不显示已过期的搜索响应', async ({ page }) => {
   await page.clock.install();
   await page.route('**/pagefind/pagefind.js', (route) =>

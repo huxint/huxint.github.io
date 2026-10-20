@@ -14,7 +14,7 @@
     "check": "astro check",
     "format": "prettier --write .",
     "render:gorilla": "node scripts/render-gorilla.mjs",
-    "test": "pnpm build && playwright test"
+    "test": "node tests/build.mjs && playwright test"
   },
   "dependencies": {
     "@astrojs/markdown-remark": "7.3.0",

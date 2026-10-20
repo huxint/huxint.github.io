@@ -18,8 +18,8 @@ function resetMathZoom(katex: HTMLElement): void {
 }
 
 function zoomToFit(katex: HTMLElement, availableWidth: number): void {
-  // Font and spacing rounding can change after zoom, so measure the result too.
-  for (let pass = 0; pass < 2; pass += 1) {
+  // Font metrics change in steps at smaller zoom levels, so remeasure each reduction.
+  for (let pass = 0; pass < 8; pass += 1) {
     const zoom = parseFloat(getComputedStyle(katex).zoom);
     const width = Math.max(
       katex.scrollWidth * zoom,

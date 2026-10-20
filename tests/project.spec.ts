@@ -1,5 +1,3 @@
-import { globSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
 
 test('项目页可以直接打开，并且有自己的标题与页内导航', async ({ page }) => {
@@ -15,29 +13,31 @@ test('项目页可以直接打开，并且有自己的标题与页内导航', as
   );
 });
 
-test('博客页面没有通向项目页的链接，站点地图包含项目页', async () => {
-  const dist = 'dist';
-  const blogPages = globSync(`${dist}/**/*.html`).filter(
-    (file) => !file.includes(`${join(dist, 'projects')}`),
-  );
-  expect(blogPages.length).toBeGreaterThan(0);
-  for (const file of blogPages) {
-    expect(readFileSync(file, 'utf8'), file).not.toContain('/projects/');
-  }
-  const sitemap = readFileSync(join(dist, 'sitemap-0.xml'), 'utf8');
-  expect(sitemap).toContain('https://huxint.github.io/projects/orangutan/');
-  const project = readFileSync(
-    join(dist, 'projects', 'orangutan', 'index.html'),
-    'utf8',
-  );
-  expect(project).not.toContain('noindex');
-  expect(project).not.toContain('BlogPosting');
+test('博客主导航不包含项目入口，正文可以提及项目路径', async ({ page }) => {
+  await page.goto('/posts/reader/');
+  await expect(page.locator('.prose')).toContainText('/projects/');
+  const navigation = page.getByRole('navigation', { name: '主导航' });
+  await expect(navigation).toBeVisible();
+  await expect(navigation.locator('a[href^="/projects/"]')).toHaveCount(0);
 });
 
-test('搜索索引只包含文章', async ({ page }) => {
-  await page.goto('/search/?q=Orangutan');
-  await expect(page.getByRole('status')).toHaveText(/找到/);
+test('项目页可被索引，站点地图收录它且元数据不标为文章', async ({ page }) => {
+  const sitemap = await page.request.get('/sitemap-0.xml');
+  expect(sitemap.status()).toBe(200);
+  expect(await sitemap.text()).toContain(
+    'https://huxint.github.io/projects/orangutan/',
+  );
+
+  await page.goto('/projects/orangutan/');
   await expect(
-    page.locator('.search-results a[href^="/projects/"]'),
+    page.locator('meta[name="robots"][content*="noindex"]'),
   ).toHaveCount(0);
+  await expect(page.locator('meta[property="og:type"]')).toHaveAttribute(
+    'content',
+    'website',
+  );
+  const structuredData = await page
+    .locator('script[type="application/ld+json"]')
+    .allTextContents();
+  expect(structuredData.join('\n')).not.toContain('BlogPosting');
 });
