@@ -1,10 +1,5 @@
-import inter from '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?inline';
-import mono from '@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2?inline';
-
 // The host owns vertical scrolling, so viewport scrollbars must not narrow the measurement.
 const baseStyle = `
-  @font-face{font-family:'Inter Variable';font-style:normal;font-weight:100 900;font-display:swap;src:url('${inter}') format('woff2')}
-  @font-face{font-family:'JetBrains Mono Variable';font-style:normal;font-weight:100 800;font-display:swap;src:url('${mono}') format('woff2')}
   *,*::before,*::after{box-sizing:border-box}
   html{background:transparent;overflow-y:clip}
   body{display:flow-root;margin:0;min-width:0;background:transparent;color:var(--text);font:17px/1.95 var(--font-sans);overflow-wrap:break-word}
@@ -20,10 +15,10 @@ let themeSnapshot: { theme: string; css: string } | undefined;
 // Runs inside the transparent frame, with no references to the host module.
 function frameBridge(): void {
   let previousHeight = -1;
-  let pendingFrame = false;
+  let measurementPending = false;
 
   function reportHeight(): void {
-    pendingFrame = false;
+    measurementPending = false;
     const horizontalScrollbarHeight =
       window.innerHeight - document.documentElement.clientHeight;
     const height =
@@ -45,23 +40,26 @@ function frameBridge(): void {
   }
 
   function scheduleHeight(): void {
-    if (pendingFrame) return;
-    pendingFrame = true;
-    requestAnimationFrame(reportHeight);
+    if (measurementPending) return;
+    measurementPending = true;
+    // Animation frames can be suspended for diagrams below the viewport.
+    queueMicrotask(reportHeight);
   }
 
   window.addEventListener('message', ({ source, data }) => {
     if (source !== parent || data?.type !== 'article-render:theme') return;
+    if (document.documentElement.dataset.theme === data.theme) return;
     document.documentElement.dataset.theme = data.theme;
     document.getElementById('article-render-theme')!.textContent = data.css;
     window.dispatchEvent(
       new CustomEvent('themechange', { detail: data.theme }),
     );
   });
-  new ResizeObserver(scheduleHeight).observe(document.body);
-  window.addEventListener('resize', reportHeight);
-  window.addEventListener('load', reportHeight);
-  void document.fonts.ready.then(reportHeight);
+  void document.fonts.ready.then(() => {
+    new ResizeObserver(scheduleHeight).observe(document.body);
+    window.addEventListener('resize', scheduleHeight);
+    scheduleHeight();
+  });
 }
 
 const bridgeSource = `(${frameBridge.toString()})();`;

@@ -1,18 +1,7 @@
-// Each language owns its renderer; Markdown only supplies the source and caption.
-/** @type {Record<string, {label: string, load: () => Promise<{render: (target: HTMLElement, source: string) => void | Promise<void>}>}>} */
-export const renderers = {
-  svg: {
-    label: 'SVG 图示',
-    load: () => import('../scripts/renderers/svg.ts'),
-  },
-  html: {
-    label: '交互演示',
-    load: () => import('../scripts/renderers/html.ts'),
-  },
-  excalidraw: {
-    label: 'Excalidraw 图示',
-    load: () => import('../scripts/renderers/excalidraw.ts'),
-  },
+const renderers = {
+  svg: 'SVG 图示',
+  html: '交互演示',
+  excalidraw: 'Excalidraw 图示',
 };
 
 export function renderBlock(source, meta = '') {
@@ -21,27 +10,53 @@ export function renderBlock(source, meta = '') {
     throw new Error(
       `未知的 render 类型「${type ?? ''}」。可用：${Object.keys(renderers).join('、')}。`,
     );
-  const renderer = renderers[type];
-
   const caption = options
     .find((option) => option.startsWith('title='))
     ?.slice('title='.length)
     .replace(/^(["'])(.*)\1$/, '$2');
-  const label = caption || renderer.label;
+  const label = caption || renderers[type];
+  const isSvg = type === 'svg';
   return {
     type: 'element',
     tagName: 'figure',
     properties: {
       className: ['render-block'],
       dataRenderer: type,
-      dataSource: source,
+      dataSource: isSvg ? undefined : source,
     },
     children: [
       {
         type: 'element',
         tagName: 'div',
-        properties: { className: ['render-canvas'], ariaLabel: label },
-        children: [],
+        properties: {
+          className: ['render-canvas'],
+          ariaLabel: label,
+          role: isSvg ? 'img' : undefined,
+        },
+        children: isSvg
+          ? [
+              {
+                type: 'element',
+                tagName: 'template',
+                properties: { shadowrootmode: 'open' },
+                children: [
+                  {
+                    type: 'element',
+                    tagName: 'style',
+                    properties: {},
+                    children: [
+                      {
+                        type: 'text',
+                        value:
+                          'svg{display:block;max-width:100%;height:auto;margin-inline:auto}',
+                      },
+                    ],
+                  },
+                  { type: 'raw', value: source },
+                ],
+              },
+            ]
+          : [],
       },
       ...(caption
         ? [

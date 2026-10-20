@@ -21,6 +21,8 @@ export async function render(
         config: {
           canvasBackgroundColor: false,
           theme: theme === 'dark' ? 'dark' : 'light',
+          // Inline SVGs share document fonts; embedding would subset them again.
+          skipInliningFonts: true,
         },
       });
     svgs.set(theme, pendingSvg);

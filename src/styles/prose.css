@@ -495,9 +495,8 @@
 .prose .mermaid-figure.has-error .mermaid-source {
   display: block;
 }
-.prose .mermaid-figure:not(.is-rendered) .mermaid-canvas {
-  min-height: 0;
-  padding: 0;
+:root:not(.js) .prose .mermaid-canvas {
+  display: none;
 }
 .prose .mermaid-figure.is-rendering:not(.is-rendered) .mermaid-canvas::before {
   content: '正在绘制图表…';
@@ -515,8 +514,7 @@
 .prose .render-block {
   margin: 2em 0;
 }
-.prose .render-canvas > svg,
-.prose .render-canvas::part(svg) {
+.prose .render-canvas > svg {
   display: block;
   max-width: 100%;
   height: auto;

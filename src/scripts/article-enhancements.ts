@@ -30,7 +30,6 @@ function setupFootnotePreviews(): void {
 
   let activeRef: HTMLAnchorElement | null = null;
   let hideTimer = 0;
-  let shownAt = 0;
 
   function hide(): void {
     window.clearTimeout(hideTimer);
@@ -73,7 +72,6 @@ function setupFootnotePreviews(): void {
     activeRef = ref;
     ref.setAttribute('aria-describedby', popover.id);
 
-    shownAt = performance.now();
     const clone = target.cloneNode(true) as HTMLElement;
     clone.removeAttribute('id');
     clone
@@ -100,7 +98,9 @@ function setupFootnotePreviews(): void {
   window.addEventListener(
     'scroll',
     () => {
-      if (performance.now() - shownAt > 220) hide();
+      if (!activeRef) return;
+      if (activeRef.matches(':hover, :focus-visible')) position(activeRef);
+      else hide();
     },
     { passive: true },
   );
@@ -115,6 +115,7 @@ type MermaidBlock = {
   target: HTMLElement;
   source: string;
   svgs: Map<string, string>;
+  visible: boolean;
   theme?: string;
 };
 
@@ -124,19 +125,28 @@ function setupMermaid(): void {
   ];
   if (figures.length === 0) return;
 
-  const blocks: MermaidBlock[] = figures.map((figure) => ({
-    figure,
-    target: figure.querySelector<HTMLElement>('.mermaid-canvas')!,
-    source: figure
-      .querySelector<HTMLElement>('.mermaid-source')!
-      .textContent!.trim(),
-    svgs: new Map(),
-  }));
+  // Mermaid's temporary SVGs must not change the article's layout.
+  const renderHost = document.createElement('div');
+  renderHost.style.cssText =
+    'position:fixed;inset:0;overflow:hidden;visibility:hidden;pointer-events:none';
+  document.body.append(renderHost);
+
+  const blocks = new Map<HTMLElement, MermaidBlock>(
+    figures.map((figure) => [
+      figure,
+      {
+        figure,
+        target: figure.querySelector<HTMLElement>('.mermaid-canvas')!,
+        source: figure
+          .querySelector<HTMLElement>('.mermaid-source')!
+          .textContent!.trim(),
+        svgs: new Map(),
+        visible: false,
+      },
+    ]),
+  );
   const pending = new Set<MermaidBlock>();
-  const mermaidPromise = Promise.all([
-    import('mermaid'),
-    document.fonts.ready,
-  ]).then(([module]) => module.default);
+  let mermaidPromise: Promise<typeof import('mermaid').default> | undefined;
   let running = false;
   let rendered = 0;
   let configuredTheme: string | undefined;
@@ -149,7 +159,11 @@ function setupMermaid(): void {
       pending.delete(block);
       block.figure.classList.add('is-rendering');
       try {
-        const mermaid = await mermaidPromise;
+        const mermaid = await (mermaidPromise ??= Promise.all([
+          import('mermaid'),
+          document.fonts.ready,
+        ]).then(([module]) => module.default));
+        if (!block.visible) continue;
         const theme = document.documentElement.dataset.theme!;
         if (block.theme === theme) continue;
         let svg = block.svgs.get(theme);
@@ -171,8 +185,13 @@ function setupMermaid(): void {
             });
             configuredTheme = theme;
           }
-          svg = (await mermaid.render(`mermaid-${++rendered}`, block.source))
-            .svg;
+          svg = (
+            await mermaid.render(
+              `mermaid-${++rendered}`,
+              block.source,
+              renderHost,
+            )
+          ).svg;
           block.svgs.set(theme, svg);
         }
         if (theme !== document.documentElement.dataset.theme) {
@@ -196,7 +215,8 @@ function setupMermaid(): void {
 
   function scheduleRender(): void {
     const theme = document.documentElement.dataset.theme!;
-    for (const block of blocks) if (block.theme !== theme) pending.add(block);
+    for (const block of blocks.values())
+      if (block.visible && block.theme !== theme) pending.add(block);
     void renderPending();
   }
 
@@ -204,7 +224,15 @@ function setupMermaid(): void {
     attributes: true,
     attributeFilter: ['data-theme'],
   });
-  scheduleRender();
+  const observer = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries)
+        blocks.get(entry.target as HTMLElement)!.visible = entry.isIntersecting;
+      scheduleRender();
+    },
+    { rootMargin: '800px 0px' },
+  );
+  for (const figure of figures) observer.observe(figure);
 }
 
 setupFootnotePreviews();
