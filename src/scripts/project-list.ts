@@ -1,16 +1,6 @@
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';
 
-async function repositoryDescription(url: string): Promise<string | null> {
-  try {
-    const response = await fetch(url);
-    if (!response.ok) return null;
-    return (await response.json()).description;
-  } catch {
-    return null;
-  }
-}
-
 async function readmeIntroduction(url: string) {
   const response = await fetch(url, { cache: 'no-cache' });
   if (!response.ok) return;
@@ -30,9 +20,7 @@ document
   .querySelectorAll<HTMLElement>('[data-project-description]')
   .forEach(async (element) => {
     try {
-      const description =
-        (await repositoryDescription(element.dataset.metadataUrl!)) ||
-        (await readmeIntroduction(element.dataset.readmeUrl!));
+      const description = await readmeIntroduction(element.dataset.readmeUrl!);
       if (description) {
         element.textContent = description;
         element.hidden = false;
