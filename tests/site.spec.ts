@@ -5,6 +5,7 @@ test('主导航可以打开各个站点页面', async ({ page }) => {
   const navigation = page.getByRole('navigation', { name: '主导航' });
   for (const [name, path] of [
     ['生活', '/life/'],
+    ['项目', '/projects/'],
     ['关于', '/about/'],
     ['文章', '/'],
   ]) {
@@ -47,9 +48,29 @@ test('主题选择覆盖系统偏好并跨页面保留', async ({ page }) => {
 });
 
 test('手机视口下页面没有横向溢出', async ({ page }) => {
+  await page.route(
+    'https://raw.githubusercontent.com/huxint/**/HEAD/README.md',
+    (route) =>
+      route.fulfill({
+        contentType: 'text/plain',
+        body: '# 项目说明\n\n项目的 README 正文。\n\n| 能力 | 说明 |\n| --- | --- |\n| 任务 | 并行执行 |',
+      }),
+  );
   await page.setViewportSize({ width: 375, height: 812 });
-  for (const path of ['/', '/life/', '/tags/']) {
+  for (const path of [
+    '/',
+    '/life/',
+    '/tags/',
+    '/projects/',
+    '/projects/orangutan-agent/',
+    '/projects/nexus/',
+  ]) {
     await page.goto(path);
+    if (path.startsWith('/projects/') && path !== '/projects/')
+      await expect(page.locator('[data-project-readme]')).toHaveAttribute(
+        'aria-busy',
+        'false',
+      );
     await page.evaluate(() => document.fonts.ready);
     const dimensions = await page.evaluate(() => ({
       page: document.documentElement.scrollWidth,

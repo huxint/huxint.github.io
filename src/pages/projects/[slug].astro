@@ -1,0 +1,69 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Icon from '../../components/Icon.astro';
+import { projects } from '../../data/projects';
+import '../../styles/prose.css';
+import '../../styles/project-readme.css';
+
+export function getStaticPaths() {
+  return projects.map((project) => ({
+    params: { slug: project.slug },
+    props: { project },
+  }));
+}
+
+interface Props {
+  project: (typeof projects)[number];
+}
+const { project } = Astro.props;
+---
+
+<BaseLayout
+  title={project.name}
+  description={`${project.owner}/${project.name} 的项目 README。`}
+>
+  <main class="page project-readme-page" id="main">
+    <header class="project-readme-heading">
+      <a class="project-readme-back" href="/projects/">← 项目</a>
+      <h1>{project.name}</h1>
+      <div class="project-readme-source">
+        <span>README</span><a href={project.repository}
+          ><Icon name="github" size={16} />{project.owner}/{project.name}<Icon
+            name="external"
+            size={14}
+          /></a
+        >
+      </div>
+    </header>
+    <section
+      data-project-readme
+      data-repository={project.repository}
+      data-readme-url={project.readme}
+      aria-label="项目 README"
+      aria-busy="true"
+    >
+      <p class="project-readme-status" data-readme-status role="status">
+        正在读取 README…
+      </p>
+      <div class="project-readme-error" data-readme-error hidden>
+        <p>README 暂时无法读取。</p><button type="button" data-readme-retry
+          >重试</button
+        ><a href={`${project.repository}#readme`}
+          >在 GitHub 阅读 <Icon name="external" size={14} /></a
+        >
+      </div>
+      <article class="prose project-readme-body" data-readme-body></article>
+      <noscript
+        ><p class="project-readme-status">
+          启用 JavaScript 以阅读 README，或<a
+            href={`${project.repository}#readme`}>在 GitHub 阅读</a
+          >。
+        </p></noscript
+      >
+    </section>
+  </main>
+</BaseLayout>
+
+<script>
+  import '../../scripts/project-readme';
+</script>

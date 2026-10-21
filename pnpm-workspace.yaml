@@ -1,3 +1,7 @@
 allowBuilds:
   esbuild: true
   sharp: true
+
+# Keep pnpm's release-age policy, except for this explicitly pinned version.
+minimumReleaseAgeExclude:
+  - '@excalidraw/utils@0.1.7'

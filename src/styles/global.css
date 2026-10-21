@@ -1149,17 +1149,24 @@ ol {
 }
 @media (max-width: 640px) {
   :root {
-    --header-height: 60px;
+    --header-height: 96px;
   }
   .header-inner {
-    display: flex;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: 56px 40px;
     width: calc(100% - 40px);
-    gap: 12px;
+    height: auto;
+    gap: 0;
   }
   .wordmark {
+    grid-column: 1;
+    grid-row: 1;
     font-size: 20px;
   }
   .site-nav {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-content: space-between;
     gap: 12px;
   }
   .site-nav a {
@@ -1167,10 +1174,12 @@ ol {
     font-size: 14px;
   }
   .site-nav a::after {
-    bottom: 10px;
+    bottom: 5px;
     width: 16px;
   }
   .header-tools {
+    grid-column: 2;
+    grid-row: 1;
     gap: 0;
   }
   .icon-button {
@@ -1294,7 +1303,6 @@ ol {
 @media (max-width: 360px) {
   .header-inner {
     width: calc(100% - 32px);
-    gap: 8px;
   }
   .wordmark {
     font-size: 18px;

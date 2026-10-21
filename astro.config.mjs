@@ -21,6 +21,7 @@ export default defineConfig({
   trailingSlash: 'always',
   redirects: {
     '/tags/C%2B%2B/': '/tags/C++/',
+    '/projects/orangutan/': '/projects/orangutan-agent/',
   },
   vite: {
     plugins: [

@@ -35,9 +35,18 @@ importers:
       diff:
         specifier: 9.0.0
         version: 9.0.0
+      dompurify:
+        specifier: 3.4.17
+        version: 3.4.17
+      github-slugger:
+        specifier: 2.0.0
+        version: 2.0.0
       katex:
         specifier: 0.16.47
         version: 0.16.47
+      marked:
+        specifier: 16.4.2
+        version: 16.4.2
       mermaid:
         specifier: ^12.2.0
         version: 12.2.0
