@@ -4,4 +4,5 @@ export const site = {
   description: 'huxint 的个人博客，记录学到的东西和日常生活。',
   github: 'https://github.com/huxint',
   email: 'huxint123@gmail.com',
+  x: 'https://x.com/huxint123',
 };
