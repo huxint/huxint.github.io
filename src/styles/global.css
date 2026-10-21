@@ -602,20 +602,22 @@ ol {
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
-.post-title {
+/* Titles and summaries share one style across article and project lists. */
+.content-list :is(h2, h3) {
   font-family: var(--font-serif);
   font-weight: 600;
   font-size: 24px;
   line-height: 1.45;
   letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
 }
-.post-title a {
+.content-list :is(h2, h3) a {
   display: inline-flex;
   align-items: baseline;
   gap: 12px;
   transition: color var(--dur-fast) ease;
 }
-.post-title a:hover {
+.content-list :is(h2, h3) a:hover {
   color: var(--accent-ink);
 }
 .post-list-arrow {
@@ -630,7 +632,7 @@ ol {
   transform: translateX(4px);
   color: var(--accent);
 }
-.post-list p {
+.content-list p {
   margin-top: 8px;
   color: var(--muted);
   font-size: 16px;
@@ -1254,13 +1256,13 @@ ol {
     padding-top: 0;
     margin-bottom: 8px;
   }
-  .post-title {
+  .content-list :is(h2, h3) {
     font-size: 21px;
   }
   .post-list-arrow {
     display: none;
   }
-  .post-list p {
+  .content-list p {
     font-size: 15px;
   }
   .site-footer {

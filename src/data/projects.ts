@@ -11,6 +11,7 @@ export const projects = repositories.map((repository) => {
     name,
     repository,
     slug: name,
+    metadata: `https://api.github.com/repos/${owner}/${name}`,
     readme: `https://raw.githubusercontent.com/${owner}/${name}/HEAD/README.md`,
   };
 });

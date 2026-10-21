@@ -9,10 +9,10 @@ import { projects } from '../../data/projects';
   description="我做的一些项目，内容来自各自仓库的 README。"
 >
   <main class="page projects-page" id="main">
-    <header class="projects-heading">
+    <header class="page-heading">
       <h1>项目</h1><p>一些想法，写成了代码。</p>
     </header>
-    <div class="project-list">
+    <div class="project-list content-list">
       {
         projects.map((project) => (
           <article class="project-item">
@@ -21,9 +21,12 @@ import { projects } from '../../data/projects';
                 <h2>
                   <a href={`/projects/${project.slug}/`}>{project.name}</a>
                 </h2>
-                <p>
-                  {project.owner} / {project.name}
-                </p>
+                <p
+                  data-project-description
+                  data-metadata-url={project.metadata}
+                  data-readme-url={project.readme}
+                  hidden
+                />
               </>
             </div>
             <div class="project-links">
@@ -46,24 +49,14 @@ import { projects } from '../../data/projects';
   </main>
 </BaseLayout>
 
+<script>
+  import '../../scripts/project-list';
+</script>
+
 <style>
   .projects-page {
     width: min(100% - 48px, 800px);
     padding-top: 48px;
-  }
-  .projects-heading {
-    margin-bottom: 32px;
-  }
-  .projects-heading h1 {
-    font-family: var(--font-serif);
-    font-size: 38px;
-    font-weight: 600;
-    line-height: 1.4;
-  }
-  .projects-heading p {
-    margin-top: 12px;
-    color: var(--muted);
-    font-size: 16px;
   }
   .project-item {
     display: flex;
@@ -71,19 +64,12 @@ import { projects } from '../../data/projects';
     justify-content: space-between;
     gap: 28px;
     padding-block: 27px;
+  }
+  .project-item + .project-item {
     border-top: 1px solid var(--rule);
   }
-  .project-item h2 {
-    font-size: 23px;
-    font-weight: 500;
-    line-height: 1.4;
-    letter-spacing: -0.025em;
-    overflow-wrap: anywhere;
-  }
-  .project-item p {
-    margin-top: 8px;
-    color: var(--muted);
-    font-size: 12px;
+  .project-item > div:first-child {
+    min-width: 0;
   }
   .project-links {
     display: flex;
@@ -107,18 +93,9 @@ import { projects } from '../../data/projects';
       width: calc(100% - 40px);
       padding-top: 32px;
     }
-    .projects-heading h1 {
-      font-size: 34px;
-    }
-    .projects-heading p {
-      font-size: 15px;
-    }
     .project-item {
       display: block;
       padding-block: 24px 18px;
-    }
-    .project-item h2 {
-      font-size: 22px;
     }
     .project-links {
       gap: 24px;

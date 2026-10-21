@@ -22,7 +22,7 @@ const groups = posts.reduce<{ year: number; posts: Post[] }[]>(
 );
 ---
 
-<ol class="post-list">
+<ol class="post-list content-list">
   {
     groups.map((group) => (
       <li class="post-year-group">
