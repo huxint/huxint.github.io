@@ -1,3 +1,8 @@
+import interFont from '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url';
+import monoFont from '@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2?url';
+import mathMainFont from 'katex/dist/fonts/KaTeX_Main-Regular.woff2?url';
+import mathItalicFont from 'katex/dist/fonts/KaTeX_Math-Italic.woff2?url';
+
 // The host owns vertical scrolling, so viewport scrollbars must not narrow the measurement.
 const baseStyle = `
   *,*::before,*::after{box-sizing:border-box}
@@ -5,10 +10,47 @@ const baseStyle = `
   body{display:flow-root;margin:0;min-width:0;background:transparent;color:var(--text);font:17px/1.95 var(--font-sans);overflow-wrap:break-word}
   button,input,select,textarea{font:inherit;color:inherit}
   code,pre{font-family:var(--font-mono)}
+  math{font-family:KaTeX_Main,var(--font-serif)}
+  math mi{font-family:KaTeX_Math;font-style:italic;text-transform:none}
+  math mtext{font-family:var(--font-sans)}
   img,svg,canvas{max-width:100%;height:auto}
   :focus-visible{outline:2px solid var(--accent);outline-offset:4px}
   @media(max-width:640px){body{font-size:16px;line-height:1.85}}
 `;
+const fontSources = [
+  {
+    family: 'Inter Variable',
+    weight: '100 900',
+    style: 'normal',
+    url: interFont,
+  },
+  {
+    family: 'JetBrains Mono Variable',
+    weight: '100 800',
+    style: 'normal',
+    url: monoFont,
+  },
+  { family: 'KaTeX_Main', weight: '400', style: 'normal', url: mathMainFont },
+  { family: 'KaTeX_Math', weight: '400', style: 'italic', url: mathItalicFont },
+];
+let fontStyle: Promise<string> | undefined;
+
+function frameFontStyle(): Promise<string> {
+  // Opaque sandbox origins cannot reuse the host's font faces or fetch its dev assets.
+  return (fontStyle ??= Promise.all(
+    fontSources.map(async ({ family, weight, style, url }) => {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const dataUrl = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
+      return `@font-face{font-family:'${family}';font-weight:${weight};font-style:${style};font-display:swap;src:url('${dataUrl}') format('woff2')}`;
+    }),
+  ).then((faces) => faces.join('')));
+}
+
 const frames = new Map<MessageEventSource | null, HTMLIFrameElement>();
 let themeSnapshot: { theme: string; css: string } | undefined;
 
@@ -109,16 +151,16 @@ window.addEventListener('resize', () => {
   themeSnapshot = undefined;
 });
 
-function frameDocument(source: string): string {
+function frameDocument(source: string, fonts: string): string {
   const { theme, css } = currentTheme();
   // Fragments go straight to the browser parser; full documents retain their attributes.
   if (!/<(?:!doctype\b|\/?(?:html|head|body)\b)/i.test(source))
-    return `<!doctype html><html lang="${document.documentElement.lang}" data-theme="${theme}"><head><style>${baseStyle}</style><style id="article-render-theme">${css}</style>${source}<body><script>${bridgeSource}</script></body></html>`;
+    return `<!doctype html><html lang="${document.documentElement.lang}" data-theme="${theme}"><head><style>${fonts}${baseStyle}</style><style id="article-render-theme">${css}</style>${source}<body><script>${bridgeSource}</script></body></html>`;
   const content = new DOMParser().parseFromString(source, 'text/html');
   content.documentElement.lang = document.documentElement.lang;
   content.documentElement.dataset.theme = theme;
   const base = content.createElement('style');
-  base.textContent = baseStyle;
+  base.textContent = fonts + baseStyle;
   const themeStyle = content.createElement('style');
   themeStyle.id = 'article-render-theme';
   themeStyle.textContent = css;
@@ -129,13 +171,17 @@ function frameDocument(source: string): string {
   return `<!doctype html>${content.documentElement.outerHTML}`;
 }
 
-export function render(target: HTMLElement, source: string): void {
+export async function render(
+  target: HTMLElement,
+  source: string,
+): Promise<void> {
+  const fonts = await frameFontStyle();
   const frame = document.createElement('iframe');
   frame.title = target.getAttribute('aria-label')!;
   frame.setAttribute('sandbox', 'allow-scripts');
   frame.height = '1';
   frame.addEventListener('load', () => syncTheme(frame));
-  frame.srcdoc = frameDocument(source);
+  frame.srcdoc = frameDocument(source, fonts);
   target.replaceChildren(frame);
   frames.set(frame.contentWindow!, frame);
 }
