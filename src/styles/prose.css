@@ -96,6 +96,13 @@
   text-decoration-thickness: 1px;
   text-underline-offset: 0.23em;
 }
+/* Code shows the characters as typed: JetBrains Mono would draw <| as a triangle.
+   Expressive Code reverts fonts on its descendants, so they inherit from the container. */
+.prose code,
+.prose pre,
+.prose .expressive-code {
+  font-variant-ligatures: none;
+}
 .prose :not(pre) > code {
   padding: 0;
   border: 0;
