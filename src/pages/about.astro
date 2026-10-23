@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import Icon from '../components/Icon.astro';
 import ClaudeCode from '../icons/claude-code.svg';
 import Codex from '../icons/codex.svg';
 import DeepSeek from '../icons/deepseek.svg';
@@ -7,57 +8,59 @@ import GitHub from '../icons/github.svg';
 import Gmail from '../icons/gmail.svg';
 import X from '../icons/x.svg';
 import { site } from '../data/site';
-import { projects } from '../data/projects';
-import { formatDate, getPosts } from '../lib/posts';
-import { getMoments } from '../lib/life';
+import { getContributionCalendar } from '../lib/contributions';
 
-const contacts = [
+const sections = [
   {
-    name: 'Gmail',
-    account: site.email,
-    href: `mailto:${site.email}`,
-    icon: Gmail,
-    glyphSize: 24,
+    id: 'contacts',
+    title: '联系我',
+    links: [
+      {
+        name: 'Gmail',
+        detail: site.email,
+        href: `mailto:${site.email}`,
+        icon: Gmail,
+        size: 26,
+      },
+      {
+        name: 'GitHub',
+        detail: 'huxint',
+        href: site.github,
+        icon: GitHub,
+        size: 26,
+      },
+      { name: 'X', detail: '@huxint123', href: site.x, icon: X, size: 23 },
+    ],
   },
   {
-    name: 'GitHub',
-    account: 'huxint',
-    href: site.github,
-    icon: GitHub,
-    glyphSize: 24,
-  },
-  {
-    name: 'X',
-    account: '@huxint123',
-    href: site.x,
-    icon: X,
-    glyphSize: 21,
+    id: 'agents',
+    title: '常用 Agent',
+    links: [
+      {
+        name: 'Claude Code',
+        detail: 'Anthropic',
+        href: 'https://code.claude.com/',
+        icon: ClaudeCode,
+        size: 30,
+      },
+      {
+        name: 'Codex',
+        detail: 'OpenAI',
+        href: 'https://openai.com/codex/',
+        icon: Codex,
+        size: 26,
+      },
+      {
+        name: 'DeepSeek Harness',
+        detail: 'DeepSeek',
+        href: 'https://github.com/deepseek-ai/deepseek-harness',
+        icon: DeepSeek,
+        size: 30,
+      },
+    ],
   },
 ];
-const tools = [
-  {
-    name: 'Claude Code',
-    href: 'https://code.claude.com/',
-    icon: ClaudeCode,
-    glyphSize: 28,
-  },
-  {
-    name: 'Codex',
-    href: 'https://openai.com/codex/',
-    icon: Codex,
-    glyphSize: 24,
-  },
-  {
-    name: 'DeepSeek Harness',
-    href: 'https://github.com/deepseek-ai/deepseek-harness',
-    icon: DeepSeek,
-    glyphSize: 28,
-  },
-];
-const posts = await getPosts();
-const moments = await getMoments();
-const latest = posts[0];
-const first = posts.at(-1);
+const calendar = await getContributionCalendar('huxint');
 ---
 
 <BaseLayout
@@ -66,87 +69,104 @@ const first = posts.at(-1);
 >
   <main class="page" id="main">
     <header class="about-intro">
-      <img
-        class="avatar"
-        src="/images/gorilla.webp"
-        width="148"
-        height="148"
-        alt="银背猩猩头像"
-      />
-      <div>
-        <h1>{site.name}</h1>
+      <div class="intro-text">
+        <h1>{site.name}<span>.</span></h1>
         <a class="school" href="https://www.jxnu.edu.cn/">
           <span class="school-emblem" aria-hidden="true"></span>
-          江西师范大学 · 人工智能专业，本科在读
+          <span>江西师范大学 · 人工智能专业，本科在读</span>
         </a>
-        <p class="intro">写算法题解、C++ 和机器学习笔记，也记一点日常。</p>
+        <p class="intro">日常记录</p>
+      </div>
+      <div class="stamp">
+        <img
+          src="/images/gorilla-portrait.webp"
+          width="640"
+          height="640"
+          alt="拿着橙色笔记本的银背猩猩"
+        />
       </div>
     </header>
 
-    <section class="about-section" aria-labelledby="contacts-heading">
-      <h2 id="contacts-heading">联系我</h2>
-      <ul class="contacts">
-        {
-          contacts.map(
-            ({ name, account, href, icon: ContactIcon, glyphSize }) => (
+    {
+      sections.map(({ id, title, links }) => (
+        <section class="about-section" aria-labelledby={`${id}-heading`}>
+          <h2 id={`${id}-heading`}>{title}</h2>
+          <ul class="links">
+            {links.map(({ name, detail, href, icon: Glyph, size }) => (
               <li>
                 <a href={href}>
-                  <span
-                    class="brand-icon"
-                    style={`--glyph-size: ${glyphSize}px`}
-                  >
-                    <ContactIcon aria-hidden="true" />
+                  <span class="glyph" style={`--glyph-size: ${size}px`}>
+                    <Glyph aria-hidden="true" />
                   </span>
-                  <span class="contact-name">{name}</span>
-                  <span class="contact-account">{account}</span>
+                  <span class="link-name">
+                    {name}
+                    <Icon name="external" size={13} />
+                  </span>
+                  <span class="link-detail">{detail}</span>
                 </a>
               </li>
-            ),
-          )
-        }
-      </ul>
-    </section>
-
-    <section class="about-section" aria-labelledby="tools-heading">
-      <h2 id="tools-heading">常用 Agent</h2>
-      <ul class="tools">
-        {
-          tools.map(({ name, href, icon: ToolIcon, glyphSize }) => (
-            <li>
-              <a href={href}>
-                <span class="brand-icon" style={`--glyph-size: ${glyphSize}px`}>
-                  <ToolIcon aria-hidden="true" />
-                </span>
-                {name}
-              </a>
-            </li>
-          ))
-        }
-      </ul>
-    </section>
+            ))}
+          </ul>
+        </section>
+      ))
+    }
 
     {
-      latest && first && (
-        <section class="about-section" aria-labelledby="site-heading">
-          <h2 id="site-heading">这个博客</h2>
-          <div class="site-facts">
-            <p>
-              <a href="/">{posts.length} 篇文章</a>、
-              <a href="/life/">{moments.length} 条生活记录</a>、
-              <a href="/projects/">{projects.length} 个项目</a>，第一篇写于{' '}
-              {formatDate(first.data.pubDate)}。
-            </p>
-            <p>
-              最近一篇是《
-              <a href={`/posts/${latest.id}/`}>{latest.data.title}</a>
-              》，可以通过 <a href="/rss.xml">RSS</a> 订阅更新。
-            </p>
-          </div>
+      calendar && (
+        <section class="about-section" aria-labelledby="github-heading">
+          <h2 id="github-heading">GitHub</h2>
+          <figure class="calendar">
+            <figcaption data-calendar-caption>
+              过去一年 {calendar.total.toLocaleString('zh-CN')} 次贡献
+            </figcaption>
+            <div class="calendar-scroll">
+              <div
+                class="calendar-body"
+                style={`--weeks: ${calendar.weeks}`}
+                aria-hidden="true"
+              >
+                <div class="calendar-months">
+                  {calendar.months.map(({ week, label }) => (
+                    <span style={`grid-column: ${week + 1}`}>{label}</span>
+                  ))}
+                </div>
+                <div class="calendar-days" data-calendar-days>
+                  {calendar.days.map(({ date, level, count }, index) => (
+                    <span
+                      style={
+                        index === 0
+                          ? `grid-row-start: ${calendar.offset + 1}`
+                          : undefined
+                      }
+                      data-level={level}
+                      data-date={date.replaceAll('-', '.')}
+                      data-count={count}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </figure>
         </section>
       )
     }
   </main>
 </BaseLayout>
+
+<script>
+  const caption = document.querySelector('[data-calendar-caption]');
+  const days = document.querySelector('[data-calendar-days]');
+  if (caption && days) {
+    const total = caption.textContent;
+    days.addEventListener('pointerover', ({ target }) => {
+      const { date, count } = (target as HTMLElement).dataset;
+      if (date) caption.textContent = `${date} · ${count} 次贡献`;
+    });
+    days.addEventListener('pointerleave', () => {
+      caption.textContent = total;
+    });
+  }
+</script>
 
 <style>
   .about-intro,
@@ -155,30 +175,30 @@ const first = posts.at(-1);
     grid-template-columns: var(--rail) minmax(0, 1fr);
     column-gap: var(--gutter);
   }
+
   .about-intro {
+    grid-template-columns: var(--rail) minmax(0, 1fr) auto;
     align-items: center;
-    padding-bottom: 56px;
+    padding: 8px 0 64px;
   }
-  .avatar {
-    justify-self: end;
-    width: min(148px, 100%);
-    height: auto;
-    border-radius: 32px;
-    background: var(--portrait-bg);
-    transform: rotate(4deg);
+  .intro-text {
+    grid-column: 2;
   }
   h1 {
     font-family: var(--font-serif);
-    font-size: clamp(44px, 5vw, 56px);
+    font-size: clamp(48px, 6vw, 68px);
     font-weight: 600;
-    line-height: 1.15;
-    letter-spacing: -0.02em;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+  }
+  h1 span {
+    color: var(--accent);
   }
   .school {
     display: inline-flex;
     align-items: center;
     gap: 10px;
-    margin-top: 16px;
+    margin-top: 18px;
     font-size: 15px;
     transition: color var(--dur-fast) ease;
   }
@@ -188,6 +208,7 @@ const first = posts.at(-1);
   .school-emblem {
     width: 26px;
     height: 26px;
+    flex-shrink: 0;
     background: #aa4e4f;
     mask: url('/images/jxnu-emblem.webp') center / contain no-repeat;
   }
@@ -195,15 +216,51 @@ const first = posts.at(-1);
     background: #d88d8f;
   }
   .intro {
-    max-width: 32em;
-    margin-top: 10px;
+    margin-top: 8px;
     color: var(--muted);
     font-size: 16px;
   }
 
+  /* The avatar is a postage stamp in the envelope's top-right corner, its
+     scalloped paper edge drawn by a grid of transparent circles. */
+  .stamp {
+    --hole: 4px;
+    --paper: #fffdf8;
+    width: 148px;
+    padding: 11px;
+    background:
+      radial-gradient(var(--hole), #0000 98%, var(--paper)) round
+        calc(var(--hole) * -1.5) calc(var(--hole) * -1.5) /
+        calc(var(--hole) * 3) calc(var(--hole) * 3),
+      linear-gradient(var(--paper) 0 0) no-repeat 50% /
+        calc(100% - var(--hole) * 3) calc(100% - var(--hole) * 3);
+    filter: drop-shadow(0 1px 1px rgb(40 30 10 / 0.14))
+      drop-shadow(0 10px 18px rgb(40 30 10 / 0.1));
+    rotate: 4deg;
+    transition: rotate 420ms var(--ease-spring);
+  }
+  .stamp:hover {
+    rotate: 0deg;
+  }
+  .stamp img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    object-position: 50% 75%;
+    background: #f0dcc6;
+  }
+  :global([data-theme='dark']) .stamp {
+    --paper: #2b2a30;
+    filter: drop-shadow(0 12px 20px rgb(0 0 0 / 0.45));
+  }
+  :global([data-theme='dark']) .stamp img {
+    background: #3a2f27;
+  }
+
   .about-section {
-    align-items: baseline;
-    padding-block: 26px;
+    align-items: start;
+    padding-block: 30px;
     border-top: 1px solid var(--rule);
   }
   .about-section:last-child {
@@ -214,122 +271,160 @@ const first = posts.at(-1);
     color: var(--muted);
     font-size: 14px;
     font-weight: 500;
+    line-height: 24px;
     white-space: nowrap;
   }
-  .brand-icon {
+  .links {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 18px 24px;
+  }
+  .links a {
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr);
+    column-gap: 14px;
+    align-items: center;
+  }
+  .glyph {
+    grid-row: span 2;
     display: grid;
     place-items: center;
-    flex-shrink: 0;
-    width: 40px;
-    height: 40px;
-    border: 1px solid var(--rule);
-    border-radius: 11px;
-    background: var(--bg-raised);
+    height: 32px;
+    transition: transform var(--dur-base) var(--ease-spring);
   }
-  .brand-icon :global(svg) {
+  .glyph :global(svg) {
     width: var(--glyph-size);
     height: var(--glyph-size);
   }
-  .brand-icon :global(.deepseek-mark) {
+  .glyph :global(.deepseek-mark) {
     translate: 1px 1px;
   }
-
-  .contacts {
-    display: grid;
-    gap: 6px;
-  }
-  .contacts a {
-    display: grid;
-    grid-template-columns: 40px 64px minmax(0, 1fr);
-    column-gap: 16px;
-    align-items: center;
-    min-height: 48px;
-  }
-  .contact-name {
-    font-weight: 550;
-  }
-  .contact-account {
-    color: var(--muted);
-    font-size: 15px;
-    overflow-wrap: anywhere;
-  }
-  .tools {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px 32px;
-  }
-  .tools a {
+  .link-name {
     display: inline-flex;
     align-items: center;
-    gap: 14px;
-    min-height: 48px;
+    gap: 6px;
     font-weight: 550;
+    line-height: 24px;
+    transition: color var(--dur-fast) ease;
   }
-  .contacts a:hover,
-  .contacts a:hover .contact-account,
-  .tools a:hover {
-    color: var(--accent-ink);
-  }
-  .site-facts {
-    max-width: var(--measure);
-    color: var(--muted);
-    line-height: 1.9;
-  }
-  .site-facts a {
-    color: var(--text);
-    text-decoration: underline;
-    text-decoration-color: var(--rule-strong);
-    text-underline-offset: 4px;
+  .link-name :global(svg) {
+    color: var(--faint);
+    opacity: 0;
+    transform: translate(-3px, 3px);
     transition:
-      color var(--dur-fast) ease,
-      text-decoration-color var(--dur-fast) ease;
+      opacity var(--dur-fast) ease,
+      transform var(--dur-base) var(--ease-spring);
   }
-  .site-facts a:hover {
+  .link-detail {
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+  }
+  .links a:hover .glyph {
+    transform: translateY(-2px) rotate(-6deg);
+  }
+  .links a:hover .link-name {
     color: var(--accent-ink);
-    text-decoration-color: var(--accent);
   }
-  .site-facts p + p {
-    margin-top: 6px;
+  .links a:hover .link-name :global(svg) {
+    opacity: 1;
+    transform: none;
+  }
+
+  .calendar figcaption {
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 24px;
+    font-variant-numeric: tabular-nums;
+  }
+  .calendar-scroll {
+    display: flex;
+    flex-direction: row-reverse;
+    margin-top: 12px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .calendar-body {
+    flex: 1;
+    --columns: repeat(var(--weeks), minmax(0, 1fr));
+  }
+  .calendar-months,
+  .calendar-days {
+    display: grid;
+    grid-template-columns: var(--columns);
+    column-gap: 3px;
+  }
+  .calendar-months {
+    margin-bottom: 6px;
+    color: var(--faint);
+    font-size: 12px;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .calendar-days {
+    grid-template-rows: repeat(7, auto);
+    grid-auto-flow: column;
+    row-gap: 3px;
+  }
+  .calendar-days span {
+    aspect-ratio: 1;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--text) 7%, var(--bg));
+  }
+  .calendar-days [data-level='1'] {
+    background: color-mix(in srgb, var(--accent) 30%, var(--bg));
+  }
+  .calendar-days [data-level='2'] {
+    background: color-mix(in srgb, var(--accent) 55%, var(--bg));
+  }
+  .calendar-days [data-level='3'] {
+    background: color-mix(in srgb, var(--accent) 78%, var(--bg));
+  }
+  .calendar-days [data-level='4'] {
+    background: var(--accent-ink);
+  }
+  .calendar-days span:hover {
+    outline: 1.5px solid var(--text);
+    outline-offset: 1px;
   }
 
   @media (max-width: 720px) {
     .about-intro {
-      grid-template-columns: minmax(0, 1fr) 88px;
+      grid-template-columns: minmax(0, 1fr) auto;
       column-gap: 20px;
-      padding-bottom: 36px;
+      padding: 0 0 40px;
     }
-    .avatar {
-      grid-area: 1 / 2;
-      align-self: start;
-      border-radius: 22px;
-    }
-    .about-intro > div {
-      grid-area: 1 / 1;
+    .intro-text {
+      grid-column: 1;
     }
     h1 {
-      font-size: 42px;
+      font-size: 44px;
     }
     .school {
       align-items: flex-start;
       font-size: 14px;
+      word-break: keep-all;
+    }
+    .stamp {
+      --hole: 3px;
+      width: 96px;
+      padding: 7px;
     }
     .about-section {
       display: block;
-      padding-block: 20px 22px;
+      padding-block: 20px 24px;
     }
     h2 {
       justify-self: start;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
     }
-    .contacts a {
-      grid-template-columns: 40px 56px minmax(0, 1fr);
-      column-gap: 12px;
+    .links {
+      gap: 14px;
     }
-    .contact-account {
-      font-size: 14px;
-    }
-    .tools {
-      gap: 4px 24px;
+    .calendar-body {
+      flex: none;
+      --columns: repeat(var(--weeks), 10px);
     }
   }
 </style>

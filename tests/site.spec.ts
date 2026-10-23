@@ -61,6 +61,7 @@ test('手机视口下页面没有横向溢出', async ({ page }) => {
     '/',
     '/life/',
     '/tags/',
+    '/about/',
     '/projects/',
     '/projects/orangutan-agent/',
     '/projects/nexus/',
