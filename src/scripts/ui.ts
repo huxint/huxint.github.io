@@ -1,12 +1,8 @@
-const headers = [
-  ...document.querySelectorAll<HTMLElement>('.site-header, .project-header'),
-];
+const header = document.querySelector<HTMLElement>('.site-header')!;
 let headerFrame = 0;
 
 function updateHeaderState(): void {
-  const scrolled = window.scrollY > 8;
-  for (const header of headers)
-    header.classList.toggle('is-scrolled', scrolled);
+  header.classList.toggle('is-scrolled', window.scrollY > 8);
   headerFrame = 0;
 }
 

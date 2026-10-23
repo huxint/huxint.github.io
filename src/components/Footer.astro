@@ -4,11 +4,63 @@ import { site } from '../data/site';
 ---
 
 <footer class="site-footer" data-pagefind-ignore>
-  <span>© {new Date().getUTCFullYear()} {site.name}</span>
-  <div>
-    <a href={site.github} aria-label="huxint 的 GitHub"
-      ><Icon name="github" size={15} /><span>GitHub</span></a
-    >
-    <a href="/rss.xml"><Icon name="rss" size={15} /><span>RSS</span></a>
+  <div class="footer-inner">
+    <p>© {new Date().getUTCFullYear()} {site.name}</p>
+    <div class="footer-links">
+      <a href={site.github}><Icon name="github" size={15} />GitHub</a>
+      <a href="/rss.xml"><Icon name="rss" size={15} />RSS</a>
+    </div>
   </div>
 </footer>
+
+<style>
+  .site-footer {
+    border-top: 1px solid var(--rule);
+    color: var(--faint);
+    font-size: 14px;
+  }
+  .footer-inner {
+    display: grid;
+    grid-template-columns: var(--rail) minmax(0, 1fr);
+    column-gap: var(--gutter);
+    align-items: center;
+    width: min(100% - 48px, var(--wide));
+    margin: 0 auto;
+    padding: 24px 0 32px;
+  }
+  .footer-links {
+    display: flex;
+    gap: 24px;
+  }
+  .footer-links a {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 32px;
+    transition: color var(--dur-fast) ease;
+  }
+  .footer-links a:hover {
+    color: var(--text);
+  }
+  @media (max-width: 720px) {
+    .footer-inner {
+      grid-template-columns: 1fr auto;
+      width: calc(100% - 40px);
+      padding: 20px 0 28px;
+      font-size: 13px;
+    }
+    .footer-links {
+      gap: 18px;
+    }
+  }
+  @media (max-width: 360px) {
+    .footer-inner {
+      width: calc(100% - 32px);
+    }
+  }
+  @media print {
+    .site-footer {
+      display: none;
+    }
+  }
+</style>

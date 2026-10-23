@@ -1,65 +1,88 @@
 ---
 import type { Post } from '../lib/posts';
-import { formatDate, readingMinutes, tagHref } from '../lib/posts';
-import Icon from './Icon.astro';
+import { readingMinutes, shortDate, tagHref, yearOf } from '../lib/posts';
 interface Props {
   posts: Post[];
   headingLevel?: 'h2' | 'h3';
 }
 const { posts, headingLevel: Heading = 'h2' } = Astro.props;
-const groups = posts.reduce<{ year: number; posts: Post[] }[]>(
-  (result, post) => {
-    const year = post.data.pubDate.getUTCFullYear();
-    const group = result.at(-1);
-    if (group?.year === year) {
-      group.posts.push(post);
-    } else {
-      result.push({ year, posts: [post] });
-    }
-    return result;
-  },
-  [],
-);
+const groups = Map.groupBy(posts, (post) => yearOf(post.data.pubDate));
 ---
 
-<ol class="post-list content-list">
-  {
-    groups.map((group) => (
-      <li class="post-year-group">
-        <div class="post-year-heading">
-          <span>{group.year}</span>
-          <span>{group.posts.length} 篇</span>
-        </div>
-        <ol aria-label={`${group.year} 年的文章`}>
-          {group.posts.map((post) => (
-            <li class="post-list-item">
-              <div class="post-list-meta">
-                <time datetime={post.data.pubDate.toISOString()}>
-                  {formatDate(post.data.pubDate)}
-                </time>
-                <span>约 {readingMinutes(post.body)} 分钟</span>
+{
+  [...groups].map(([year, posts]) => (
+    <section class="year-group">
+      <p class="year-label">
+        {year}
+        <small>{posts.length} 篇</small>
+      </p>
+      <ol aria-label={`${year} 年的文章`}>
+        {posts.map((post) => (
+          <li class="year-entry post-item">
+            <p class="entry-date">
+              <time datetime={post.data.pubDate.toISOString()}>
+                {shortDate(post.data.pubDate)}
+              </time>
+              <span>{readingMinutes(post.body)} 分钟</span>
+            </p>
+            <div class="post-body">
+              <Heading class="post-title">
+                <a href={`/posts/${post.id}/`}>{post.data.title}</a>
                 {post.data.draft && <span class="draft-badge">草稿</span>}
-              </div>
-              <div>
-                <Heading class="post-title">
-                  <a href={`/posts/${post.id}/`}>
-                    {post.data.title}
-                    <span class="post-list-arrow">
-                      <Icon name="arrow" size={18} />
-                    </span>
-                  </a>
-                </Heading>
-                <p>{post.data.description}</p>
-                <div class="tag-links">
-                  {post.data.tags.map((tag) => (
-                    <a href={tagHref(tag)}>{tag}</a>
-                  ))}
-                </div>
-              </div>
-            </li>
-          ))}
-        </ol>
-      </li>
-    ))
+              </Heading>
+              <p class="post-summary">{post.data.description}</p>
+              <p class="tag-links">
+                {post.data.tags.map((tag) => (
+                  <a href={tagHref(tag)}>{tag}</a>
+                ))}
+              </p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
+  ))
+}
+
+<style>
+  .post-item {
+    padding-block: 16px;
   }
-</ol>
+  .post-body {
+    max-width: var(--measure);
+  }
+  .post-title {
+    font-family: var(--font-serif);
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+  }
+  .post-title a {
+    transition: color var(--dur-fast) ease;
+  }
+  .post-title a:hover {
+    color: var(--accent-ink);
+  }
+  .post-title .draft-badge {
+    margin-left: 8px;
+    vertical-align: 3px;
+  }
+  .post-summary {
+    margin-top: 4px;
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.8;
+  }
+  .tag-links {
+    margin-top: 6px;
+  }
+  @media (max-width: 720px) {
+    .post-item {
+      padding-block: 14px;
+    }
+    .post-title {
+      font-size: 19px;
+    }
+  }
+</style>

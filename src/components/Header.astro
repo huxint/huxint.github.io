@@ -46,6 +46,7 @@ const links = [
         class="icon-button"
         href="/search/"
         aria-label="搜索文章"
+        aria-current={path === '/search/' ? 'page' : undefined}
         title="搜索文章"><Icon name="search" size={19} /></a
       >
       <ThemeToggle />
@@ -55,3 +56,131 @@ const links = [
 <script>
   import '../scripts/theme';
 </script>
+
+<style>
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    border-bottom: 1px solid transparent;
+    background: color-mix(in srgb, var(--bg) 92%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: border-color var(--dur-base) ease;
+  }
+  .site-header:global(.is-scrolled) {
+    border-bottom-color: var(--rule);
+  }
+  .header-inner {
+    display: grid;
+    grid-template-columns: var(--rail) minmax(0, 1fr) auto;
+    column-gap: var(--gutter);
+    align-items: center;
+    width: min(100% - 48px, var(--wide));
+    height: var(--header-height);
+    margin: 0 auto;
+  }
+  .wordmark {
+    justify-self: start;
+    font-family: var(--font-serif);
+    font-size: 25px;
+    font-weight: 600;
+    letter-spacing: -0.035em;
+    line-height: 1;
+    transition: color var(--dur-fast) ease;
+  }
+  .wordmark:hover {
+    color: var(--accent-ink);
+  }
+  .wordmark span {
+    color: var(--accent);
+  }
+  .site-nav {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    height: 100%;
+  }
+  .site-nav a {
+    position: relative;
+    display: flex;
+    align-items: center;
+    height: 100%;
+    color: var(--muted);
+    font-size: 15px;
+    white-space: nowrap;
+    transition: color var(--dur-fast) ease;
+  }
+  .site-nav a::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    bottom: -1px;
+    left: 0;
+    height: 2px;
+    background: var(--accent);
+    opacity: 0;
+    transform: scaleX(0.4);
+    transition:
+      opacity var(--dur-fast) ease,
+      transform var(--dur-base) var(--ease-out);
+  }
+  .site-nav a:hover {
+    color: var(--text);
+  }
+  .site-nav a.active {
+    color: var(--text);
+    font-weight: 600;
+  }
+  .site-nav a.active::after {
+    opacity: 1;
+    transform: none;
+  }
+  .header-tools {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    margin-right: -10px;
+  }
+  .header-tools [aria-current] {
+    color: var(--accent-ink);
+  }
+  @media (max-width: 720px) {
+    .header-inner {
+      grid-template-columns: 1fr auto;
+      grid-template-rows: 54px 42px;
+      width: calc(100% - 40px);
+      column-gap: 0;
+    }
+    .wordmark {
+      font-size: 21px;
+    }
+    .site-nav {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      justify-content: space-between;
+      gap: 0;
+    }
+    .site-nav a {
+      font-size: 14.5px;
+    }
+    .header-tools {
+      grid-column: 2;
+      grid-row: 1;
+      margin-right: -8px;
+    }
+    .header-tools :global(.icon-button) {
+      width: 36px;
+    }
+  }
+  @media (max-width: 360px) {
+    .header-inner {
+      width: calc(100% - 32px);
+    }
+  }
+  @media print {
+    .site-header {
+      display: none;
+    }
+  }
+</style>

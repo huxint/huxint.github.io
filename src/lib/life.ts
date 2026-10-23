@@ -2,6 +2,7 @@ import { getCollection, type CollectionEntry } from 'astro:content';
 import type { ImageMetadata } from 'astro';
 import { posix } from 'node:path';
 import { formatDate } from './posts';
+import { joinLines } from './text';
 
 export type Moment = CollectionEntry<'life'>;
 
@@ -17,22 +18,13 @@ export async function getMoments(): Promise<Moment[]> {
   );
 }
 
-const dateParts = new Intl.DateTimeFormat('zh-CN', {
+const weekdays = new Intl.DateTimeFormat('zh-CN', {
   timeZone: 'Asia/Shanghai',
-  year: 'numeric',
   weekday: 'short',
 });
 
-export function momentDate(moment: Moment) {
-  const parts = Object.fromEntries(
-    dateParts
-      .formatToParts(moment.data.date)
-      .map(({ type, value }) => [type, value]),
-  );
-  return {
-    year: Number(parts.year),
-    weekday: parts.weekday,
-  };
+export function momentWeekday(moment: Moment): string {
+  return weekdays.format(moment.data.date);
 }
 
 const stills = import.meta.glob<{ default: ImageMetadata }>(
@@ -70,12 +62,12 @@ export function momentCover(moment: Moment): ImageMetadata | undefined {
 }
 
 export function momentExcerpt(moment: Moment, limit = 60): string {
-  const text = (moment.body ?? '')
-    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
-    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
-    .replace(/[#>*_`~]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
+  const text = joinLines(
+    (moment.body ?? '')
+      .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+      .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+      .replace(/[#>*_`~]/g, ''),
+  );
   if (!text) return `${formatDate(moment.data.date)} 的记录`;
   return text.length > limit ? `${text.slice(0, limit)}…` : text;
 }

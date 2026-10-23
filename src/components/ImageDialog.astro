@@ -12,3 +12,45 @@ import Icon from './Icon.astro';
   </div>
   <img id="image-preview" alt="" />
 </dialog>
+
+<style>
+  .image-viewer {
+    width: min(1200px, calc(100% - 32px));
+    max-height: calc(100svh - 40px);
+    padding: 0;
+    border: 1px solid var(--rule);
+    border-radius: 16px;
+    background: var(--bg);
+    color: var(--text);
+    box-shadow: 0 36px 90px -28px rgb(0 0 0 / 0.6);
+  }
+  .image-viewer[open] {
+    animation: dialog-pop-in 320ms var(--ease-spring) both;
+  }
+  .image-viewer::backdrop {
+    background: rgb(0 0 0 / 0.78);
+    backdrop-filter: blur(5px);
+    animation: backdrop-in 240ms ease both;
+  }
+  .image-viewer-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 10px 14px 10px 20px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .image-viewer-toolbar p {
+    color: var(--muted);
+    font-size: 14px;
+  }
+  img {
+    display: block;
+    width: auto;
+    max-width: 100%;
+    max-height: calc(100svh - 135px);
+    margin: auto;
+    object-fit: contain;
+    background: #fff;
+  }
+</style>

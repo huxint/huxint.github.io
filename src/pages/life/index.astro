@@ -1,53 +1,40 @@
 ---
-import '../../styles/life.css';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHeader from '../../components/PageHeader.astro';
 import MomentPreview from '../../components/MomentPreview.astro';
-import {
-  getMoments,
-  momentDate,
-  type Moment as MomentEntry,
-} from '../../lib/life';
+import { getMoments } from '../../lib/life';
+import { yearOf } from '../../lib/posts';
 const moments = await getMoments();
-const groups = moments.reduce<{ year: number; moments: MomentEntry[] }[]>(
-  (result, moment) => {
-    const { year } = momentDate(moment);
-    const group = result.at(-1);
-    if (group?.year === year) group.moments.push(moment);
-    else result.push({ year, moments: [moment] });
-    return result;
-  },
-  [],
-);
+const groups = Map.groupBy(moments, (moment) => yearOf(moment.data.date));
 ---
 
 <BaseLayout
   title="生活"
   description="huxint 的生活记录：照片、视频和随手写下的日常。"
 >
-  <main class="page life-page life-index" id="main">
-    <header class="life-hero">
-      <h1>生活</h1>
-      <p class="life-lead">拍下来的日常。<br />随手写下的只言片语。</p>
-    </header>
+  <main class="page" id="main">
+    <PageHeader title="生活">
+      <p>拍下来的日常，和随手写下的只言片语。</p>
+    </PageHeader>
     {
       moments.length ? (
-        <ol class="moment-list" id="life-records" aria-label="日常记录">
-          {groups.map((group) => (
-            <li class="moment-year-group">
-              <h2 class="moment-year">
-                <span>{group.year}</span>
-                <small>{group.moments.length} 条</small>
-              </h2>
-              <ol class="moment-previews" aria-label={`${group.year} 年的记录`}>
-                {group.moments.map((moment) => (
+        <>
+          {[...groups].map(([year, moments]) => (
+            <section class="year-group">
+              <p class="year-label">
+                {year}
+                <small>{moments.length} 条</small>
+              </p>
+              <ol aria-label={`${year} 年的记录`}>
+                {moments.map((moment) => (
                   <li>
                     <MomentPreview moment={moment} />
                   </li>
                 ))}
               </ol>
-            </li>
+            </section>
           ))}
-        </ol>
+        </>
       ) : (
         <p class="empty-state">
           还没有记录。

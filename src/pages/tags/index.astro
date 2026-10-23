@@ -1,80 +1,85 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHeader from '../../components/PageHeader.astro';
 import Icon from '../../components/Icon.astro';
 import { getPosts, getTags, tagHref } from '../../lib/posts';
 import '../../styles/tags.css';
 
-const posts = await getPosts();
-const tags = getTags(posts).sort(
-  ([leftTag, leftPosts], [rightTag, rightPosts]) =>
-    rightPosts.length - leftPosts.length ||
-    leftTag.localeCompare(rightTag, 'zh-CN'),
+const tags = getTags(await getPosts());
+// One row per article count, most-written topics first.
+const tiers = [...Map.groupBy(tags, ([, tagged]) => tagged.length)].sort(
+  ([left], [right]) => right - left,
 );
+const weight = (count: number) =>
+  Math.log(count) / Math.log(Math.max(2, tiers[0]?.[0] ?? 2));
 ---
 
 <BaseLayout
   title="标签"
   description="huxint 博客的标签索引：从题目、算法和技术笔记里，找到继续阅读的线索。"
 >
-  <main class="page tag-index-page" id="main">
-    <header class="tag-hero">
-      <div>
-        <h1>标签</h1>
-        <p class="tag-hero-lede">从一个主题，找到想读的文章。</p>
-      </div>
-    </header>
-
+  <main class="page" id="main">
+    <PageHeader title="标签">
+      <p>从一个主题，找到想读的文章。</p>
+    </PageHeader>
     {
       tags.length ? (
-        <section class="tag-directory" aria-label="全部标签">
-          <div class="tag-toolbar">
-            <label class="tag-search">
-              <Icon name="search" size={16} />
-              <span class="sr-only">筛选标签</span>
-              <input
-                type="search"
-                placeholder="搜索标签或文章…"
-                autocomplete="off"
-                spellcheck="false"
-                data-tag-filter
-              />
-              <kbd aria-hidden="true">/</kbd>
-            </label>
-            <p class="tag-toolbar-status" role="status" data-tag-status>
-              共 {tags.length} 个标签，按文章数排列。
-            </p>
+        <section class="tag-index" aria-label="全部标签">
+          <div class="tag-toolbar rail-grid">
+            <div class="tag-filter">
+              <label class="tag-search">
+                <Icon name="search" size={16} />
+                <span class="sr-only">筛选标签</span>
+                <input
+                  type="search"
+                  placeholder="筛选标签或文章标题"
+                  autocomplete="off"
+                  spellcheck="false"
+                  data-tag-filter
+                />
+                <kbd aria-hidden="true">/</kbd>
+              </label>
+              <p class="tag-status" role="status" data-tag-status>
+                共 {tags.length} 个标签，按文章数分组。
+              </p>
+            </div>
           </div>
-
-          <ol class="tag-list">
-            {tags.map(([tag, tagged]) => (
+          <ol class="tag-tiers">
+            {tiers.map(([count, entries]) => (
               <li
-                class="tag-list-item"
-                style={`--tag-size: ${18 + Math.log2(tagged.length) * 3}px`}
-                data-tag-item
-                data-tag-search={[
-                  tag,
-                  ...tagged.map((post) => post.data.title),
-                ].join(' ')}
+                class="tag-tier"
+                style={`--weight: ${weight(count).toFixed(2)}`}
+                data-tag-tier
               >
-                <a
-                  class="tag-entry"
-                  href={tagHref(tag)}
-                  aria-label={`${tag}，${tagged.length} 篇文章`}
-                >
-                  <span class="tag-entry-name">{tag}</span>
-                  <span class="tag-entry-count" aria-hidden="true">
-                    {tagged.length}
-                  </span>
-                </a>
+                <p class="tag-tier-count">{count} 篇</p>
+                <ul class="tag-tier-tags">
+                  {entries.map(([tag, tagged]) => (
+                    <li
+                      data-tag-item
+                      data-tag-search={[
+                        tag,
+                        ...tagged.map((post) => post.data.title),
+                      ].join(' ')}
+                    >
+                      <a
+                        href={tagHref(tag)}
+                        aria-label={`${tag}，${count} 篇文章`}
+                      >
+                        {tag}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
               </li>
             ))}
           </ol>
-
-          <div class="tag-empty" data-tag-empty hidden>
-            <p>没有找到对应的标签。</p>
-            <button type="button" data-tag-clear>
-              清除筛选
-            </button>
+          <div class="tag-empty rail-grid" data-tag-empty hidden>
+            <p>
+              没有找到对应的标签。
+              <button type="button" data-tag-clear>
+                清除筛选
+              </button>
+            </p>
           </div>
         </section>
       ) : (

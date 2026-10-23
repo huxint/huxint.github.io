@@ -22,39 +22,38 @@ const { project } = Astro.props;
   title={project.name}
   description={`${project.owner}/${project.name} 的项目 README。`}
 >
-  <main class="page project-readme-page" id="main">
-    <header class="project-readme-heading">
-      <a class="project-readme-back" href="/projects/">← 项目</a>
-      <h1>{project.name}</h1>
-      <div class="project-readme-source">
-        <span>README</span><a href={project.repository}
-          ><Icon name="github" size={16} />{project.owner}/{project.name}<Icon
-            name="external"
-            size={14}
-          /></a
+  <main class="page readme-page" id="main">
+    <div class="readme-info">
+      <a class="back-link" href="/projects/">← 所有项目</a>
+      <p class="readme-source">
+        <span>README 来自</span>
+        <a href={project.repository}
+          ><Icon name="github" size={15} />{project.owner}/{project.name}</a
         >
-      </div>
-    </header>
+      </p>
+    </div>
+    <h1>{project.name}</h1>
     <section
+      class="readme"
       data-project-readme
       data-repository={project.repository}
       data-readme-url={project.readme}
       aria-label="项目 README"
       aria-busy="true"
     >
-      <p class="project-readme-status" data-readme-status role="status">
+      <p class="readme-status" data-readme-status role="status">
         正在读取 README…
       </p>
-      <div class="project-readme-error" data-readme-error hidden>
+      <div class="readme-error" data-readme-error hidden>
         <p>README 暂时无法读取。</p><button type="button" data-readme-retry
           >重试</button
         ><a href={`${project.repository}#readme`}
           >在 GitHub 阅读 <Icon name="external" size={14} /></a
         >
       </div>
-      <article class="prose project-readme-body" data-readme-body></article>
+      <article class="prose readme-body" data-readme-body></article>
       <noscript
-        ><p class="project-readme-status">
+        ><p class="readme-status">
           启用 JavaScript 以阅读 README，或<a
             href={`${project.repository}#readme`}>在 GitHub 阅读</a
           >。

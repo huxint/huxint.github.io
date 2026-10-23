@@ -10,25 +10,20 @@ viewer.addEventListener('close', () =>
   document.documentElement.classList.remove('dialog-open'),
 );
 
-document
-  .querySelectorAll<HTMLElement>('.article-image, .project-figure')
-  .forEach((figure) => {
-    const image = figure.querySelector('img')!;
-    let trigger = figure.querySelector('button');
-    if (!trigger) {
-      trigger = document.createElement('button');
-      trigger.type = 'button';
-      trigger.className = 'image-trigger';
-      trigger.setAttribute('aria-label', `放大图片：${image.alt}`);
-      image.before(trigger);
-      trigger.append(image);
-    }
-    trigger.addEventListener('click', () => {
-      preview.src = image.currentSrc || image.src;
-      preview.alt = image.alt;
-      caption.textContent =
-        figure.querySelector('figcaption')?.textContent || image.alt;
-      viewer.showModal();
-      document.documentElement.classList.add('dialog-open');
-    });
+document.querySelectorAll<HTMLElement>('.article-image').forEach((figure) => {
+  const image = figure.querySelector('img')!;
+  const trigger = document.createElement('button');
+  trigger.type = 'button';
+  trigger.className = 'image-trigger';
+  trigger.setAttribute('aria-label', `放大图片：${image.alt}`);
+  image.before(trigger);
+  trigger.append(image);
+  trigger.addEventListener('click', () => {
+    preview.src = image.currentSrc || image.src;
+    preview.alt = image.alt;
+    caption.textContent =
+      figure.querySelector('figcaption')?.textContent || image.alt;
+    viewer.showModal();
+    document.documentElement.classList.add('dialog-open');
   });
+});

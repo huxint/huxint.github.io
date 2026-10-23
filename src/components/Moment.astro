@@ -1,42 +1,32 @@
 ---
 import { render } from 'astro:content';
-import Icon from './Icon.astro';
 import { formatDate } from '../lib/posts';
-import { momentDate, type Moment } from '../lib/life';
+import { momentWeekday, type Moment } from '../lib/life';
 
 interface Props {
   moment: Moment;
 }
 const { moment } = Astro.props;
 const { Content } = await render(moment);
-const { weekday } = momentDate(moment);
-const date = formatDate(moment.data.date);
-const datetime = moment.data.date.toISOString();
-const { location } = moment.data;
-const caption = [date, location].filter(Boolean).join(' · ');
+const { date: datetime, location, draft } = moment.data;
+const date = formatDate(datetime);
 ---
 
 <article
   class="moment"
   id={moment.id}
   aria-label={`${date} 的记录`}
-  data-caption={caption}
+  data-caption={[date, location].filter(Boolean).join(' · ')}
 >
-  <header class="moment-header">
-    <h1><time datetime={datetime}>{date}</time></h1>
-    <div class="moment-meta">
-      <span>{weekday}</span>
-      {
-        location && (
-          <span class="moment-location">
-            <Icon name="pin" size={13} />
-            {location}
-          </span>
-        )
-      }
-      {moment.data.draft && <span class="draft-badge">草稿</span>}
-    </div>
-  </header>
+  <div class="moment-info">
+    <a class="back-link" href="/life/">← 所有记录</a>
+    <p class="moment-meta">
+      <span>{momentWeekday(moment)}</span>
+      {location && <span>{location}</span>}
+      {draft && <span class="draft-badge">草稿</span>}
+    </p>
+  </div>
+  <h1><time datetime={datetime.toISOString()}>{date}</time></h1>
   <div class="prose moment-text">
     <Content />
   </div>

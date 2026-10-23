@@ -20,6 +20,14 @@ export function formatDate(date: Date): string {
     .replaceAll('-', '.');
 }
 
+export function shortDate(date: Date): string {
+  return formatDate(date).slice(5);
+}
+
+export function yearOf(date: Date): number {
+  return Number(formatDate(date).slice(0, 4));
+}
+
 export function readingMinutes(body: string = ''): number {
   const text = body.replace(/^```render[^\n]*\n[\s\S]*?^```[ \t]*$/gm, '');
   const chineseCharacters = text.match(/[\u4e00-\u9fff]/g)?.length ?? 0;

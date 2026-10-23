@@ -1,14 +1,32 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHeader from '../components/PageHeader.astro';
 ---
 
 <BaseLayout title="页面未找到" noindex>
   <main class="page" id="main">
-    <p class="error-code">404</p>
-    <header class="page-heading">
-      <h1>页面未找到</h1>
+    <PageHeader title="页面未找到">
+      <p slot="rail" class="error-code">404</p>
       <p>地址可能有误，或文章已经移动。</p>
-    </header>
-    <a class="text-link" href="/">← 返回文章列表</a>
+      <a class="text-link" href="/">← 返回文章列表</a>
+    </PageHeader>
   </main>
 </BaseLayout>
+
+<style>
+  .error-code {
+    text-align: right;
+    color: var(--faint);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    letter-spacing: 0.08em;
+  }
+  .text-link {
+    margin-top: 28px;
+  }
+  @media (max-width: 720px) {
+    .error-code {
+      text-align: left;
+    }
+  }
+</style>

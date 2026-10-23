@@ -76,8 +76,6 @@ import Icon from './Icon.astro';
   .gorilla-avatar {
     display: block;
     width: 100%;
-    max-width: 360px;
-    justify-self: end;
   }
   .gorilla-stage {
     position: relative;
@@ -192,13 +190,12 @@ import Icon from './Icon.astro';
   [aria-pressed='true'] .gorilla-play {
     display: block;
   }
-  @media (max-width: 640px) {
-    .gorilla-avatar {
-      max-width: 240px;
-      justify-self: center;
-    }
+  @media (max-width: 720px) {
     .gorilla-caption {
       margin-top: 0;
+    }
+    .gorilla-hint {
+      display: none;
     }
     .gorilla-controls button {
       min-height: 40px;

@@ -1,6 +1,7 @@
 ---
 import type { GetStaticPaths } from 'astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHeader from '../../components/PageHeader.astro';
 import PostList from '../../components/PostList.astro';
 import {
   formatDate,
@@ -11,25 +12,24 @@ import {
 } from '../../lib/posts';
 import '../../styles/tags.css';
 export const getStaticPaths = (async () => {
-  const posts = await getPosts();
-  return getTags(posts).map(([tag, tagged]) => ({
+  const tags = getTags(await getPosts());
+  return tags.map(([tag, posts]) => ({
     params: { tag },
-    props: { tag, posts: tagged },
+    props: { tag, posts, tags },
   }));
 }) satisfies GetStaticPaths;
 interface Props {
   tag: string;
   posts: Post[];
+  tags: [string, Post[]][];
 }
-const { tag, posts } = Astro.props;
-const allPosts = await getPosts();
-const currentPostIds = new Set(posts.map((post) => post.id));
-const related = getTags(allPosts)
+const { tag, posts, tags } = Astro.props;
+const related = tags
   .filter(([name]) => name !== tag)
-  .map(([name, relatedPosts]) => ({
+  .map(([name, tagged]) => ({
     tag: name,
-    shared: relatedPosts.filter((post) => currentPostIds.has(post.id)).length,
-    count: relatedPosts.length,
+    shared: tagged.filter((post) => posts.includes(post)).length,
+    count: tagged.length,
   }))
   .filter(({ shared }) => shared > 0)
   .sort(
@@ -40,43 +40,36 @@ const related = getTags(allPosts)
   )
   .slice(0, 6);
 const latest = posts[0];
-const description = `标签「${tag}」下的 ${posts.length} 篇文章。`;
 ---
 
-<BaseLayout title={`#${tag}`} description={description}>
-  <main class="page tag-detail-page" id="main">
-    <a class="back-link" href="/tags/">← 所有标签</a>
-    <header class="tag-detail-header">
-      <div class="tag-detail-title-row">
-        <h1><span>#</span>{tag}</h1>
-        <span class="tag-detail-total">{posts.length} 篇</span>
-      </div>
-      <p class="tag-detail-lede">
-        这个话题下收了 {posts.length} 篇文章{
-          latest && `，最近一篇写于 ${formatDate(latest.data.pubDate)}`
-        }。
+<BaseLayout
+  title={`#${tag}`}
+  description={`标签「${tag}」下的 ${posts.length} 篇文章。`}
+>
+  <main class="page" id="main">
+    <PageHeader>
+      <a slot="rail" class="back-link" href="/tags/">← 所有标签</a>
+      <Fragment slot="title"><span class="tag-hash">#</span>{tag}</Fragment>
+      <p>
+        {posts.length} 篇文章，最近一篇写于 {formatDate(latest.data.pubDate)}。
       </p>
-    </header>
-
-    {
-      related.length > 0 && (
-        <nav class="tag-related" aria-label="相邻主题">
-          <span class="tag-related-label">相关标签</span>
-          {related.map((item) => (
-            <a
-              href={tagHref(item.tag)}
-              title={`与「${tag}」共同出现在 ${item.shared} 篇文章里`}
-            >
-              {item.tag}
-              <span>{item.shared}</span>
-            </a>
-          ))}
-        </nav>
-      )
-    }
-
-    <section class="tag-detail-articles" aria-label={`${tag} 标签下的文章`}>
-      <PostList posts={posts} />
-    </section>
+      {
+        related.length > 0 && (
+          <nav class="tag-related" aria-label="相邻主题">
+            <span>常一起出现</span>
+            {related.map((item) => (
+              <a
+                href={tagHref(item.tag)}
+                title={`与「${tag}」共同出现在 ${item.shared} 篇文章里`}
+              >
+                {item.tag}
+                <small>{item.shared}</small>
+              </a>
+            ))}
+          </nav>
+        )
+      }
+    </PageHeader>
+    <PostList posts={posts} />
   </main>
 </BaseLayout>

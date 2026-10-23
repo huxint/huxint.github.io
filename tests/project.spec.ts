@@ -59,6 +59,21 @@ test('项目从仓库列表生成，并沿用博客导航', async ({ page }) => 
   ).toHaveAttribute('href', 'https://github.com/huxint/orangutan-agent');
 });
 
+test('项目列表用 README 第一段文字作介绍，跳过徽章和链接行', async ({
+  page,
+}) => {
+  await page.route(readmeUrl, (route) =>
+    route.fulfill({
+      contentType: 'text/plain',
+      body: '<p align="center"><img src="hero.svg" alt="封面"></p>\n\n[![C++](badge.svg)](https://isocpp.org) · [文档](docs.md)\n\n**Orangutan** 是一个\n智能体运行时。',
+    }),
+  );
+  await page.goto('/projects/');
+  await expect(page.locator(`[data-readme-url="${readmeUrl}"]`)).toHaveText(
+    'Orangutan 是一个智能体运行时。',
+  );
+});
+
 test('README 支持 Markdown、HTML 图片、相对链接和安全的目录锚点', async ({
   page,
 }) => {

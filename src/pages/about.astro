@@ -7,6 +7,9 @@ import GitHub from '../icons/github.svg';
 import Gmail from '../icons/gmail.svg';
 import X from '../icons/x.svg';
 import { site } from '../data/site';
+import { projects } from '../data/projects';
+import { formatDate, getPosts } from '../lib/posts';
+import { getMoments } from '../lib/life';
 
 const contacts = [
   {
@@ -14,21 +17,21 @@ const contacts = [
     account: site.email,
     href: `mailto:${site.email}`,
     icon: Gmail,
-    glyphSize: 28,
+    glyphSize: 24,
   },
   {
     name: 'GitHub',
     account: 'huxint',
     href: site.github,
     icon: GitHub,
-    glyphSize: 28,
+    glyphSize: 24,
   },
   {
     name: 'X',
     account: '@huxint123',
     href: site.x,
     icon: X,
-    glyphSize: 25,
+    glyphSize: 21,
   },
 ];
 const tools = [
@@ -36,254 +39,297 @@ const tools = [
     name: 'Claude Code',
     href: 'https://code.claude.com/',
     icon: ClaudeCode,
-    glyphSize: 32,
+    glyphSize: 28,
   },
   {
     name: 'Codex',
     href: 'https://openai.com/codex/',
     icon: Codex,
-    glyphSize: 28,
+    glyphSize: 24,
   },
   {
     name: 'DeepSeek Harness',
     href: 'https://github.com/deepseek-ai/deepseek-harness',
     icon: DeepSeek,
-    glyphSize: 32,
+    glyphSize: 28,
   },
 ];
+const posts = await getPosts();
+const moments = await getMoments();
+const latest = posts[0];
+const first = posts.at(-1);
 ---
 
 <BaseLayout
   title="关于我"
   description="huxint，江西师范大学人工智能专业本科生。"
 >
-  <main class="page profile-page" id="main">
-    <header class="profile-heading">
-      <h1>huxint</h1>
+  <main class="page" id="main">
+    <header class="about-intro">
       <img
-        class="profile-avatar"
+        class="avatar"
         src="/images/gorilla.webp"
-        width="176"
-        height="176"
+        width="148"
+        height="148"
         alt="银背猩猩头像"
       />
-      <a class="profile-school" href="https://www.jxnu.edu.cn/">
-        <span class="brand-icon" aria-hidden="true">
-          <span class="school-emblem"></span>
-        </span>
-        <span>
-          <span class="school-name">江西师范大学</span>
-          <span class="profile-secondary">人工智能专业，本科在读</span>
-        </span>
-      </a>
+      <div>
+        <h1>{site.name}</h1>
+        <a class="school" href="https://www.jxnu.edu.cn/">
+          <span class="school-emblem" aria-hidden="true"></span>
+          江西师范大学 · 人工智能专业，本科在读
+        </a>
+        <p class="intro">写算法题解、C++ 和机器学习笔记，也记一点日常。</p>
+      </div>
     </header>
 
-    <div class="profile-links">
-      <section aria-labelledby="contacts-heading">
-        <h2 id="contacts-heading">联系我</h2>
-        <ul class="profile-contacts">
-          {
-            contacts.map(
-              ({ name, account, href, icon: ContactIcon, glyphSize }) => (
-                <li>
-                  <a href={href} class="profile-link">
-                    <span
-                      class="brand-icon"
-                      style={`--glyph-size: ${glyphSize}px`}
-                    >
-                      <ContactIcon aria-hidden="true" />
-                    </span>
-                    <span>
-                      <span class="profile-label">{name}</span>
-                      <span class="profile-secondary">{account}</span>
-                    </span>
-                  </a>
-                </li>
-              ),
-            )
-          }
-        </ul>
-      </section>
-      <section class="profile-workbench" aria-labelledby="tools-heading">
-        <h2 id="tools-heading">常用 Agent</h2>
-        <ul class="profile-tools">
-          {
-            tools.map(({ name, href, icon: ToolIcon, glyphSize }) => (
+    <section class="about-section" aria-labelledby="contacts-heading">
+      <h2 id="contacts-heading">联系我</h2>
+      <ul class="contacts">
+        {
+          contacts.map(
+            ({ name, account, href, icon: ContactIcon, glyphSize }) => (
               <li>
-                <a href={href} class="profile-link">
+                <a href={href}>
                   <span
                     class="brand-icon"
                     style={`--glyph-size: ${glyphSize}px`}
                   >
-                    <ToolIcon aria-hidden="true" />
+                    <ContactIcon aria-hidden="true" />
                   </span>
-                  <span class="profile-label">{name}</span>
+                  <span class="contact-name">{name}</span>
+                  <span class="contact-account">{account}</span>
                 </a>
               </li>
-            ))
-          }
-        </ul>
-      </section>
-    </div>
+            ),
+          )
+        }
+      </ul>
+    </section>
+
+    <section class="about-section" aria-labelledby="tools-heading">
+      <h2 id="tools-heading">常用 Agent</h2>
+      <ul class="tools">
+        {
+          tools.map(({ name, href, icon: ToolIcon, glyphSize }) => (
+            <li>
+              <a href={href}>
+                <span class="brand-icon" style={`--glyph-size: ${glyphSize}px`}>
+                  <ToolIcon aria-hidden="true" />
+                </span>
+                {name}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    {
+      latest && first && (
+        <section class="about-section" aria-labelledby="site-heading">
+          <h2 id="site-heading">这个博客</h2>
+          <div class="site-facts">
+            <p>
+              <a href="/">{posts.length} 篇文章</a>、
+              <a href="/life/">{moments.length} 条生活记录</a>、
+              <a href="/projects/">{projects.length} 个项目</a>，第一篇写于{' '}
+              {formatDate(first.data.pubDate)}。
+            </p>
+            <p>
+              最近一篇是《
+              <a href={`/posts/${latest.id}/`}>{latest.data.title}</a>
+              》，可以通过 <a href="/rss.xml">RSS</a> 订阅更新。
+            </p>
+          </div>
+        </section>
+      )
+    }
   </main>
 </BaseLayout>
 
 <style>
-  .profile-page {
-    width: min(100% - 48px, 800px);
-    padding-top: 80px;
-  }
-  .profile-heading {
+  .about-intro,
+  .about-section {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 176px;
-    grid-template-areas: 'name portrait' 'school portrait';
+    grid-template-columns: var(--rail) minmax(0, 1fr);
+    column-gap: var(--gutter);
+  }
+  .about-intro {
     align-items: center;
-    gap: 28px 48px;
+    padding-bottom: 56px;
   }
-  .profile-heading h1 {
-    grid-area: name;
-    font-size: clamp(80px, 10vw, 120px);
-    font-weight: 560;
-    line-height: 0.95;
-    letter-spacing: -0.075em;
-  }
-  .profile-avatar {
-    grid-area: portrait;
-    display: block;
-    width: 176px;
-    height: 176px;
-    border-radius: 36px;
+  .avatar {
+    justify-self: end;
+    width: min(148px, 100%);
+    height: auto;
+    border-radius: 32px;
     background: var(--portrait-bg);
     transform: rotate(4deg);
   }
-  .profile-school {
-    grid-area: school;
+  h1 {
+    font-family: var(--font-serif);
+    font-size: clamp(44px, 5vw, 56px);
+    font-weight: 600;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+  }
+  .school {
     display: inline-flex;
     align-items: center;
-    justify-self: start;
-    gap: 12px;
-    min-height: 52px;
-  }
-  .school-name,
-  .profile-label {
-    display: block;
+    gap: 10px;
+    margin-top: 16px;
     font-size: 15px;
-    font-weight: 500;
-    line-height: 1.6;
+    transition: color var(--dur-fast) ease;
   }
-  .profile-secondary {
-    display: block;
-    margin-top: 2px;
-    color: var(--muted);
-    font-size: 13px;
-    line-height: 1.6;
-  }
-  .brand-icon {
-    display: grid;
-    place-items: center;
-    width: 44px;
-    height: 44px;
-    flex-shrink: 0;
-    border: 1px solid var(--rule);
-    border-radius: 12px;
-    background: var(--bg-raised);
-  }
-  .brand-icon :global(svg) {
-    width: var(--glyph-size, 26px);
-    height: var(--glyph-size, 26px);
-  }
-  .brand-icon :global(.deepseek-mark) {
-    translate: 1px 1px;
+  .school:hover {
+    color: var(--accent-ink);
   }
   .school-emblem {
-    width: 32px;
-    height: 32px;
+    width: 26px;
+    height: 26px;
     background: #aa4e4f;
     mask: url('/images/jxnu-emblem.webp') center / contain no-repeat;
   }
   :global([data-theme='dark']) .school-emblem {
     background: #d88d8f;
   }
-  .profile-links {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 48px;
-    margin-top: 48px;
-    padding-top: 28px;
+  .intro {
+    max-width: 32em;
+    margin-top: 10px;
+    color: var(--muted);
+    font-size: 16px;
+  }
+
+  .about-section {
+    align-items: baseline;
+    padding-block: 26px;
     border-top: 1px solid var(--rule);
   }
-  .profile-links h2 {
-    margin-bottom: 16px;
+  .about-section:last-child {
+    border-bottom: 1px solid var(--rule);
+  }
+  h2 {
+    justify-self: end;
     color: var(--muted);
     font-size: 14px;
-    font-weight: 450;
+    font-weight: 500;
+    white-space: nowrap;
   }
-  .profile-workbench {
-    padding-left: 48px;
-    border-left: 1px solid var(--rule);
+  .brand-icon {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--rule);
+    border-radius: 11px;
+    background: var(--bg-raised);
   }
-  .profile-link {
+  .brand-icon :global(svg) {
+    width: var(--glyph-size);
+    height: var(--glyph-size);
+  }
+  .brand-icon :global(.deepseek-mark) {
+    translate: 1px 1px;
+  }
+
+  .contacts {
+    display: grid;
+    gap: 6px;
+  }
+  .contacts a {
+    display: grid;
+    grid-template-columns: 40px 64px minmax(0, 1fr);
+    column-gap: 16px;
+    align-items: center;
+    min-height: 48px;
+  }
+  .contact-name {
+    font-weight: 550;
+  }
+  .contact-account {
+    color: var(--muted);
+    font-size: 15px;
+    overflow-wrap: anywhere;
+  }
+  .tools {
     display: flex;
+    flex-wrap: wrap;
+    gap: 10px 32px;
+  }
+  .tools a {
+    display: inline-flex;
     align-items: center;
     gap: 14px;
-    min-height: 64px;
-    padding-block: 8px;
+    min-height: 48px;
+    font-weight: 550;
   }
-  .profile-link:hover .profile-label,
-  .profile-school:hover .school-name {
+  .contacts a:hover,
+  .contacts a:hover .contact-account,
+  .tools a:hover {
+    color: var(--accent-ink);
+  }
+  .site-facts {
+    max-width: var(--measure);
+    color: var(--muted);
+    line-height: 1.9;
+  }
+  .site-facts a {
+    color: var(--text);
     text-decoration: underline;
     text-decoration-color: var(--rule-strong);
-    text-underline-offset: 5px;
+    text-underline-offset: 4px;
+    transition:
+      color var(--dur-fast) ease,
+      text-decoration-color var(--dur-fast) ease;
   }
-  @media (max-width: 640px) {
-    .profile-page {
-      width: calc(100% - 40px);
-      max-width: 480px;
-      padding-top: 44px;
+  .site-facts a:hover {
+    color: var(--accent-ink);
+    text-decoration-color: var(--accent);
+  }
+  .site-facts p + p {
+    margin-top: 6px;
+  }
+
+  @media (max-width: 720px) {
+    .about-intro {
+      grid-template-columns: minmax(0, 1fr) 88px;
+      column-gap: 20px;
+      padding-bottom: 36px;
     }
-    .profile-heading {
-      grid-template-columns: minmax(0, 1fr) 80px;
-      grid-template-areas: 'name portrait' 'school school';
-      gap: 24px 20px;
+    .avatar {
+      grid-area: 1 / 2;
+      align-self: start;
+      border-radius: 22px;
     }
-    .profile-heading h1 {
-      font-size: clamp(50px, 16vw, 76px);
+    .about-intro > div {
+      grid-area: 1 / 1;
     }
-    .profile-avatar {
-      width: 80px;
-      height: 80px;
-      border-radius: 20px;
+    h1 {
+      font-size: 42px;
     }
-    .profile-links {
-      grid-template-columns: 1fr;
-      gap: 28px;
-      margin-top: 28px;
-      padding-top: 24px;
-    }
-    .profile-contacts {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      column-gap: 16px;
-    }
-    .profile-contacts li:first-child {
-      grid-column: 1 / -1;
-    }
-    .profile-workbench {
-      padding-left: 0;
-      border-left: 0;
-    }
-    .profile-tools {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1.2fr;
-      gap: 16px;
-    }
-    .profile-tools .profile-link {
-      flex-direction: column;
+    .school {
       align-items: flex-start;
-      gap: 12px;
+      font-size: 14px;
     }
-    .profile-tools .profile-label {
-      font-size: 13px;
+    .about-section {
+      display: block;
+      padding-block: 20px 22px;
+    }
+    h2 {
+      justify-self: start;
+      margin-bottom: 10px;
+    }
+    .contacts a {
+      grid-template-columns: 40px 56px minmax(0, 1fr);
+      column-gap: 12px;
+    }
+    .contact-account {
+      font-size: 14px;
+    }
+    .tools {
+      gap: 4px 24px;
     }
   }
 </style>

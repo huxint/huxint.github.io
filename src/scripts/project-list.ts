@@ -1,31 +1,20 @@
-import DOMPurify from 'dompurify';
-import { marked } from 'marked';
+import { readmeIntroduction } from '../lib/readme';
 
-async function readmeIntroduction(url: string) {
-  const response = await fetch(url, { cache: 'no-cache' });
-  if (!response.ok) return;
-  const fragment = DOMPurify.sanitize(
-    marked.parse(await response.text(), { async: false }),
-    { USE_PROFILES: { html: true }, RETURN_DOM_FRAGMENT: true },
-  );
-  const paragraph = Array.from(fragment.querySelectorAll('p')).find((item) => {
-    const text = item.cloneNode(true) as HTMLParagraphElement;
-    text.querySelectorAll('a, img').forEach((node) => node.remove());
-    return /[\p{L}\p{N}]/u.test(text.textContent!);
-  });
-  return paragraph?.textContent?.trim().replace(/\s+/g, ' ');
-}
-
+// The build already filled in each introduction; refresh it from the README the
+// repository has now.
 document
-  .querySelectorAll<HTMLElement>('[data-project-description]')
+  .querySelectorAll<HTMLElement>('[data-readme-url]')
   .forEach(async (element) => {
     try {
-      const description = await readmeIntroduction(element.dataset.readmeUrl!);
-      if (description) {
-        element.textContent = description;
-        element.hidden = false;
-      }
+      const response = await fetch(element.dataset.readmeUrl!, {
+        cache: 'no-cache',
+      });
+      if (!response.ok) return;
+      const introduction = readmeIntroduction(await response.text());
+      if (!introduction) return;
+      element.textContent = introduction;
+      element.hidden = false;
     } catch {
-      // The repository and README links remain available if GitHub is unreachable.
+      // GitHub is unreachable: keep the introduction from the build.
     }
   });

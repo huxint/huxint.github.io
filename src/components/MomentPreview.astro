@@ -1,11 +1,11 @@
 ---
 import { Image } from 'astro:assets';
 import Icon from './Icon.astro';
-import { formatDate } from '../lib/posts';
+import { formatDate, shortDate } from '../lib/posts';
 import {
-  momentDate,
   momentExcerpt,
   momentMedia,
+  momentWeekday,
   type Moment,
 } from '../lib/life';
 
@@ -13,64 +13,161 @@ interface Props {
   moment: Moment;
 }
 const { moment } = Astro.props;
-const date = formatDate(moment.data.date);
-const { weekday } = momentDate(moment);
+const { date, location, draft } = moment.data;
 const { images, photos, videos } = momentMedia(moment);
-const previews = images.slice(0, 3);
 const media = [photos && `${photos} 张照片`, videos && `${videos} 段视频`]
   .filter(Boolean)
   .join('，');
 ---
 
 <a
-  class:list={['moment-preview', images.length ? 'is-photo' : 'is-note']}
+  class:list={['year-entry moment-preview', { 'is-note': !images.length }]}
   href={`/life/${moment.id}/`}
   id={moment.id}
-  aria-label={`${date} 的记录`}
+  aria-label={`${formatDate(date)} 的记录`}
 >
-  <div class="moment-preview-meta">
-    <div class="moment-preview-date">
-      <time datetime={moment.data.date.toISOString()}>{date.slice(5)}</time>
-      <span>{weekday}</span>
-    </div>
-    <div class="moment-preview-place">
-      {
-        moment.data.location && (
-          <span class="moment-location">
-            <Icon name="pin" size={13} />
-            {moment.data.location}
-          </span>
-        )
-      }
-      {moment.data.draft && <span class="draft-badge">草稿</span>}
-    </div>
-  </div>
-  {
-    images.length > 0 && (
-      <div class="moment-preview-prints" data-count={previews.length}>
-        {previews.map((image) => (
-          <div class="moment-print">
+  <p class="entry-date">
+    <time datetime={date.toISOString()}>{shortDate(date)}</time>
+    <span>{[momentWeekday(moment), location].filter(Boolean).join(' · ')}</span>
+    {draft && <span class="draft-badge">草稿</span>}
+  </p>
+  <div class="moment-preview-body">
+    {
+      images.length > 0 && (
+        <div class="moment-preview-prints">
+          {images.slice(0, 3).map((image) => (
             <Image
               src={image}
               alt=""
               width={480}
-              widths={[240, 360, 480, 720]}
-              sizes="(max-width: 640px) 35vw, 260px"
+              widths={[240, 360, 480]}
+              sizes="(max-width: 720px) 32vw, 236px"
               format="webp"
               loading="lazy"
             />
-          </div>
-        ))}
-      </div>
-    )
-  }
-  <div class="moment-preview-copy">
+          ))}
+        </div>
+      )
+    }
     <p class="moment-preview-excerpt">{momentExcerpt(moment, 140)}</p>
-    <div class="moment-preview-footer">
-      {media && <span class="moment-preview-count">{media}</span>}
+    <p class="moment-preview-footer">
+      {media && <span>{media}</span>}
       <span class="moment-preview-read">
-        查看记录 <Icon name="chevron" size={14} />
+        查看记录 <Icon name="arrow" size={14} />
       </span>
-    </div>
+    </p>
   </div>
 </a>
+
+<style>
+  /* Up to three photos and the opening lines; the date sits in the rail. */
+  .moment-preview {
+    align-items: start;
+    padding-block: 18px 22px;
+  }
+  .moment-preview.is-note {
+    align-items: baseline;
+  }
+  .entry-date time {
+    color: var(--text);
+    transition: color var(--dur-fast) ease;
+  }
+  .draft-badge {
+    margin-top: 6px;
+  }
+  .moment-preview-body {
+    min-width: 0;
+    max-width: var(--measure);
+  }
+  .moment-preview-prints {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+  .moment-preview-prints :global(img) {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    border-radius: 4px;
+    background: var(--surface);
+    transition: filter 300ms ease;
+  }
+  .moment-preview-prints :global(img:first-child) {
+    border-top-left-radius: 10px;
+    border-bottom-left-radius: 10px;
+  }
+  .moment-preview-prints :global(img:last-child) {
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+  }
+  .moment-preview-excerpt {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    font-size: 16px;
+    line-height: 1.9;
+  }
+  .is-note .moment-preview-excerpt {
+    -webkit-line-clamp: 4;
+    font-family: var(--font-serif);
+    font-size: 18px;
+    line-height: 1.85;
+  }
+  .moment-preview-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 20px;
+    margin-top: 10px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .moment-preview-read {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--accent-ink);
+  }
+  .moment-preview-read :global(svg) {
+    transition: transform var(--dur-base) var(--ease-spring);
+  }
+  .moment-preview:hover .entry-date time {
+    color: var(--accent-ink);
+  }
+  .moment-preview:hover .moment-preview-prints :global(img) {
+    filter: brightness(1.04) saturate(1.04);
+  }
+  .moment-preview:hover .moment-preview-read :global(svg) {
+    transform: translateX(3px);
+  }
+  .moment-preview:focus-visible {
+    outline-offset: 6px;
+  }
+  @media (max-width: 720px) {
+    .moment-preview {
+      padding-block: 14px 18px;
+    }
+    .moment-preview-prints {
+      gap: 4px;
+      margin-bottom: 12px;
+    }
+    .moment-preview-prints :global(img:first-child) {
+      border-top-left-radius: 8px;
+      border-bottom-left-radius: 8px;
+    }
+    .moment-preview-prints :global(img:last-child) {
+      border-top-right-radius: 8px;
+      border-bottom-right-radius: 8px;
+    }
+    .moment-preview-excerpt {
+      font-size: 15px;
+    }
+    .is-note .moment-preview-excerpt {
+      font-size: 17px;
+    }
+  }
+</style>

@@ -8,26 +8,34 @@ function setupTagFilter(): void {
   const status = document.querySelector<HTMLElement>('[data-tag-status]')!;
   const empty = document.querySelector<HTMLElement>('[data-tag-empty]')!;
   const clear = document.querySelector<HTMLButtonElement>('[data-tag-clear]')!;
-  const items = [
-    ...document.querySelectorAll<HTMLElement>('[data-tag-item]'),
-  ].map((element) => ({
-    element,
-    text: normalize(element.dataset.tagSearch!),
+  const initialStatus = status.textContent!;
+  const tiers = [
+    ...document.querySelectorAll<HTMLElement>('[data-tag-tier]'),
+  ].map((tier) => ({
+    tier,
+    items: [...tier.querySelectorAll<HTMLElement>('[data-tag-item]')].map(
+      (element) => ({ element, text: normalize(element.dataset.tagSearch!) }),
+    ),
   }));
 
   function applyFilter(): void {
     const query = normalize(filter!.value);
     let shown = 0;
-    for (const item of items) {
-      item.element.hidden = !item.text.includes(query);
-      if (!item.element.hidden) shown += 1;
+    for (const { tier, items } of tiers) {
+      let tierShown = 0;
+      for (const item of items) {
+        item.element.hidden = !item.text.includes(query);
+        if (!item.element.hidden) tierShown += 1;
+      }
+      tier.hidden = tierShown === 0;
+      shown += tierShown;
     }
     empty.hidden = shown > 0;
-    status.textContent = query
-      ? shown > 0
+    status.textContent = !query
+      ? initialStatus
+      : shown > 0
         ? `找到 ${shown} 个标签。`
-        : '没有匹配的标签。'
-      : `共 ${items.length} 个标签，按文章数排列。`;
+        : '没有匹配的标签。';
   }
 
   function clearFilter(): void {
