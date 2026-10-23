@@ -1,5 +1,7 @@
 ---
+import 'katex/dist/katex.min.css';
 import type { Post } from '../lib/posts';
+import { inlineHtml } from '../lib/inline-markdown';
 import { readingMinutes, shortDate, tagHref, yearOf } from '../lib/posts';
 interface Props {
   posts: Post[];
@@ -27,10 +29,17 @@ const groups = Map.groupBy(posts, (post) => yearOf(post.data.pubDate));
             </p>
             <div class="post-body">
               <Heading class="post-title">
-                <a href={`/posts/${post.id}/`}>{post.data.title}</a>
+                <a
+                  class="inline-markdown"
+                  href={`/posts/${post.id}/`}
+                  set:html={inlineHtml(post.data.title)}
+                />
                 {post.data.draft && <span class="draft-badge">草稿</span>}
               </Heading>
-              <p class="post-summary">{post.data.description}</p>
+              <p
+                class="post-summary inline-markdown"
+                set:html={inlineHtml(post.data.description)}
+              />
               <p class="tag-links">
                 {post.data.tags.map((tag) => (
                   <a href={tagHref(tag)}>{tag}</a>

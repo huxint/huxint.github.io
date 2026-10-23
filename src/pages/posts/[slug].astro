@@ -7,6 +7,7 @@ import '../../styles/post.css';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ImageDialog from '../../components/ImageDialog.astro';
 import { site } from '../../data/site';
+import { inlineHtml, inlineText } from '../../lib/inline-markdown';
 import {
   getPosts,
   formatDate,
@@ -26,6 +27,8 @@ interface Props {
   next?: Post;
 }
 const { post, next } = Astro.props;
+const title = inlineText(post.data.title);
+const description = inlineText(post.data.description);
 const { Content, headings } = await render(post);
 const toc = headings.filter(
   ({ depth, slug }) =>
@@ -33,14 +36,14 @@ const toc = headings.filter(
 );
 // Match Pagefind's browser tokenizer; its build-time Chinese dictionary differs.
 const searchTitle = Array.from(
-  new Intl.Segmenter('zh-CN', { granularity: 'word' }).segment(post.data.title),
+  new Intl.Segmenter('zh-CN', { granularity: 'word' }).segment(title),
   ({ segment }) => segment,
 ).join(' ');
 const structuredArticle = {
   '@context': 'https://schema.org',
   '@type': 'BlogPosting',
-  headline: post.data.title,
-  description: post.data.description,
+  headline: title,
+  description,
   datePublished: post.data.pubDate.toISOString(),
   dateModified: (post.data.updatedDate ?? post.data.pubDate).toISOString(),
   author: {
@@ -52,7 +55,7 @@ const structuredArticle = {
 };
 ---
 
-<BaseLayout title={post.data.title} description={post.data.description} article>
+<BaseLayout title={title} description={description} article>
   <Fragment slot="head"
     ><meta
       property="article:published_time"
@@ -80,14 +83,18 @@ const structuredArticle = {
       </div>
       <header class="post-header">
         <h1
-          data-pagefind-meta="title, titleWords[data-search-title]"
+          class="inline-markdown"
+          data-pagefind-meta="title[data-title], titleWords[data-search-title]"
+          data-title={title}
           data-search-title={searchTitle}
-        >
-          {post.data.title}
-        </h1>
-        <p class="post-description" data-pagefind-meta="description">
-          {post.data.description}
-        </p>
+          set:html={inlineHtml(post.data.title)}
+        />
+        <p
+          class="post-description inline-markdown"
+          data-pagefind-meta="description[data-description]"
+          data-description={description}
+          set:html={inlineHtml(post.data.description)}
+        />
         <p class="tag-links" data-pagefind-ignore>
           {post.data.tags.map((tag) => <a href={tagHref(tag)}>{tag}</a>)}
         </p>
@@ -134,10 +141,15 @@ const structuredArticle = {
               继续阅读
             </p>
             <div>
-              <a class="post-next-link" href={`/posts/${next.id}/`}>
-                {next.data.title}
-              </a>
-              <p>{next.data.description}</p>
+              <a
+                class="post-next-link inline-markdown"
+                href={`/posts/${next.id}/`}
+                set:html={inlineHtml(next.data.title)}
+              />
+              <p
+                class="inline-markdown"
+                set:html={inlineHtml(next.data.description)}
+              />
             </div>
           </section>
         )

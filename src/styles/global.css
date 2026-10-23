@@ -254,6 +254,15 @@ ol {
 }
 
 /* Shared text pieces */
+/* Post titles and descriptions, rendered by src/lib/inline-markdown.ts. */
+.inline-markdown .katex {
+  font-size: 1.055em;
+}
+.inline-markdown code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  font-variant-ligatures: none;
+}
 .text-link {
   display: inline-flex;
   align-items: center;
