@@ -10,12 +10,30 @@ const DELIMITERS = new Map([
   ['**', { name: 'strong' }],
 ]);
 
+// As with CommonMark emphasis, a delimiter opens only before text and closes
+// only after it. It also never opens right after a Latin letter or digit, so
+// the pluses in C++20 and the equals in a==b stay as typed.
+function canOpen(nodes, index) {
+  const before = nodes[index - 1];
+  const after = nodes[index + 1];
+  return (
+    after !== undefined &&
+    !(after.type === 'text' && /^\s/.test(after.value)) &&
+    !(before?.type === 'text' && /[A-Za-z0-9]$/.test(before.value))
+  );
+}
+
+function canClose(nodes, index) {
+  const before = nodes[index - 1];
+  return !(before.type === 'text' && /\s$/.test(before.value));
+}
+
 function wrapInline(nodes) {
   const result = [];
   for (let index = 0; index < nodes.length; index += 1) {
     const node = nodes[index];
     const format = node.type === 'text' && DELIMITERS.get(node.value);
-    if (!format) {
+    if (!format || !canOpen(nodes, index)) {
       result.push(node);
       continue;
     }
@@ -24,7 +42,8 @@ function wrapInline(nodes) {
       (candidate, at) =>
         at > index &&
         candidate.type === 'text' &&
-        candidate.value === node.value,
+        candidate.value === node.value &&
+        canClose(nodes, at),
     );
     const content = nodes.slice(index + 1, end);
     if (

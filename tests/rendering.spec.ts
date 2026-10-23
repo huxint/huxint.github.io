@@ -126,6 +126,9 @@ test('行内标记渲染高亮与下划线', async ({ page }) => {
     .filter({ hasText: 'underlined text' });
   await expect(underline).toHaveText('underlined text');
   await expect(underline).toHaveCSS('text-decoration-line', 'underline');
+  await expect(
+    page.getByText('C++ drafts and C++20 keep their pluses.'),
+  ).toBeVisible();
 });
 
 test('脚注提供内容预览和返回正文的链接', async ({ page }) => {
