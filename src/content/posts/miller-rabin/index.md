@@ -1,6 +1,6 @@
 ---
-title: "米勒–拉宾素性测试：从原理到 64 位实现"
-description: "从费马小定理出发，再把平方链看一遍，就能解释 561 这种合数为什么会被抓住。"
+title: "Miller–Rabin 素性测试"
+description: '试除到 $\sqrt n$ 判断质数，数一大就太慢了。Miller–Rabin 只要几次快速幂。'
 pubDate: 2026-09-06T09:00:00+08:00
 updatedDate: 2026-10-20
 tags: ["算法", "数论", "C++"]

@@ -1,6 +1,6 @@
 ---
-title: "Transformer：理解 Attention Is All You Need"
-description: "从“他”怎样找到“小明”讲起：拖动向量看注意力怎样打分、分配和混合，再看多头、位置编码，以及解码器为什么训练时能并行、生成时只能一个一个来。"
+title: "Transformer 是怎么知道“他”是小明的"
+description: "RNN 读长句容易忘，也没法并行。Transformer 让每个词直接看整句话。"
 pubDate: 2026-09-06T10:00:00+08:00
 updatedDate: 2026-10-23
 tags: ["机器学习", "论文笔记"]

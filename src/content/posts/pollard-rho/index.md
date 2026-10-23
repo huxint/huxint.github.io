@@ -1,6 +1,6 @@
 ---
-title: "Pollard–Rho：从模意义下的碰撞找到因子"
-description: "用 91 的小例子理解余数碰撞、GCD 和快慢指针，再组合 Miller–Rabin 完成 64 位质因数分解。"
+title: "Pollard–Rho 质因数分解"
+description: "大数分解质因数，试除太慢。Pollard–Rho 用随机序列的碰撞找因子，判素数交给 Miller–Rabin。"
 pubDate: 2024-08-28T18:36:00+08:00
 updatedDate: 2026-10-20
 tags: ["算法", "数论", "模板", "C++"]
