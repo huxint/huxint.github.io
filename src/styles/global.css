@@ -299,17 +299,22 @@ ol {
   color: var(--accent-ink);
   transform: translateX(-2px);
 }
-/* An emote sits in the line like a character. A meme carries a caption, so it
-   is drawn larger. Alone on its line, either grows. */
+/* An emote sits in the line like a character. The art is detailed, so it needs
+   about 38px to stay legible; beside large type it follows the text instead.
+   A meme carries a caption, so it is drawn larger. Alone on its line, either
+   grows. */
 .sticker {
+  --size: max(1.5em, 38px);
   display: inline-block;
-  width: 1.5em;
-  height: 1.5em;
-  vertical-align: -0.35em;
+  width: var(--size);
+  height: var(--size);
+  margin-block: -0.2em;
+  vertical-align: calc(0.58em - var(--size) / 2);
 }
 .sticker.has-caption {
   width: min(5em, 104px);
   height: min(5em, 104px);
+  margin-block: 0;
   vertical-align: -0.3em;
 }
 .sticker-row {
@@ -320,6 +325,7 @@ ol {
 .sticker.is-large {
   width: 112px;
   height: 112px;
+  margin-block: 0;
   vertical-align: top;
 }
 .empty-state {

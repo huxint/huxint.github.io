@@ -55,7 +55,7 @@ test.describe('正文', () => {
     const font = await inline
       .first()
       .evaluate((image) => parseFloat(getComputedStyle(image).fontSize));
-    expect(size).toBeCloseTo(font * 1.5, 0);
+    expect(size).toBeCloseTo(Math.max(font * 1.5, 38), 0);
 
     const response = await request.get(
       (await inline.first().getAttribute('src'))!,
