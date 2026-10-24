@@ -299,6 +299,29 @@ ol {
   color: var(--accent-ink);
   transform: translateX(-2px);
 }
+/* An emote sits in the line like a character. A meme carries a caption, so it
+   is drawn larger. Alone on its line, either grows. */
+.sticker {
+  display: inline-block;
+  width: 1.5em;
+  height: 1.5em;
+  vertical-align: -0.35em;
+}
+.sticker.has-caption {
+  width: min(5em, 104px);
+  height: min(5em, 104px);
+  vertical-align: -0.3em;
+}
+.sticker-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.sticker.is-large {
+  width: 112px;
+  height: 112px;
+  vertical-align: top;
+}
 .empty-state {
   padding: 40px 0;
   color: var(--muted);

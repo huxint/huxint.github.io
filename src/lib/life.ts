@@ -3,6 +3,7 @@ import type { ImageMetadata } from 'astro';
 import { posix } from 'node:path';
 import { formatDate } from './posts';
 import { joinLines } from './text';
+import { stickerText } from './stickers/catalog.mjs';
 
 export type Moment = CollectionEntry<'life'>;
 
@@ -63,7 +64,7 @@ export function momentCover(moment: Moment): ImageMetadata | undefined {
 
 export function momentExcerpt(moment: Moment, limit = 60): string {
   const text = joinLines(
-    (moment.body ?? '')
+    stickerText(moment.body ?? '')
       .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
       .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
       .replace(/[#>*_`~]/g, ''),

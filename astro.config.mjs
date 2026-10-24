@@ -6,6 +6,7 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import { rehypeArticle } from './src/lib/rehype-article.mjs';
 import { remarkMoment } from './src/lib/remark-moment.mjs';
+import { remarkStickers } from './src/lib/remark-stickers.mjs';
 import { remarkArticleExtras } from './src/lib/remark-article-extras.mjs';
 import { lifeMedia } from './src/integrations/life-media.mjs';
 import { pluginDiffDetails } from './src/lib/expressive-diff.mjs';
@@ -95,7 +96,12 @@ export default defineConfig({
   markdown: {
     processor: unified({
       remarkRehype: { footnoteLabel: '注释', footnoteBackLabel: '返回正文' },
-      remarkPlugins: [remarkMath, remarkArticleExtras, remarkMoment],
+      remarkPlugins: [
+        remarkMath,
+        remarkArticleExtras,
+        remarkStickers,
+        remarkMoment,
+      ],
       rehypePlugins: [[rehypeKatex, { strict: 'error' }], rehypeArticle],
     }),
   },

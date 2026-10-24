@@ -1,10 +1,36 @@
 import katex from 'katex';
 import { Marked, type Token } from 'marked';
+import {
+  stickerAt,
+  stickerAttributes,
+  stickerClasses,
+} from './stickers/catalog.mjs';
 
 // Post titles and descriptions are one line of Markdown, with $math$ typeset
-// by KaTeX under the same strict rules as the article body.
+// by KaTeX under the same strict rules as the article body, and :id: shown as
+// the sticker it names.
 const markdown = new Marked({
   extensions: [
+    {
+      name: 'sticker',
+      level: 'inline',
+      start: (source) => source.indexOf(':'),
+      tokenizer(source) {
+        const hit = stickerAt(source, 0);
+        if (hit)
+          return {
+            type: 'sticker',
+            raw: source.slice(0, hit.end),
+            sticker: hit.sticker,
+          };
+      },
+      renderer: ({ sticker }) => {
+        const attributes = Object.entries(stickerAttributes(sticker))
+          .map(([name, value]) => `${name}="${value}"`)
+          .join(' ');
+        return `<img class="${stickerClasses(sticker).join(' ')}" ${attributes}>`;
+      },
+    },
     {
       name: 'math',
       level: 'inline',
@@ -51,6 +77,7 @@ function tokensText(tokens: Token[]): string {
   return tokens
     .map((token) => {
       if (token.type === 'math') return texText(token.text);
+      if (token.type === 'sticker') return `[${token.sticker.label}]`;
       if ('tokens' in token && token.tokens) return tokensText(token.tokens);
       return 'text' in token ? token.text : '';
     })

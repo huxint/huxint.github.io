@@ -302,7 +302,12 @@ export function rehypeArticle() {
       if (node.tagName !== 'p' || node.children.length !== 1) return;
 
       const image = node.children[0];
-      if (image.type !== 'element' || image.tagName !== 'img') return;
+      if (
+        image.type !== 'element' ||
+        image.tagName !== 'img' ||
+        classesOf(image).includes('sticker')
+      )
+        return;
 
       const caption = image.properties.title;
       delete image.properties.title;

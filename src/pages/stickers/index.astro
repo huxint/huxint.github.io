@@ -1,0 +1,58 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHeader from '../../components/PageHeader.astro';
+import { groups, stickers } from '../../lib/stickers/catalog.mjs';
+import '../../styles/stickers.css';
+---
+
+<BaseLayout
+  title="表情"
+  description="huxint 博客的大猩猩表情：在文章里写 :名字: 就会显示对应的贴纸。"
+>
+  <main class="page" id="main">
+    <PageHeader title="表情">
+      <p>
+        在文章、标题和描述里写 <code>:名字:</code
+        >，就会换成对应的大猩猩。带字的梗图在文字里显示得更大，单独占一行时都会放大。点一下贴纸复制写法。
+      </p>
+    </PageHeader>
+    {
+      groups.map((group) => {
+        const members = stickers.filter(({ group: id }) => id === group.id);
+        return (
+          <section class="sticker-group rail-grid" aria-labelledby={group.id}>
+            <h2 class="rail" id={group.id}>
+              {group.label}
+              <small>{members.length} 个</small>
+            </h2>
+            <ul class="sticker-grid">
+              {members.map((sticker) => (
+                <li>
+                  <button
+                    class="sticker-card"
+                    type="button"
+                    data-sticker-code={`:${sticker.id}:`}
+                  >
+                    <img
+                      src={`/stickers/${sticker.id}.svg`}
+                      alt=""
+                      width="96"
+                      height="96"
+                      loading="lazy"
+                    />
+                    <span class="sticker-name">{sticker.label}</span>
+                    <code>:{sticker.id}:</code>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        );
+      })
+    }
+    <p class="sr-only" role="status" data-sticker-status></p>
+  </main>
+  <script>
+    import '../../scripts/stickers';
+  </script>
+</BaseLayout>

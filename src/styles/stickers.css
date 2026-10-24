@@ -1,0 +1,77 @@
+/* The catalogue: one grid per group, each card copies its :name:. */
+.sticker-group {
+  margin-bottom: 40px;
+}
+.sticker-group .rail {
+  position: sticky;
+  top: calc(var(--header-height) + 24px);
+  align-self: start;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+}
+.sticker-group .rail small {
+  display: block;
+  margin-top: 4px;
+  color: var(--faint);
+  font-size: 12px;
+  font-weight: 400;
+}
+.sticker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.sticker-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+  padding: 14px 8px 12px;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--bg-raised);
+  color: var(--text);
+  cursor: pointer;
+  transition:
+    border-color var(--dur-fast) ease,
+    transform var(--dur-base) var(--ease-out);
+}
+.sticker-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+.sticker-card img {
+  margin-bottom: 6px;
+}
+.sticker-name {
+  font-size: 14px;
+}
+.sticker-card code {
+  color: var(--faint);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.sticker-card.is-copied {
+  border-color: var(--accent);
+}
+.sticker-card.is-copied code {
+  color: var(--accent-ink);
+}
+@media (max-width: 720px) {
+  .sticker-group {
+    display: block;
+  }
+  .sticker-group .rail {
+    position: static;
+    margin-bottom: 12px;
+  }
+  .sticker-group .rail small {
+    display: inline;
+    margin-left: 8px;
+  }
+}
