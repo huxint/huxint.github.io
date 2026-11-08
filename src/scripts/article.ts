@@ -1,4 +1,4 @@
-import './image-viewer';
+import './article-images';
 import './article-enhancements';
 import './render-blocks';
 import './math';

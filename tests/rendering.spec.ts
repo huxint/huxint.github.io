@@ -114,6 +114,21 @@ test('SVG 绘图块显示可访问的图示', async ({ page }) => {
   await expect(figure.getByRole('img', { name: 'Fixture SVG' })).toBeVisible();
 });
 
+test('文章图片在查看器里放大，可以切到下一张', async ({ page }) => {
+  await page.getByRole('button', { name: '放大图片：Fixture figure' }).click();
+
+  const viewer = page.locator('#image-viewer');
+  const caption = viewer.locator('.image-viewer-caption');
+  await expect(viewer).toBeVisible();
+  await expect(caption).toHaveText('Fixture caption');
+  await expect(viewer.locator('.image-viewer-count')).toHaveText('1 / 2');
+
+  await page.keyboard.press('ArrowRight');
+  await expect(caption).toHaveText('Second figure');
+  await page.keyboard.press('Escape');
+  await expect(viewer).toBeHidden();
+});
+
 test('提示块显示各自类型的标签', async ({ page }) => {
   const titles = page.locator('.prose .callout-title');
   await expect(titles).toHaveText(['说明', '建议', '重点', '警告', '注意']);

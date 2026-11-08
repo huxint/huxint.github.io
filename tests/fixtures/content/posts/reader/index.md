@@ -62,6 +62,10 @@ $$
 
 ## Diagrams
 
+![Fixture figure](./figure.png 'Fixture caption')
+
+![Second figure](./figure.png)
+
 ```mermaid
 flowchart LR
     accTitle: Fixture flow

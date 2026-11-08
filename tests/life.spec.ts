@@ -67,9 +67,9 @@ test('正文里的图片段落变成媒体行，点击后在灯箱里放大', as
 
   await trigger.click();
 
-  const viewer = page.locator('#life-viewer');
+  const viewer = page.locator('#image-viewer');
   await expect(viewer).toBeVisible();
-  await expect(viewer.locator('.life-viewer-frame img')).toHaveAttribute(
+  await expect(viewer.locator('.image-viewer-frame img')).toHaveAttribute(
     'src',
     largest,
   );
@@ -115,7 +115,7 @@ test('触屏长按播放实况，松开后停止且不会打开灯箱', async ({
   await live.dispatchEvent('pointerup', touch);
   await live.locator('.moment-open').dispatchEvent('click');
   await expect(live).not.toHaveClass(/is-playing/);
-  await expect(page.locator('#life-viewer')).toBeHidden();
+  await expect(page.locator('#image-viewer')).toBeHidden();
 });
 
 test('视频先显示封面，点击后播放并出现播放器', async ({ page }) => {

@@ -6,7 +6,7 @@ import '../../styles/prose.css';
 import '../../styles/life.css';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Moment from '../../components/Moment.astro';
-import LifeViewer from '../../components/LifeViewer.astro';
+import ImageViewer from '../../components/ImageViewer.astro';
 import Icon from '../../components/Icon.astro';
 import { formatDate } from '../../lib/posts';
 import {
@@ -87,7 +87,7 @@ const neighbours = [
       )
     }
   </main>
-  <LifeViewer />
+  <ImageViewer />
 </BaseLayout>
 <script>
   import '../../scripts/life';

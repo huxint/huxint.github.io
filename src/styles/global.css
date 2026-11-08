@@ -399,18 +399,6 @@ ol {
   transform: scale(0.92);
 }
 
-@keyframes dialog-pop-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px) scale(0.975);
-  }
-}
-@keyframes backdrop-in {
-  from {
-    opacity: 0;
-  }
-}
-
 @media (max-width: 720px) {
   :root {
     --header-height: 96px;

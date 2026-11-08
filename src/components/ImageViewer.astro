@@ -1,26 +1,27 @@
 ---
+import '../styles/image-viewer.css';
 import Icon from './Icon.astro';
 ---
 
-<dialog class="life-viewer" id="life-viewer" aria-label="照片">
-  <div class="life-viewer-bar">
-    <p class="life-viewer-meta"></p>
-    <p class="life-viewer-count" aria-live="polite"></p>
+<dialog class="image-viewer" id="image-viewer" aria-label="图片">
+  <div class="image-viewer-bar">
+    <p class="image-viewer-meta"></p>
+    <p class="image-viewer-count" aria-live="polite"></p>
     <button
-      class="life-viewer-button"
+      class="image-viewer-button"
       type="button"
       data-viewer-close
       aria-label="关闭"><Icon name="close" /></button
     >
   </div>
-  <div class="life-viewer-stage">
+  <div class="image-viewer-stage">
     <button
-      class="life-viewer-button life-viewer-step is-previous"
+      class="image-viewer-button image-viewer-step is-previous"
       type="button"
       data-viewer-step="-1"
       aria-label="上一张"><Icon name="chevron" size={22} /></button
     >
-    <figure class="life-viewer-frame">
+    <figure class="image-viewer-frame">
       <img alt="" />
       <video muted playsinline preload="none" aria-hidden="true" tabindex="-1"
       ></video>
@@ -54,11 +55,11 @@ import Icon from './Icon.astro';
       >
     </figure>
     <button
-      class="life-viewer-button life-viewer-step is-next"
+      class="image-viewer-button image-viewer-step is-next"
       type="button"
       data-viewer-step="1"
       aria-label="下一张"><Icon name="chevron" size={22} /></button
     >
   </div>
-  <p class="life-viewer-caption"></p>
+  <p class="image-viewer-caption"></p>
 </dialog>

@@ -5,7 +5,7 @@ import 'katex/dist/katex.min.css';
 import '../../styles/prose.css';
 import '../../styles/post.css';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import ImageDialog from '../../components/ImageDialog.astro';
+import ImageViewer from '../../components/ImageViewer.astro';
 import { site } from '../../data/site';
 import { inlineHtml, inlineText } from '../../lib/inline-markdown';
 import {
@@ -159,7 +159,7 @@ const structuredArticle = {
       </p>
     </footer>
   </main>
-  <ImageDialog />
+  <ImageViewer />
 </BaseLayout>
 <script>
   import '../../scripts/article';

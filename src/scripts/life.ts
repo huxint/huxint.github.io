@@ -1,151 +1,14 @@
 import './article-enhancements';
 import './math';
+import { openViewer } from './image-viewer';
+import { livePlayer } from './live-player';
 
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-
-// Plays a muted clip over its still, as Live Photos do. `host` carries the
-// is-loading / is-playing state the styles fade on.
-function livePlayer(
-  video: HTMLVideoElement,
-  host: HTMLElement,
-  badge: HTMLButtonElement,
-) {
-  video.muted = true;
-  let session = 0;
-  const stop = () => {
-    session += 1;
-    video.pause();
-    if (video.readyState) video.currentTime = 0;
-    host.classList.remove('is-loading', 'is-playing');
-    badge.setAttribute('aria-pressed', 'false');
-  };
-  const play = () => {
-    const current = ++session;
-    host.classList.add('is-loading');
-    badge.setAttribute('aria-pressed', 'true');
-    if (video.readyState) video.currentTime = 0;
-    video.play().catch(() => {
-      if (session === current) stop();
-    });
-  };
-  const active = () =>
-    host.classList.contains('is-playing') ||
-    host.classList.contains('is-loading');
-  video.addEventListener('playing', () => {
-    host.classList.remove('is-loading');
-    host.classList.add('is-playing');
-  });
-  video.addEventListener('ended', stop);
-  video.addEventListener('error', stop);
-  badge.addEventListener('click', () => (active() ? stop() : play()));
-  return { play, stop };
-}
 
 function largestSource(image: HTMLImageElement): string {
   // remarkMoment supplies srcset widths in ascending order.
   return image.srcset.split(',').at(-1)!.trim().split(/\s+/)[0] || image.src;
 }
-
-interface Photo {
-  src: string;
-  alt: string;
-  live?: string;
-}
-
-// Lightbox: steps through the photos of one record.
-const viewer = document.querySelector<HTMLDialogElement>('#life-viewer')!;
-const frame = viewer.querySelector<HTMLElement>('.life-viewer-frame')!;
-const preview = frame.querySelector('img')!;
-const clip = frame.querySelector('video')!;
-const liveBadge =
-  viewer.querySelector<HTMLButtonElement>('[data-viewer-live]')!;
-const meta = viewer.querySelector<HTMLElement>('.life-viewer-meta')!;
-const count = viewer.querySelector<HTMLElement>('.life-viewer-count')!;
-const caption = viewer.querySelector<HTMLElement>('.life-viewer-caption')!;
-const viewerLive = livePlayer(clip, frame, liveBadge);
-let photos: Photo[] = [];
-let index = 0;
-
-function show(next: number) {
-  index = (next + photos.length) % photos.length;
-  const photo = photos[index];
-  viewerLive.stop();
-  preview.src = photo.src;
-  preview.alt = photo.alt;
-  caption.textContent = photo.alt;
-  count.textContent =
-    photos.length > 1 ? `${index + 1} / ${photos.length}` : '';
-  liveBadge.hidden = !photo.live;
-  if (photo.live) {
-    clip.src = photo.live;
-    if (!reducedMotion.matches) viewerLive.play();
-  } else clip.removeAttribute('src');
-  for (const step of [-1, 1]) {
-    const neighbour = photos[(index + step + photos.length) % photos.length];
-    if (neighbour !== photo) new Image().src = neighbour.src;
-  }
-}
-
-function step(delta: number) {
-  if (photos.length < 2) return;
-  show(index + delta);
-  if (!reducedMotion.matches)
-    frame.animate(
-      [
-        { opacity: 0, transform: `translateX(${delta * 28}px)` },
-        { opacity: 1, transform: 'none' },
-      ],
-      { duration: 280, easing: 'cubic-bezier(0.2, 0.7, 0.2, 1)' },
-    );
-}
-
-function openViewer(items: Photo[], start: number, label: string) {
-  photos = items;
-  viewer.classList.toggle('is-gallery', items.length > 1);
-  meta.textContent = label;
-  show(start);
-  viewer.showModal();
-  document.documentElement.classList.add('dialog-open');
-}
-
-viewer
-  .querySelector('[data-viewer-close]')!
-  .addEventListener('click', () => viewer.close());
-viewer
-  .querySelectorAll<HTMLElement>('[data-viewer-step]')
-  .forEach((button) =>
-    button.addEventListener('click', () =>
-      step(Number(button.dataset.viewerStep)),
-    ),
-  );
-viewer.addEventListener('click', (event) => {
-  const target = event.target as HTMLElement;
-  if (target === viewer || target.classList.contains('life-viewer-stage'))
-    viewer.close();
-});
-viewer.addEventListener('keydown', (event) => {
-  if (event.key === 'ArrowLeft') step(-1);
-  else if (event.key === 'ArrowRight') step(1);
-});
-viewer.addEventListener('close', () => {
-  viewerLive.stop();
-  document.documentElement.classList.remove('dialog-open');
-});
-
-let swipeStart: { x: number; y: number } | undefined;
-frame.addEventListener('pointerdown', (event) => {
-  if (event.pointerType !== 'mouse')
-    swipeStart = { x: event.clientX, y: event.clientY };
-});
-frame.addEventListener('pointerup', (event) => {
-  if (!swipeStart) return;
-  const dx = event.clientX - swipeStart.x;
-  const dy = event.clientY - swipeStart.y;
-  swipeStart = undefined;
-  if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy) * 1.5)
-    step(dx < 0 ? 1 : -1);
-});
-frame.addEventListener('pointercancel', () => (swipeStart = undefined));
 
 document.querySelectorAll<HTMLElement>('.moment').forEach((moment) => {
   const cells = [
@@ -156,6 +19,7 @@ document.querySelectorAll<HTMLElement>('.moment').forEach((moment) => {
     return {
       src: largestSource(image),
       alt: image.alt,
+      caption: image.alt,
       live: cell.querySelector('video')?.getAttribute('src') ?? undefined,
     };
   });
