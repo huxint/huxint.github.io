@@ -87,8 +87,8 @@
   font-size: 13px;
   line-height: 1.6;
   transition:
-    color 120ms ease,
-    border-color 120ms ease;
+    color var(--dur-fast) ease,
+    border-color var(--dur-fast) ease;
 }
 .toc a:hover {
   color: var(--text);
@@ -134,7 +134,7 @@
   border-right: 1.5px solid var(--faint);
   border-bottom: 1.5px solid var(--faint);
   transform: rotate(45deg) translateY(-2px);
-  transition: transform 150ms ease;
+  transition: transform var(--dur-fast) ease;
 }
 .mobile-toc[open] summary::after {
   transform: rotate(-135deg) translateY(1px);

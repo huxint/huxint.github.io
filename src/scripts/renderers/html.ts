@@ -4,18 +4,20 @@ import mathMainFont from 'katex/dist/fonts/KaTeX_Main-Regular.woff2?url';
 import mathItalicFont from 'katex/dist/fonts/KaTeX_Math-Italic.woff2?url';
 
 // The host owns vertical scrolling, so viewport scrollbars must not narrow the measurement.
+// Media queries see the frame, which on phones is the viewport less 40px of page margin:
+// 680px here is the 720px breakpoint of the article text around it.
 const baseStyle = `
   *,*::before,*::after{box-sizing:border-box}
   html{background:transparent;overflow-y:clip}
   body{display:flow-root;margin:0;min-width:0;background:transparent;color:var(--text);font:17px/1.95 var(--font-sans);overflow-wrap:break-word}
   button,input,select,textarea{font:inherit;color:inherit}
-  code,pre{font-family:var(--font-mono)}
+  code,pre{font-family:var(--font-mono);font-variant-ligatures:none}
   math{font-family:KaTeX_Main,var(--font-serif)}
   math mi{font-family:KaTeX_Math;font-style:italic;text-transform:none}
   math mtext{font-family:var(--font-sans)}
   img,svg,canvas{max-width:100%;height:auto}
   :focus-visible{outline:2px solid var(--accent);outline-offset:4px}
-  @media(max-width:640px){body{font-size:16px;line-height:1.85}}
+  @media(max-width:680px){body{font-size:16px;line-height:1.85}}
 `;
 const fontSources = [
   {

@@ -17,15 +17,21 @@
   --portrait-border: #ddd3c2;
   --shadow:
     0 1px 2px rgb(40 30 10 / 0.05), 0 18px 46px -32px rgb(40 30 10 / 0.32);
+  --font-cjk:
+    'PingFang SC', 'Hiragino Sans GB', 'Noto Sans CJK SC', 'Source Han Sans SC',
+    'Microsoft YaHei';
   --font-sans:
     'Inter Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI',
-    'PingFang SC', 'Hiragino Sans GB', 'Noto Sans CJK SC', 'Source Han Sans SC',
-    'Microsoft YaHei', sans-serif;
+    var(--font-cjk), sans-serif;
   --font-serif:
     'Source Han Serif SC', 'Noto Serif CJK SC', 'Songti SC', 'STSong', 'SimSun',
     'Georgia', 'Times New Roman', serif;
+  /* Chinese in code uses the body's Chinese face. Left to the generic
+     monospace, it falls to whatever the system pairs with it, often a Song
+     face on Windows. Liberation Mono keeps arrows and symbols narrow on Linux. */
   --font-mono:
-    'JetBrains Mono Variable', 'SFMono-Regular', Menlo, Consolas, monospace;
+    'JetBrains Mono Variable', 'SFMono-Regular', Menlo, Consolas,
+    'Liberation Mono', var(--font-cjk), monospace;
   /* Every page hangs off one edge: a rail for labels, dates and navigation,
      then the main column. The header aligns its navigation to the same line. */
   --wide: 1080px;
@@ -258,10 +264,14 @@ ol {
 .inline-markdown .katex {
   font-size: 1.055em;
 }
-.inline-markdown code {
+/* Code anywhere shows the characters as typed, without ligatures, and inline
+   code sits a little smaller than the text around it. */
+:where(code, kbd, pre) {
   font-family: var(--font-mono);
-  font-size: 0.88em;
   font-variant-ligatures: none;
+}
+:where(:not(pre) > code) {
+  font-size: 0.88em;
 }
 .text-link {
   display: inline-flex;
@@ -276,7 +286,7 @@ ol {
   text-decoration-color: color-mix(in srgb, var(--accent) 55%, transparent);
   text-decoration-thickness: 1px;
   text-underline-offset: 4px;
-  transition: text-decoration-color 150ms ease;
+  transition: text-decoration-color var(--dur-fast) ease;
 }
 .text-link:hover,
 .prose a:hover,

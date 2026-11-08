@@ -602,8 +602,8 @@
   opacity: 0;
   transform: translateY(4px);
   transition:
-    opacity 150ms ease,
-    transform 150ms ease;
+    opacity var(--dur-fast) ease,
+    transform var(--dur-fast) ease;
 }
 .footnote-popover.is-visible {
   pointer-events: auto;
@@ -664,7 +664,7 @@
   margin-bottom: 16px;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 720px) {
   .prose {
     font-size: 16px;
     line-height: 1.85;
