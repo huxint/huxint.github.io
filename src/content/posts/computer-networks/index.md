@@ -2,7 +2,8 @@
 title: "互联网是怎么连起来的"
 description: "两台电脑拉根网线就能通信。几十亿台互不相识的机器，一个包是怎么找到对面的。"
 pubDate: 2026-10-24
-tags: ["计算机网络", "计算机基础", "面试"]
+updatedDate: 2026-11-11
+tags: ["计算机网络", "计算机基础"]
 ---
 
 在深圳打开一个放在美国的网站，`traceroute` 能把一路经过的机器一台台列出来（地址都换成了示例地址）：
@@ -29,7 +30,7 @@ traceroute to www.example.com (203.0.113.10), 30 hops max, 60 byte packets
 
 路上这 12 台路由器，没有一台知道完整的路线。每一台只看一眼包上的目的地址，决定下一步交给谁，然后就不管了。互联网没有中心，也没有一张总地图，几十亿台设备就靠这种接力连在一起。
 
-下面从两台电脑、一根网线开始，一层一层往上搭。每加一层，都是因为下面那层解决不了某个问题。
+从两台电脑、一根网线开始，一层一层往上搭。每加一层，都是因为下面那层解决不了某个问题。
 
 ## 一根线
 
@@ -57,7 +58,9 @@ traceroute to www.example.com (203.0.113.10), 30 hops max, 60 byte packets
 
 每一帧的开头都写着目的 MAC 和源 MAC。交换机收到一帧，查表看目的 MAC 在几号口，就只从那个口发出去。
 
-这张表没人配，是交换机自己学的。每收到一帧，它就记下“这个源 MAC 是从几号口进来的”。要发往一个还没记住的地址，就从别的口各发一份，叫**泛洪**，地址对得上的那台收下，其余的扔掉。像新来的前台，第一次谁都不认识，只能挨个房间喊；喊过几回，谁坐哪间就都记住了。
+这张表没人配，是交换机自己学的。每收到一帧，它就记下“这个源 MAC 是从几号口进来的”。要发往一个还没记住的地址，就从别的口各发一份，叫**泛洪**，地址对得上的那台收下，其余的扔掉。
+
+四台电脑接在一台交换机上，A 刚给 C 发完第一帧：
 
 ```render html
 <style>
@@ -68,6 +71,7 @@ traceroute to www.example.com (203.0.113.10), 30 hops max, 60 byte packets
   .key:hover:not(:disabled) { border-color: var(--text); }
   .key:disabled { cursor: default; opacity: .4; }
   .key b { margin-left: 6px; font-weight: 600; }
+  .say { align-self: center; margin-left: 4px; color: var(--accent-ink); font-size: 13px; font-weight: 600; }
   .sw svg { display: block; width: 100%; height: auto; margin-top: 10px; overflow: visible; user-select: none; -webkit-user-select: none; }
   .host { cursor: pointer; }
   .hit { fill: transparent; }
@@ -100,6 +104,7 @@ traceroute to www.example.com (203.0.113.10), 30 hops max, 60 byte packets
   <div class="keys">
     <button type="button" class="key send">发送<b></b></button>
     <button type="button" class="key clear">清空表</button>
+    <output class="say">没学过 C：泛洪</output>
   </div>
   <svg role="img" aria-label="四台电脑连在交换机的四个口上，交换机里有一张 MAC 表"></svg>
 </section>
@@ -111,6 +116,7 @@ const SCRIPT = [[0, 2], [2, 0], [0, 2], [3, 1], [1, 3]];
 const DOWN = 420, UP = 420, ROW = 21;
 const root = document.querySelector('.sw'), svg = root.querySelector('svg');
 const [sendKey, clearKey] = root.querySelectorAll('.key');
+const say = root.querySelector('.say');
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // next 是按钮上下一次要发的；shown 是图里正在演示或刚演示完的那一次
@@ -182,8 +188,10 @@ function learn() {
   let k = table.indexOf(run.src);
   if (k < 0) k = table.push(run.src) - 1;
   fresh = k;
-  run.targets = table.includes(run.dst) ? [run.dst] : NAMES.map((_, j) => j).filter(j => j !== run.src);
+  const known = table.includes(run.dst);
+  run.targets = known ? [run.dst] : NAMES.map((_, j) => j).filter(j => j !== run.src);
   lit = [run.src, ...run.targets];
+  say.textContent = known ? `${NAMES[run.dst]} 在 ${run.dst + 1} 口：只发这一口` : `没学过 ${NAMES[run.dst]}：泛洪`;
 }
 
 function tick(now) {
@@ -235,6 +243,7 @@ function pick(i) {
     shown = [i, -1];
     marks = [];
     lit = [];
+    say.textContent = '';
     keys();
     draw();
   } else {
@@ -260,6 +269,7 @@ clearKey.addEventListener('click', () => {
   shown = [-1, -1];
   marks = [];
   lit = [];
+  say.textContent = '';
   keys();
   draw();
 });
@@ -271,19 +281,21 @@ keys();
 </script>
 ```
 
+这一帧被泛洪了，B 和 D 白收了一份。可 A 在 1 号口这件事也记下了：接着 C 回信给 A，这一帧只从 1 号口出去。
+
 目的 MAC 写成 `ff:ff:ff:ff:ff:ff` 的是**广播帧**，交换机永远泛洪，屋里每台都收得到。后面找人，就靠它。表里的条目几分钟不刷新就过期，电脑换了个口也能重新学到。
 
 Wi‑Fi 也是这一层的东西。无线路由器里的无线接入点，干的就是交换机的活，只是线换成了无线电。
 
 ## 交换机连不了全世界
 
-那把全世界的电脑都接上交换机，一层层串起来，行不行？
+把全世界的电脑都接上交换机，一层层串起来，行不通。
 
-不行。MAC 地址是平的。它像身份证号，全国唯一，可光看号码，看不出这个人现在在哪。交换机只能一条一条地记：全世界几十亿块网卡，每台交换机都得记几十亿行；每碰到一个没见过的地址，还要泛洪到整个地球。
+MAC 地址是平的。它像身份证号，全国唯一，可光看号码，看不出这个人现在在哪。交换机只能一条一条地记：全世界几十亿块网卡，每台交换机都得记几十亿行；每碰到一个没见过的地址，还要泛洪到整个地球。
 
 寄信就不这样。信封上写的是“广东省 深圳市 南山区 某路 某号”，这串地址分了层。北京的分拣中心只看“广东省”就知道该往南发，到了深圳再看区，到了区再看街道。没有哪个分拣中心需要认识全国每一户人家。
 
-网络也需要这样一种地址：前半截说明在哪个网络，后半截说明是网络里的哪一台。这就是 IP 地址。
+网络照这个办法分开管。交换机只管一小片，一间屋子、一层楼，这一片叫一个**网络**；网络和网络之间，用另一种盒子接起来，叫**路由器**。地址也换成分层的：前半截说明在哪个网络，后半截说明是网络里的哪一台。这就是 IP 地址。
 
 ## IP 地址：前半截是网络
 
@@ -291,7 +303,9 @@ IPv4 地址是 32 位，每 8 位写成一个十进制数，用点隔开，比�
 
 前多少位算“网络”，要另外写明。`192.168.1.23/24` 是说前 24 位是网络号，后 8 位是主机号。前 24 位相同的地址都在同一个网络里，从 `192.168.1.0` 到 `192.168.1.255`，一共 256 个。老写法叫子网掩码：前 24 位全是 1，后 8 位全是 0，写出来就是 `255.255.255.0`，一个意思。
 
-电脑要发包，先拿自己的前缀和目的地址比。前缀一样，说明对方就在同一个网络里，直接发；不一样，就交给**默认网关**，也就是连着外面的那台路由器。
+用上 IP 以后，要发的数据前面多一个头，写着源 IP 和目的 IP，合起来叫一个**包**。包自己上不了线，还得装进帧里：帧头的 MAC 管这一段线上交给谁，包头的 IP 管最终去哪。
+
+电脑要发一个包，先拿自己的前缀和目的地址比。前缀一样，说明对方就在同一个网络里，直接发；不一样，就交给**默认网关**，也就是连着外面的那台路由器。
 
 ```render html
 <style>
@@ -407,13 +421,13 @@ new ResizeObserver(([entry]) => {
 
 主机号全是 0 的地址代表网络本身，全是 1 的是这个网络的广播地址，都不分给机器，所以一个 /24 能用的是 254 个。
 
-“直接发”也得知道对方的 MAC，交换机只认 MAC。从 IP 查 MAC 靠 **ARP**：在屋里广播一声“谁是 192.168.1.1？告诉 192.168.1.23”，每台都收得到，只有 192.168.1.1 回话，把自己的 MAC 单独发回来。查到的会缓存一阵，`ip neigh` 能看到：
+“直接发”也得知道对方的 MAC，交换机只认 MAC。从 IP 查 MAC 靠 **ARP**：在屋里广播一声“谁是 192.168.1.1？告诉 192.168.1.23”，每台都收得到，只有 192.168.1.1 回话，把自己的 MAC 单独发回来。交给网关的包也要走这一步：网关就在屋里，先问出它的 MAC，才能把帧送到它手上。查到的会缓存一阵，`ip neigh` 能看到：
 
 ```text
 192.168.1.1 dev eth0 lladdr 3c:22:fb:91:0a:7e REACHABLE
 ```
 
-那电脑自己的 `192.168.1.23`、`/24` 和网关地址，又是谁定的？一般是连上网的那一刻，用 **DHCP** 问来的。电脑这时还没有地址，只能广播：
+电脑自己的 `192.168.1.23`、`/24` 和网关地址，一般是连上网的那一刻用 **DHCP** 问来的。这时它还没有地址，只能广播：
 
 ```text
 电脑   → 广播     DISCOVER   有谁能给我分个地址？
@@ -422,62 +436,85 @@ new ResizeObserver(([entry]) => {
 路由器 → 电脑     ACK        定了，租期一天
 ```
 
-地址是租的，到期前要续，所以换个 Wi‑Fi，地址就跟着变了。
+地址是租的，到期前要续。换个 Wi‑Fi 就是换了一个网络，得重新问一遍，拿到的是那边的地址。
 
 ## 一跳一跳：MAC 在换，IP 不变
 
 目的地不在本网络，包就要经过一台台路由器。每台路由器至少连着两个网络，每个口都有自己的 MAC 和 IP。
 
-过一跳是这样的：路由器收到一帧，拆掉 MAC 这层，看里面的目的 IP，查表决定下一跳，再套上一层新的 MAC 头发出去。源 IP 和目的 IP 一路不变，MAC 头每过一跳换一次。
+过一跳是这样的：路由器收到一帧，拆掉帧头，看里面的目的 IP，查表决定下一跳，再套上一个新的帧头发出去。源 IP 和目的 IP 一路不变，帧头每过一跳换一次。
 
-像寄国际快递。包裹上的收件地址从头到尾不变；从你家到驿站是一辆三轮，驿站到分拨中心是一辆货车，再往后是飞机。每一段运输有自己的一张单子，只写“从这一站到下一站”，到站就撕掉换新的。
+电脑隔着两台路由器给服务器发一个包。图里的包画成两层，外面橙色的一圈是帧头，里面是 IP 包：
 
 ```render html
 <style>
   .hp { --blue: #356f9b; font-size: 13px; line-height: 1.5; font-variant-ligatures: none; }
   :root[data-theme="dark"] .hp { --blue: #95bfdc; }
-  .seg { display: flex; flex-wrap: wrap; gap: 0 18px; }
-  .seg button { min-height: 40px; padding: 4px 0; border: 0; border-bottom: 2px solid var(--rule); background: none; color: var(--muted); font-size: 14px; cursor: pointer; }
-  .seg button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
-  .hp svg { display: block; width: 100%; height: auto; margin-top: 14px; overflow: visible; }
+  .key { min-height: 38px; padding: 0 14px; border: 1px solid var(--rule-strong); border-radius: 6px; background: var(--bg-raised); box-shadow: 0 2px 0 var(--rule); color: var(--text); font-size: 13px; cursor: pointer; }
+  .key:hover { border-color: var(--text); }
+  .hp svg { display: block; width: 100%; height: auto; margin-top: 12px; overflow: visible; }
   .link { stroke: var(--rule-strong); stroke-width: 2; }
   .link.on { stroke: var(--text); }
-  .hit { stroke: transparent; stroke-width: 26; cursor: pointer; }
   .dev { fill: var(--bg-raised); stroke: var(--muted); stroke-width: 1.4; }
   .glyph { fill: none; stroke: var(--muted); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
   .name { fill: var(--text); font-size: 13px; }
   .ip { fill: var(--muted); font: 11.5px var(--font-mono); }
-  .m { font: 12px var(--font-mono); dominant-baseline: central; }
-  .m.src { fill: var(--accent-ink); }
-  .m.dst { fill: var(--blue); }
-  .pkt { fill: var(--accent); }
-  .frame, .packet { position: relative; display: flex; flex-wrap: wrap; gap: 6px; border: 1.5px solid var(--rule-strong); border-radius: 6px; }
-  .frame { margin-top: 22px; padding: 14px 6px 6px; }
-  .packet { flex: 1 1 300px; padding: 14px 6px 6px; border-style: dashed; border-radius: 4px; }
-  .f { display: grid; flex: 1 1 auto; padding: 4px 8px; border-radius: 3px; background: var(--bg-sunken); transition: background-color .9s; }
-  .f small { color: var(--muted); font-size: 11.5px; line-height: 1.3; }
-  .f span { color: var(--text); font: 500 13.5px var(--font-mono); white-space: nowrap; }
-  .f.dst span { color: var(--blue); }
-  .f.src span { color: var(--accent-ink); }
-  .f.data { flex: 1 1 3em; }
-  @media (max-width: 420px) { .f.data { display: none; } }
-  .f.data span { color: var(--faint); }
-  .f.flash { background: var(--accent-soft); transition: none; }
+  .m { fill: var(--faint); font: 12px var(--font-mono); dominant-baseline: central; }
+  .m.src { fill: var(--accent-ink); font-weight: 600; }
+  .m.dst { fill: var(--blue); font-weight: 600; }
+  .wrap { fill: var(--accent); }
+  .core { fill: var(--bg); stroke: var(--text); stroke-width: 1.6; }
+  .frame { position: relative; margin-top: 20px; padding: 6px 0 8px; border: 1.5px solid var(--rule-strong); border-radius: 6px; }
   .tag { position: absolute; top: -10px; left: 8px; padding: 0 5px; background: var(--bg); color: var(--muted); font-size: 12px; line-height: 18px; }
+  .grid { display: grid; grid-template-columns: 4.6em repeat(3, minmax(0, 1fr)); gap: 4px 6px; margin: 0 6px; padding: 0 6px; border: 1.5px solid transparent; }
+  .packet { position: relative; margin-top: 14px; padding: 12px 6px 6px; border: 1.5px dashed var(--rule-strong); border-radius: 5px; }
+  .hop { min-height: 38px; padding: 4px 0; border: 0; border-bottom: 2px solid var(--rule); background: none; color: var(--muted); font-size: 12.5px; white-space: nowrap; cursor: pointer; }
+  .hop[aria-pressed="true"] { border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+  .rl { display: flex; align-items: center; color: var(--muted); font-size: 12px; white-space: nowrap; }
+  .c { display: flex; align-items: center; justify-content: center; min-height: 30px; padding: 2px 4px; border-radius: 3px; background: var(--surface); color: var(--text); font: 500 13px var(--font-mono); white-space: nowrap; transition: background-color .9s, color .9s; }
+  .c.dst { color: var(--blue); }
+  .c.src { color: var(--accent-ink); }
+  .c.on { background: var(--accent-soft); }
+  .c.wait { background: none; box-shadow: inset 0 0 0 1px var(--rule); }
+  .c.flash { background: var(--accent); color: var(--bg); transition: none; }
+  .c.all { grid-column: 2 / -1; }
+  @media (prefers-reduced-motion: reduce) { .c { transition: none; } }
+  @media (max-width: 420px) {
+    .grid { grid-template-columns: 4.4em repeat(3, minmax(0, 1fr)); gap: 4px; margin: 0 4px; padding: 0 4px; }
+    .packet { margin-top: 14px; padding: 12px 4px 4px; }
+    .hop { font-size: 12px; }
+    .c { font-size: 12.5px; }
+  }
 </style>
-<section class="hp" aria-label="包经过两台路由器：MAC 头每段都换，IP 头不变">
-  <div class="seg" role="group" aria-label="第几段"></div>
+<section class="hp" aria-label="包经过两台路由器：每一段的帧头都换成这一段两头的 MAC，IP 包里的地址不变，只有 TTL 在减">
+  <button type="button" class="key play">播放</button>
   <svg role="img"></svg>
   <div class="frame">
     <span class="tag">帧</span>
-    <div class="f dst"><small>目的 MAC</small><span data-k="dst"></span></div>
-    <div class="f src"><small>源 MAC</small><span data-k="src"></span></div>
-    <div class="packet">
+    <div class="grid">
+      <span></span>
+      <button type="button" class="hop" data-hop="0">电脑→R1</button>
+      <button type="button" class="hop" data-hop="1">R1→R2</button>
+      <button type="button" class="hop" data-hop="2">R2→服务器</button>
+      <span class="rl">目的 MAC</span>
+      <span class="c dst" data-k="dst" data-hop="0"></span>
+      <span class="c dst" data-k="dst" data-hop="1"></span>
+      <span class="c dst" data-k="dst" data-hop="2"></span>
+      <span class="rl">源 MAC</span>
+      <span class="c src" data-k="src" data-hop="0"></span>
+      <span class="c src" data-k="src" data-hop="1"></span>
+      <span class="c src" data-k="src" data-hop="2"></span>
+    </div>
+    <div class="grid packet">
       <span class="tag">IP 包</span>
-      <div class="f"><small>TTL</small><span data-k="ttl"></span></div>
-      <div class="f"><small>源 IP</small><span>192.168.1.23</span></div>
-      <div class="f"><small>目的 IP</small><span>203.0.113.10</span></div>
-      <div class="f data"><small>数据</small><span>…</span></div>
+      <span class="rl">TTL</span>
+      <span class="c" data-k="ttl" data-hop="0"></span>
+      <span class="c" data-k="ttl" data-hop="1"></span>
+      <span class="c" data-k="ttl" data-hop="2"></span>
+      <span class="rl">源 IP</span>
+      <span class="c all">192.168.1.23</span>
+      <span class="rl">目的 IP</span>
+      <span class="c all">203.0.113.10</span>
     </div>
   </div>
 </section>
@@ -489,9 +526,14 @@ const DEVICES = [
   { name: 'R2', kind: 'router', left: '…9e:40', right: '…9e:41' },
   { name: '服务器', kind: 'server', ip: '203.0.113.10', left: '…3a:12' },
 ];
-const root = document.querySelector('.hp'), svg = root.querySelector('svg'), seg = root.querySelector('.seg');
+const HOPS = DEVICES.length - 1, MOVE = 900, SWAP = 800;
+const root = document.querySelector('.hp'), svg = root.querySelector('svg');
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-let hop = 0, width = 0, moveStart = 0, frame = 0;
+// hop：表里点亮的是第几段；reached：播放到了第几段，后面的列先空着
+// at：包在哪。router 为假时在第 i 段线上走了 f，为真时正穿过第 i 台设备
+// wrap：帧头的不透明度，穿过路由器时淡出再淡入
+let width = 0, hop = 0, reached = HOPS - 1, wrap = 1, run = 0;
+let at = { router: false, i: 0, f: .5 };
 
 function glyph(d, x, y) {
   if (d.kind === 'router') {
@@ -505,79 +547,240 @@ function glyph(d, x, y) {
     `<path class="glyph" d="M${x - 14} ${y - 6}h28M${x - 14} ${y + 6}h28M${x - 8} ${y - 12}h3M${x - 8} ${y}h3M${x - 8} ${y + 12}h3"/>`;
 }
 
-function draw(now = performance.now()) {
-  const pad = 22, xs = DEVICES.map((_, i) => pad + (width - 2 * pad) * i / (DEVICES.length - 1));
-  const y = 44, H = 112, gap = width < 460 ? 17 : 14;
+function draw() {
+  if (!width) return;
+  const pad = 22, xs = DEVICES.map((_, i) => pad + (width - 2 * pad) * i / HOPS);
+  const y = 44, H = 110, gap = 17;
   let s = '';
-  xs.slice(1).forEach((x, i) => {
-    s += `<line class="link${i === hop ? ' on' : ''}" x1="${xs[i]}" x2="${x}" y1="${y}" y2="${y}"/>`;
-    s += `<line class="hit" data-hop="${i}" x1="${xs[i] + 20}" x2="${x - 20}" y1="${y}" y2="${y}"/>`;
-  });
+  for (let i = 0; i < HOPS; i++) {
+    s += `<line class="link${i === hop ? ' on' : ''}" x1="${xs[i]}" x2="${xs[i + 1]}" y1="${y}" y2="${y}"/>`;
+    // 每个口的 MAC 都标着：一段线的源在上方靠左，目的在下方靠右
+    s += `<text class="m${i === hop ? ' src' : ''}" x="${xs[i] + 22}" y="${y - gap}">${DEVICES[i].right}</text>`;
+    s += `<text class="m${i === hop ? ' dst' : ''}" x="${xs[i + 1] - 22}" y="${y + gap}" text-anchor="end">${DEVICES[i + 1].left}</text>`;
+  }
   DEVICES.forEach((d, i) => {
     // 两头的设备把文字往里收，免得出界
-    const [tx, anchor] = i === 0 ? [xs[i] - 20, 'start'] : i === DEVICES.length - 1 ? [xs[i] + 15, 'end'] : [xs[i], 'middle'];
-    s += glyph(d, xs[i], y) + `<text class="name" x="${tx}" y="${y + 38}" text-anchor="${anchor}">${d.name}</text>`;
-    if (d.ip) s += `<text class="ip" x="${tx}" y="${y + 56}" text-anchor="${anchor}">${d.ip}</text>`;
+    const [tx, anchor] = i === 0 ? [xs[i] - 20, 'start'] : i === HOPS ? [xs[i] + 15, 'end'] : [xs[i], 'middle'];
+    s += glyph(d, xs[i], y) + `<text class="name" x="${tx}" y="${y + 40}" text-anchor="${anchor}">${d.name}</text>`;
+    if (d.ip) s += `<text class="ip" x="${tx}" y="${y + 58}" text-anchor="${anchor}">${d.ip}</text>`;
   });
-  // 这一段两头的 MAC：源写在线上方靠左，目的写在线下方靠右
-  const a = xs[hop], b = xs[hop + 1];
-  s += `<text class="m src" x="${a + 22}" y="${y - gap}">${DEVICES[hop].right}</text>`;
-  s += `<text class="m dst" x="${b - 22}" y="${y + gap}" text-anchor="end">${DEVICES[hop + 1].left}</text>`;
-  const t = reduce ? 1 : Math.min(1, (now - moveStart) / 800), e = 1 - (1 - t) ** 2;
-  const px = a + 24 + (b - a - 48) * e;
-  s += `<rect class="pkt" x="${px - 9}" y="${y - 6}" width="18" height="12" rx="2"/>`;
+  // 包画成两层：外面一圈是帧头，里面是 IP 包
+  const px = at.router ? xs[at.i] - 24 + 48 * at.f : xs[at.i] + 24 + (xs[at.i + 1] - xs[at.i] - 48) * at.f;
+  s += `<rect class="wrap" x="${px - 11}" y="${y - 8}" width="22" height="16" rx="3" opacity="${wrap.toFixed(2)}"/>`;
+  s += `<rect class="core" x="${px - 5}" y="${y - 4}" width="10" height="8" rx="1.5"/>`;
   svg.setAttribute('viewBox', `0 0 ${width} ${H}`);
   svg.innerHTML = s;
-  if (t < 1) frame = requestAnimationFrame(draw);
+}
+
+// 把表填到 reached 那一段，点亮 hop 那一列；fresh 那一列闪一下
+function table(fresh) {
+  root.querySelectorAll('.c[data-k]').forEach(el => {
+    const k = Number(el.dataset.hop), shown = k <= reached;
+    const value = { dst: DEVICES[k + 1].left, src: DEVICES[k].right, ttl: String(64 - k) }[el.dataset.k];
+    el.textContent = shown ? value : '';
+    el.classList.toggle('wait', !shown);
+    el.classList.toggle('on', k === hop);
+    if (k === fresh) {
+      el.classList.add('flash');
+      requestAnimationFrame(() => requestAnimationFrame(() => el.classList.remove('flash')));
+    }
+  });
+  root.querySelectorAll('.hop').forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.hop) === hop)));
+  svg.setAttribute('aria-label', `第 ${hop + 1} 段：源 MAC ${DEVICES[hop].right}，目的 MAC ${DEVICES[hop + 1].left}，TTL ${64 - hop}；源 IP 和目的 IP 没变`);
+}
+
+const ease = t => (t < .5 ? 2 * t * t : 1 - (2 - 2 * t) ** 2 / 2);
+// 在 ms 毫秒里把 fn 从 0 推到 1；中途有人点了别的，就停下并返回 false
+function tween(ms, fn) {
+  if (reduce) { fn(1); draw(); return Promise.resolve(true); }
+  const id = run;
+  return new Promise(done => {
+    const t0 = performance.now();
+    const step = now => {
+      if (id !== run) return done(false);
+      const t = Math.min(1, Math.max(0, (now - t0) / ms));
+      fn(t);
+      draw();
+      if (t < 1) requestAnimationFrame(step);
+      else done(true);
+    };
+    requestAnimationFrame(step);
+  });
+}
+
+async function play() {
+  run++;
+  hop = 0; reached = 0; wrap = 1;
+  at = { router: false, i: 0, f: 0 };
+  table(0);
+  draw();
+  for (let k = 0; k < HOPS; k++) {
+    if (!(await tween(MOVE, t => { at = { router: false, i: k, f: ease(t) }; }))) return;
+    if (k === HOPS - 1) return;
+    // 穿过路由器：前一半拆掉旧帧头，走到一半换成下一段，后一半套上新的
+    const ok = await tween(SWAP, t => {
+      at = { router: true, i: k + 1, f: t };
+      wrap = Math.abs(2 * t - 1);
+      if (t >= .5 && hop === k) { hop = k + 1; reached = hop; table(hop); }
+    });
+    if (!ok) return;
+  }
 }
 
 function show(k) {
-  hop = k;
-  const fields = { dst: DEVICES[k + 1].left, src: DEVICES[k].right, ttl: 64 - k };
-  root.querySelectorAll('[data-k]').forEach(el => {
-    const value = String(fields[el.dataset.k]);
-    if (el.textContent && el.textContent !== value) {
-      const box = el.parentElement;
-      box.classList.add('flash');
-      requestAnimationFrame(() => requestAnimationFrame(() => box.classList.remove('flash')));
-    }
-    el.textContent = value;
-  });
-  seg.querySelectorAll('button').forEach((b, i) => b.setAttribute('aria-pressed', String(i === k)));
-  svg.setAttribute('aria-label', `第 ${k + 1} 段：源 MAC ${fields.src}，目的 MAC ${fields.dst}，TTL ${fields.ttl}`);
-  cancelAnimationFrame(frame);
-  moveStart = performance.now();
-  if (width) draw();
+  run++;
+  hop = k; reached = HOPS - 1; wrap = 1;
+  table(k);
+  tween(MOVE, t => { at = { router: false, i: k, f: ease(t) }; });
 }
 
-DEVICES.slice(1).forEach((d, i) => {
-  const b = document.createElement('button');
-  b.type = 'button';
-  b.textContent = `${DEVICES[i].name} → ${d.name}`;
-  b.addEventListener('click', () => show(i));
-  seg.append(b);
-});
-svg.addEventListener('click', e => {
-  const hit = e.target.closest('[data-hop]');
-  if (hit) show(Number(hit.dataset.hop));
-});
+root.querySelector('.play').addEventListener('click', play);
+root.querySelectorAll('.hop').forEach(b => b.addEventListener('click', () => show(Number(b.dataset.hop))));
 new ResizeObserver(([entry]) => {
   const w = Math.floor(entry.contentRect.width);
   if (w !== width) { width = w; draw(); }
 }).observe(svg);
-show(0);
+table(-1);
 </script>
 ```
 
-最容易绕晕的是第一段：目的 MAC 是网关的，目的 IP 却是服务器的。帧交给下一站，包去往终点，两件事分开写。
+最容易绕晕的是第一段：目的 MAC 是网关的，目的 IP 却是服务器的。帧头写的是下一站，包头写的是终点。
 
 IP 头里还有个 **TTL**，每过一台路由器减 1，减到 0 就扔掉，免得包在环路里永远转下去。
 
-扔的同时，路由器会给源地址回一个 ICMP 的“超时”消息。`traceroute` 就利用了这一点：先发 TTL 为 1 的包，第一台路由器扔掉它、回信，就知道第一跳是谁；再发 TTL 为 2 的，问出第二跳；一路问到目的地。开头那两个星号，是那两台路由器被设置成了不回信。
+扔的同时，路由器会给源地址回一条“超时”消息。它走的是 ICMP，IP 自带的一套报错和探测消息，`ping` 用的也是它。
+
+`traceroute` 就是靠这条回信，把一路上的机器一台台问出来的：先发 TTL 为 1 的包，第一台路由器扔掉它、回信，就知道第一跳是谁；再发 TTL 为 2 的，问出第二跳；一路问到目的地。
+
+```render html
+<style>
+  .tr { --blue: #356f9b; font-size: 13px; line-height: 1.5; font-variant-ligatures: none; }
+  :root[data-theme="dark"] .tr { --blue: #95bfdc; }
+  .key { min-height: 38px; padding: 0 14px; border: 1px solid var(--rule-strong); border-radius: 6px; background: var(--bg-raised); box-shadow: 0 2px 0 var(--rule); color: var(--text); font-size: 13px; cursor: pointer; }
+  .key:hover { border-color: var(--text); }
+  .tr svg { display: block; width: 100%; height: auto; margin-top: 12px; overflow: visible; }
+  .col { stroke: var(--rule); stroke-dasharray: 2 5; }
+  .dev { fill: var(--bg-raised); stroke: var(--muted); stroke-width: 1.4; }
+  .glyph { fill: none; stroke: var(--muted); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+  .found .dev { stroke: var(--accent); stroke-width: 2; }
+  .name { fill: var(--text); font-size: 13px; }
+  .probe { stroke: var(--accent); stroke-width: 2.2; stroke-linecap: round; }
+  .pkt { fill: var(--accent); }
+  .ttl { fill: var(--accent-ink); font: 600 12px var(--font-mono); text-anchor: middle; }
+  .end { fill: var(--bg); stroke: var(--muted); stroke-width: 1.4; }
+  .end.ok { stroke: var(--accent); }
+  .cross { fill: none; stroke: var(--muted); stroke-width: 1.8; stroke-linecap: round; }
+  .tick { fill: none; stroke: var(--accent-ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .reply { stroke: var(--blue); stroke-width: 1.6; stroke-dasharray: 5 4; }
+  .reply-head { fill: var(--blue); }
+  .back { fill: var(--blue); font-size: 12px; text-anchor: middle; }
+</style>
+<section class="tr" aria-label="traceroute：TTL 从 1 开始一个个加，每个探测包比上一个多走一跳才被扔掉，回信的那台就是这一跳">
+  <button type="button" class="key play">播放</button>
+  <svg role="img" aria-label="四个探测包，TTL 分别是 1、2、3、4：前三个依次死在 R1、R2、R3，各自换回一条超时消息；第四个到了服务器"></svg>
+</section>
+<script>
+const NODES = [
+  { name: '电脑', kind: 'pc' },
+  { name: 'R1', kind: 'router' },
+  { name: 'R2', kind: 'router' },
+  { name: 'R3', kind: 'router' },
+  { name: '服务器', kind: 'server' },
+];
+const LAST = NODES.length - 1;
+// 每一跳去程 OUT 毫秒、回程 BACK 毫秒；到站停 HOLD，两个探测包之间歇 REST
+const OUT = 300, BACK = 200, HOLD = 160, REST = 320;
+const PROBES = [];
+let total = 0;
+for (let k = 1; k <= LAST; k++) {
+  const out1 = total + k * OUT, back0 = out1 + HOLD, back1 = back0 + k * BACK;
+  PROBES.push({ ttl: k, out0: total, out1, back0, back1 });
+  total = back1 + REST;
+}
+const root = document.querySelector('.tr'), svg = root.querySelector('svg');
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+// now 是动画走到了第几毫秒；首帧停在全部问完的样子
+let width = 0, now = total, raf = 0;
+
+function glyph(d, x, y) {
+  if (d.kind === 'router') {
+    return `<circle class="dev" cx="${x}" cy="${y}" r="17"/>` +
+      `<path class="glyph" d="M${x - 8} ${y - 3.5}h15m-4 -3.5l4 3.5-4 3.5M${x + 8} ${y + 3.5}h-15m4 -3.5l-4 3.5 4 3.5"/>`;
+  }
+  if (d.kind === 'pc') {
+    return `<rect class="dev" x="${x - 19}" y="${y - 15}" width="38" height="25" rx="3"/><path class="glyph" d="M${x} ${y + 10}v5M${x - 8} ${y + 15}h16"/>`;
+  }
+  return `<rect class="dev" x="${x - 14}" y="${y - 18}" width="28" height="36" rx="3"/>` +
+    `<path class="glyph" d="M${x - 14} ${y - 6}h28M${x - 14} ${y + 6}h28M${x - 8} ${y - 12}h3M${x - 8} ${y}h3M${x - 8} ${y + 12}h3"/>`;
+}
+
+function draw() {
+  if (!width) return;
+  const pad = 22, xs = NODES.map((_, i) => pad + (width - 2 * pad) * i / LAST);
+  const top = 30, first = 112, pitch = 60, H = first + (PROBES.length - 1) * pitch + 36;
+  let s = '';
+  xs.forEach(x => { s += `<line class="col" x1="${x}" x2="${x}" y1="${top + 48}" y2="${H - 4}"/>`; });
+  NODES.forEach((d, i) => {
+    // 回信到了电脑，这一跳才算问出来
+    const found = i > 0 && now >= PROBES[i - 1].back1;
+    const [tx, anchor] = i === 0 ? [xs[i] - 20, 'start'] : i === LAST ? [xs[i] + 15, 'end'] : [xs[i], 'middle'];
+    s += `<g class="${found ? 'found' : ''}">${glyph(d, xs[i], top)}</g>`;
+    s += `<text class="name" x="${tx}" y="${top + 38}" text-anchor="${anchor}">${d.name}</text>`;
+  });
+  PROBES.forEach((p, r) => {
+    if (now <= p.out0) return;
+    const y = first + r * pitch, k = p.ttl, x0 = xs[0], x1 = xs[k];
+    const fo = Math.min(1, (now - p.out0) / (p.out1 - p.out0)), head = x0 + (x1 - x0) * fo;
+    s += `<line class="probe" x1="${x0}" x2="${head}" y1="${y}" y2="${y}"/>`;
+    // 每一段线上方写着包在这一段里的 TTL：过一台路由器少 1
+    for (let j = 0; j < k && fo * k >= j + .5; j++) {
+      s += `<text class="ttl" x="${(xs[j] + xs[j + 1]) / 2}" y="${y - 8}">${j ? '' : 'TTL '}${k - j}</text>`;
+    }
+    if (fo < 1) {
+      s += `<rect class="pkt" x="${head - 6}" y="${y - 5}" width="12" height="10" rx="2"/>`;
+      return;
+    }
+    // 减到 0 的那台把包扔掉；最后一个探测包到了服务器
+    const arrived = k === LAST;
+    s += `<circle class="end${arrived ? ' ok' : ''}" cx="${x1}" cy="${y}" r="8"/>`;
+    s += arrived ? `<path class="tick" d="M${x1 - 4} ${y}l2.8 3 5.2-6"/>` : `<path class="cross" d="M${x1 - 3.5} ${y - 3.5}l7 7M${x1 + 3.5} ${y - 3.5}l-7 7"/>`;
+    if (now <= p.back0) return;
+    const fb = Math.min(1, (now - p.back0) / (p.back1 - p.back0)), yb = y + 14, tail = x1 - (x1 - x0) * fb;
+    s += `<line class="reply" x1="${x1}" x2="${tail}" y1="${yb}" y2="${yb}"/>`;
+    s += `<polygon class="reply-head" points="${tail - 1},${yb} ${tail + 8},${yb - 4} ${tail + 8},${yb + 4}"/>`;
+    s += `<text class="back" x="${(xs[k - 1] + xs[k]) / 2}" y="${yb + 16}">${arrived ? '到了' : '超时'}</text>`;
+  });
+  svg.setAttribute('viewBox', `0 0 ${width} ${H}`);
+  svg.innerHTML = s;
+}
+
+function play() {
+  cancelAnimationFrame(raf);
+  if (reduce) { now = total; return draw(); }
+  const t0 = performance.now();
+  const step = t => {
+    now = Math.min(total, Math.max(0, t - t0));
+    draw();
+    if (now < total) raf = requestAnimationFrame(step);
+  };
+  now = 0;
+  draw();
+  raf = requestAnimationFrame(step);
+}
+
+root.querySelector('.play').addEventListener('click', play);
+new ResizeObserver(([entry]) => {
+  const w = Math.floor(entry.contentRect.width);
+  if (w !== width) { width = w; draw(); }
+}).observe(svg);
+</script>
+```
+
+回信的源地址就是扔包的那台路由器，从发出探测包到收到回信隔了多久，就是那一行的毫秒数。开头那两个星号，是那两台路由器被设置成了不回信。
 
 ## 路由表：最具体的那条说了算
 
-路由器怎么“查表决定下一跳”？它有一张路由表，每行是一个网络前缀，和发往那里的包该交给谁：
+路由器查的那张表叫路由表，每行是一个网络前缀，和发往那里的包该交给谁：
 
 ```text
 目的网络            下一跳          出口
@@ -586,9 +789,130 @@ IP 头里还有个 **TTL**，每过一台路由器减 1，减到 0 就扔掉，�
 0.0.0.0/0          198.51.100.1    eth0
 ```
 
-一个地址常常同时落在好几行里。`203.0.113.10` 既在 `203.0.113.0/24` 里，也在 `203.0.113.0/25` 里，`0.0.0.0/0` 更是什么都包含。规则是**最长前缀匹配**：前缀越长，说得越具体，就听谁的。所以它走 eth2。`203.0.113.200` 不在那个 /25 里（/25 只到 .127），走 eth1。
+一个地址常常同时落在好几行里。`203.0.113.10` 既在 `203.0.113.0/24` 里，也在 `203.0.113.0/25` 里，`0.0.0.0/0` 更是什么都包含。规则是**最长前缀匹配**：前缀越长，说得越具体，就听谁的。
 
-`0.0.0.0/0` 的前缀长度是 0，匹配一切，但谁都比它长。它是默认路由，意思是“别的都不认识，就往这儿送”。家里的路由器基本只靠这一条：凡是出门的包，一律交给运营商。
+把目的地址和三行前缀都写成二进制，按位对齐。虚线那一段在前缀之外，不参与比较：
+
+```render html
+<style>
+  .lp { font-size: 13px; line-height: 1.5; font-variant-ligatures: none; }
+  .seg { display: flex; flex-wrap: wrap; gap: 0 18px; }
+  .seg button { min-height: 40px; padding: 4px 0; border: 0; border-bottom: 2px solid var(--rule); background: none; color: var(--muted); font: 13.5px var(--font-mono); cursor: pointer; }
+  .seg button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+  .lp svg { display: block; width: 100%; height: auto; margin-top: 14px; overflow: visible; }
+  .lbl { fill: var(--muted); font-size: 12.5px; dominant-baseline: central; }
+  .len { fill: var(--muted); font: 13px var(--font-mono); dominant-baseline: central; }
+  .dec { fill: var(--text); font: 500 14px var(--font-mono); text-anchor: middle; dominant-baseline: central; }
+  .dot { fill: var(--muted); font: 14px var(--font-mono); text-anchor: middle; dominant-baseline: central; }
+  .bit { fill: var(--text); font: 13px var(--font-mono); text-anchor: middle; dominant-baseline: central; }
+  .bit.off { fill: var(--faint); }
+  .bit.diff { fill: var(--bg); font-weight: 700; }
+  .sq { fill: var(--text); }
+  .sq.off { fill: var(--faint); }
+  .sq.diff { fill: var(--bg); }
+  .zero { fill: none; stroke: var(--text); stroke-opacity: .5; }
+  .zero.off { stroke: var(--faint); stroke-opacity: .6; }
+  .zero.diff { stroke: var(--bg); stroke-opacity: 1; }
+  .band { fill: var(--surface); }
+  .band.win { fill: var(--accent-soft); }
+  .hit { fill: var(--muted); }
+  .free { stroke: var(--rule-strong); stroke-dasharray: 2 4; }
+  .out { fill: var(--muted); font: 13px var(--font-mono); text-anchor: end; dominant-baseline: central; }
+  .out.off { fill: var(--faint); text-decoration: line-through; }
+  .out.win, .len.win { fill: var(--accent-ink); font-weight: 700; }
+  .verdict { margin: 8px 0 0; color: var(--text); font-size: 15px; font-weight: 600; }
+</style>
+<section class="lp" aria-label="把目的地址和路由表里每一行的前缀按位对齐：对得上的行里，前缀最长的那一行决定出口">
+  <div class="seg" role="group" aria-label="目的地址"></div>
+  <svg role="img"></svg>
+  <p class="verdict" aria-live="polite"></p>
+</section>
+<script>
+const ROUTES = [
+  { net: [203, 0, 113, 0], len: 24, out: 'eth1' },
+  { net: [203, 0, 113, 0], len: 25, out: 'eth2' },
+  { net: [0, 0, 0, 0], len: 0, out: 'eth0' },
+];
+const TARGETS = [[203, 0, 113, 10], [203, 0, 113, 200], [8, 8, 8, 8]];
+const root = document.querySelector('.lp'), svg = root.querySelector('svg');
+const seg = root.querySelector('.seg'), verdict = root.querySelector('.verdict');
+let target = 0, width = 0;
+
+const bits = ip => ip.flatMap(o => Array.from({ length: 8 }, (_, k) => (o >> (7 - k)) & 1));
+
+function render() {
+  if (!width) return;
+  const narrow = width < 460, lw = narrow ? 30 : 42, rw = 40, sep = narrow ? 6 : 10;
+  const c = Math.min(18, Math.floor((width - lw - rw - 3 * sep) / 32)), digits = c >= 11;
+  const x = i => lw + i * c + Math.floor(i / 8) * sep;
+  const a = bits(TARGETS[target]);
+  // 一行前缀的每一位都和目的地址相同，才算匹配；/0 一位都不用比
+  const rows = ROUTES.map(r => {
+    const b = bits(r.net);
+    return { ...r, b, match: b.slice(0, r.len).every((v, i) => v === a[i]) };
+  });
+  const best = Math.max(...rows.filter(r => r.match).map(r => r.len));
+  // 一位：宽的时候写数字，窄的时候 1 画实心、0 画空心
+  const cell = (v, kind, i, y) => {
+    const cx = x(i) + c / 2;
+    let out = kind === 'diff' ? `<rect class="hit" x="${x(i) + .5}" y="${y - 10}" width="${c - 1}" height="20" rx="2"/>` : '';
+    if (digits) out += `<text class="bit ${kind}" x="${cx}" y="${y}">${v}</text>`;
+    else if (v) out += `<rect class="sq ${kind}" x="${cx - 2.5}" y="${y - 5}" width="5" height="10" rx="1"/>`;
+    else out += `<rect class="zero ${kind}" x="${cx - 2}" y="${y - 4.5}" width="4" height="9" rx="1"/>`;
+    return out;
+  };
+
+  const y0 = 30;
+  let s = `<text class="lbl" x="0" y="${y0}">目的</text>`;
+  TARGETS[target].forEach((o, k) => {
+    s += `<text class="dec" x="${x(8 * k) + 4 * c}" y="8">${o}</text>`;
+    if (k) s += `<text class="dot" x="${x(8 * k) - sep / 2}" y="8">.</text>`;
+  });
+  a.forEach((v, i) => { s += cell(v, '', i, y0); });
+
+  rows.forEach((r, k) => {
+    const y = 74 + k * 36, win = r.match && r.len === best;
+    // 匹配的行，前缀那一段打底色
+    for (let g = 0; g < 4 && r.match; g++) {
+      const from = 8 * g, to = Math.min(r.len, 8 * g + 8);
+      if (to > from) s += `<rect class="band${win ? ' win' : ''}" x="${x(from)}" y="${y - 12}" width="${x(to - 1) + c - x(from)}" height="24" rx="2"/>`;
+    }
+    // 前缀之后的位不比较，画成虚线
+    if (r.len < 32) s += `<line class="free" x1="${x(r.len)}" x2="${x(31) + c}" y1="${y}" y2="${y}"/>`;
+    for (let i = 0; i < r.len; i++) s += cell(r.b[i], r.b[i] !== a[i] ? 'diff' : r.match ? '' : 'off', i, y);
+    s += `<text class="len${win ? ' win' : ''}" x="0" y="${y}">/${r.len}</text>`;
+    s += `<text class="out${win ? ' win' : r.match ? '' : ' off'}" x="${width}" y="${y}">${r.out}</text>`;
+  });
+
+  const won = rows.find(r => r.match && r.len === best), n = rows.filter(r => r.match).length;
+  verdict.textContent = n > 1 ? `匹配 ${n} 行，/${won.len} 最长 · 走 ${won.out}` : `只匹配 /${won.len} · 走 ${won.out}`;
+  svg.setAttribute('viewBox', `0 0 ${width} 166`);
+  svg.innerHTML = s;
+  svg.setAttribute('aria-label', `${TARGETS[target].join('.')}：${verdict.textContent}`);
+}
+
+TARGETS.forEach((ip, i) => {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.textContent = ip.join('.');
+  b.setAttribute('aria-pressed', String(i === target));
+  b.addEventListener('click', () => {
+    target = i;
+    seg.querySelectorAll('button').forEach((el, j) => el.setAttribute('aria-pressed', String(j === i)));
+    render();
+  });
+  seg.append(b);
+});
+new ResizeObserver(([entry]) => {
+  const w = Math.floor(entry.contentRect.width);
+  if (w !== width) { width = w; render(); }
+}).observe(svg);
+</script>
+```
+
+换成 `203.0.113.200`：它的第 25 位是 1，/25 那一行要的是 0（那一行只管到 .127），对不上，于是落回 /24，走 eth1。
+
+`0.0.0.0/0` 的前缀长度是 0，一位都不用比，什么地址都匹配，可谁都比它长。它是默认路由，意思是“别的都不认识，就往这儿送”。家里的路由器基本只靠这一条：凡是出门的包，一律交给运营商。
 
 ## 路由表是谁填的
 
@@ -604,7 +928,7 @@ AS 和 AS 之间靠 **BGP**，更像口口相传：
 
 收到的路径里要是已经有自己的编号，说明绕回来了，直接丢掉，这样就不会成环。
 
-下图每个圈是一个 AS，箭头指着它选的下一跳，橙色那条是你的包实际走的路。每个 AS 只知道自己的箭头，整条路是一个个箭头接出来的：
+下图每个圈是一个 AS，箭头指着它选的下一跳，橙色那条是你的包实际走的路。每个 AS 只知道自己的箭头，整条路是一个个箭头接出来的。点“重新宣告”，能看到这些箭头是从服务器那头一圈圈长出来的：
 
 ```render html
 <style>
@@ -637,8 +961,9 @@ AS 和 AS 之间靠 **BGP**，更像口口相传：
   .pre { fill: var(--muted); font: 12px var(--font-mono); }
   .pre.fake { fill: var(--accent-ink); }
 </style>
-<section class="bg" aria-label="BGP 路由宣告一圈圈传开；剪断光缆或者有人冒认前缀，各自的下一跳跟着变">
+<section class="bg" aria-label="BGP 路由宣告从服务器所在的 AS 一圈圈传开，每个 AS 只记下一跳；剪断光缆或者有人冒认前缀，各自的下一跳跟着变">
   <div class="keys">
+    <button type="button" class="key announce">重新宣告</button>
     <button type="button" class="key snip-key">剪断海缆</button>
     <button type="button" class="key hijack" aria-pressed="false">冒认 /25</button>
     <button type="button" class="key reset">重置</button>
@@ -657,8 +982,8 @@ const OCEAN = LINKS.map(([a, b]) => (NODES[a][0] < .5) !== (NODES[b][0] < .5));
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 let width = 0, cut = new Set(), hijack = false;
-// 每个 AS 现在指向的下一跳，和它最近一次改主意的时间
-let next = [], changedAt = [], frame = 0;
+// 每个 AS 现在指向的下一跳，和它最近一次改主意的时间；epoch 每次重算加一，旧的定时器就此作废
+let next = [], changedAt = [], frame = 0, epoch = 0;
 
 function bfs(origin, skip) {
   const dist = NODES.map(() => Infinity), hop = NODES.map(() => -1);
@@ -691,12 +1016,17 @@ function routes() {
 }
 
 function update() {
-  const now = performance.now(), r = routes();
+  const now = performance.now(), r = routes(), mine = ++epoch;
   const far = Math.max(...r.map(x => (Number.isFinite(x.dist) ? x.dist : 0))) + 1;
   r.forEach((x, i) => {
     if (x.hop === next[i]) return;
+    // 离宣告的源头越远，消息到得越晚
     const delay = reduce ? 0 : (Number.isFinite(x.dist) ? x.dist : far) * STEP;
-    setTimeout(() => { next[i] = x.hop; changedAt[i] = performance.now(); }, delay);
+    setTimeout(() => {
+      if (mine !== epoch) return;
+      next[i] = x.hop;
+      changedAt[i] = performance.now();
+    }, delay);
   });
   hijackKey.setAttribute('aria-pressed', String(hijack));
   cancelAnimationFrame(frame);
@@ -751,7 +1081,7 @@ function draw(now = performance.now()) {
   }
   NODES.forEach((_, i) => {
     const [x, y] = P[i], age = now - (changedAt[i] ?? -1e9);
-    if (age < 700) s += `<circle class="pulse" cx="${x}" cy="${y}" r="${g.r + age / 30}" stroke-opacity="${1 - age / 700}"/>`;
+    if (age < 700 && !reduce) s += `<circle class="pulse" cx="${x}" cy="${y}" r="${g.r + age / 30}" stroke-opacity="${1 - age / 700}"/>`;
     const cls = i === ORIGIN ? ' origin' : i === FAKE && hijack ? ' fake' : i === YOU ? ' you' : next[i] < 0 ? ' lost' : '';
     s += `<circle class="as${cls}" cx="${x}" cy="${y}" r="${g.r}"/>`;
   });
@@ -783,6 +1113,12 @@ svg.addEventListener('click', e => {
 hijackKey.addEventListener('click', () => { hijack = !hijack; update(); });
 snipKey.addEventListener('click', () => { const k = cable(); if (k >= 0) { cut.add(k); update(); } });
 root.querySelector('.reset').addEventListener('click', () => { cut.clear(); hijack = false; update(); });
+// 让每个 AS 先忘掉学到的路，再看宣告从服务器那头传过来
+root.querySelector('.announce').addEventListener('click', () => {
+  next = NODES.map(() => -1);
+  changedAt = [];
+  update();
+});
 // 首帧直接是收敛好的样子
 routes().forEach((x, i) => { next[i] = x.hop; });
 new ResizeObserver(([entry]) => {
@@ -794,11 +1130,11 @@ new ResizeObserver(([entry]) => {
 
 没有谁在指挥。哪根光缆断了，撤销的消息也是这样一圈圈传开，各自换一条路。
 
-BGP 基本上是相信邻居说的话。2008 年，巴基斯坦电信想在国内封掉 YouTube，在 BGP 里宣告了 YouTube 的一个 /24，这比 YouTube 自己宣告的 /22 更具体。消息被上游转发到了全世界，按最长前缀匹配，各地发往 YouTube 的流量都被引去了巴基斯坦，YouTube 全球断了两个小时左右。现在有 RPKI 给“谁有权宣告哪个前缀”签名，还没完全普及。
+BGP 基本上是相信邻居说的话。2008 年，巴基斯坦电信想在国内封掉 YouTube，在 BGP 里宣告了 YouTube 的一个 /24，这比 YouTube 自己宣告的 /22 更具体。消息被上游转发到了全世界，按最长前缀匹配，各地发往 YouTube 的流量都被引去了巴基斯坦，YouTube 全球断了两个小时左右。图里的“冒认 /25”是同一回事：有人宣告了一个更具体的前缀，流量就跟着拐过去。现在有 RPKI 给“谁有权宣告哪个前缀”签名，还没完全普及。
 
 选路也不只看远近。AS 之间是生意：小网络向大网络买**转接**，付钱让对方把自己的包送往全世界；规模差不多的网络互相**对等**，免费交换彼此用户之间的流量，常在互联网交换中心（IXP）拉根线直连。能走客户就不走对等，能走对等就不走自己付钱的上游，钱往往排在距离前面。最顶上的十几家一级运营商谁也不付钱给谁，彼此对等，撑起了骨干。
 
-所以互联网没有设计图，是一份份合同拼出来的。洲与洲之间，主要靠海底的几百条光缆。
+谁跟谁连、流量走谁家的线，就是这样一份份合同谈出来的，没有一张总的设计图。洲与洲之间，主要靠海底的几百条光缆。
 
 ## 端口：交给哪个程序
 
@@ -1041,7 +1377,7 @@ new ResizeObserver(([entry]) => {
 
 所以前面说的“IP 一路不变”，家里的路由器是个例外：它改了源地址和源端口。
 
-说到这儿，家里那个叫“路由器”的盒子，其实是好几样东西装在一起：交换机、无线接入点、路由器、NAT，再加一个发地址的 DHCP。
+家里那个叫“路由器”的盒子，是好几样东西装在一起：交换机、无线接入点、路由器、NAT，再加一个发地址的 DHCP。
 
 副作用是外面没法主动连进来。没出去过的连接，表里就没有记录，进来的包不知道该给谁，只能扔掉。这顺手挡掉了很多攻击，也让在家架服务器、两台电脑直连（P2P）麻烦了很多。P2P 软件靠“打洞”：两边约好同时往对方的公网地址发包，各自在自家的 NAT 上留下记录，对方的包就进得来了。
 
@@ -1053,22 +1389,22 @@ new ResizeObserver(([entry]) => {
 
 IP 只管尽力送，不保证送到。包会丢，路由器队列满了，后来的直接扔掉，这是最常见的；会乱序，前后两个包走了不同的路；也会重复，会在路上被干扰出错。每个包都像一张单独寄出的明信片，寄出去就没人管了。
 
-为什么不让网络自己保证送到？电话网就是这么做的：打电话之前，沿途每台交换机给你留出一条线路，通话期间谁也占不走，所以从来不丢字。互联网走了另一条路：数据切成一个个包，各走各的，一条线谁有包谁用；路由器只管转发，转完就忘，不记任何连接。一条线因此能让成千上万人同时用，路由器也做得简单，中间坏了一台，包绕过去就是。丢包、乱序这些麻烦，全推给两头的电脑自己收拾，这叫**端到端原则**。
+让网络自己保证送到，也不是没人做过。电话网就是这样：打电话之前，沿途每台交换机给你留出一条线路，通话期间谁也占不走，所以从来不丢字。互联网走了另一条路：数据切成一个个包，各走各的，一条线谁有包谁用；路由器只管转发，转完就忘，不记任何连接。一条线因此能让成千上万人同时用，路由器也做得简单，中间坏了一台，包绕过去就是。丢包、乱序这些麻烦，全推给两头的电脑自己收拾，这叫**端到端原则**。
 
 可下载一个文件，要的是一个字节不差、顺序不乱。**TCP** 在这些明信片之上造出一根可靠的管子：这头按顺序塞进字节，那头按顺序原样流出来。
 
-办法说穿了很朴素。每个字节都编号，接收方据此排序、去重；接收方回 **ACK**，告诉对方“下一个我要第几号”，前面的就都算收到了；发送方等太久没等到确认，就再发一遍。
+靠的是三件事：编号、确认、重传。每个字节都编号，接收方据此排序、去重；接收方回 **ACK**，告诉对方“下一个我要第几号”，前面的就都算收到了；发送方等太久没等到确认，就再发一遍。
 
 只是“发一个，等确认，再发下一个”太慢了。一个来回 150 毫秒，一个包最多装 1460 字节（以太网一帧最多带 1500 字节，叫 MTU，再减去 IP 头和 TCP 头各 20），一秒只能发 7 个包，不到 10 KB/s，网线再粗也没用。所以 TCP 允许一批还没确认的包同时在路上，这批的上限叫**窗口**。确认一个，窗口往前滑一格，就能再发一个。
 
-下面每一列是一个包。上面一排是发送方：灰的已经确认，框起来的是窗口，窗口里涂了色的已经发出、还在等确认。往下掉的方块是路上的包，往上飘的蓝色小块是 ACK，上面的数字是接收方下一个想要的号。下面一排是接收方：实心的已经按顺序交给了程序，虚线框的先到了，在等前面的。5 号在半路丢了；空中的包点一下也能打掉：
+下图每一列是一个包（真正的 TCP 按字节编号，这里按包编号，好认）。上排是发送方，灰的已经确认，框起来的是窗口；下排是接收方。画面停在 5 号丢了以后：6、7、8 到了却交不出去，三个 ACK 正往回飞，要的都是 5 号。
 
 ```render html
 <style>
   .tw { --blue: #356f9b; font-size: 13px; line-height: 1.5; font-variant-ligatures: none; }
   :root[data-theme="dark"] .tw { --blue: #95bfdc; }
   .top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 20px; }
-  .keys { display: flex; gap: 8px; }
+  .keys { display: flex; flex-wrap: wrap; gap: 8px; }
   .key { min-height: 38px; padding: 0 14px; border: 1px solid var(--rule-strong); border-radius: 6px; background: var(--bg-raised); box-shadow: 0 2px 0 var(--rule); color: var(--text); font-size: 13px; cursor: pointer; }
   .key:hover { border-color: var(--text); }
   .ctl { display: flex; align-items: center; gap: 10px; flex: 1 1 200px; max-width: 320px; color: var(--muted); }
@@ -1095,13 +1431,25 @@ IP 只管尽力送，不保证送到。包会丢，路由器队列满了，后�
   .lost { fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; }
   .clock { fill: var(--text); font: 600 14px var(--font-mono); text-anchor: end; }
   .clock tspan { fill: var(--muted); font: 12px var(--font-sans); }
+  .legend { display: flex; flex-wrap: wrap; gap: 2px 18px; margin-top: 6px; color: var(--muted); font-size: 12.5px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { flex: none; width: 12px; height: 12px; border-radius: 3px; background: var(--accent); }
+  .legend i.a { width: 16px; border-radius: 6px; background: var(--blue); }
+  .legend i.r { background: var(--accent-ink); }
+  .legend i.h { border: 1px dashed var(--accent); background: var(--accent-soft); }
 </style>
 <section class="tw" aria-label="滑动窗口：一批包同时在路上，丢了一个就靠重复 ACK 发现并重传">
   <div class="top">
-    <div class="keys"><button type="button" class="key play">播放</button><button type="button" class="key again">重来</button></div>
+    <div class="keys"><button type="button" class="key play">播放</button><button type="button" class="key again">重来</button><button type="button" class="key drop">打掉一个包</button></div>
     <label class="ctl"><span>窗口</span><output></output><input type="range" min="1" max="6" value="4" aria-label="窗口大小"/></label>
   </div>
   <svg role="img"></svg>
+  <div class="legend">
+    <span><i></i>数据</span>
+    <span><i class="r"></i>重传</span>
+    <span><i class="a"></i>ACK，数字是接着要的号</span>
+    <span><i class="h"></i>先到的，等前面的</span>
+  </div>
 </section>
 <script>
 const N = 12, D = 1000, GAP = 170, RTO = 2 * D + 1000, DT = 10, T0 = 3900, LOSE_AT = .5;
@@ -1122,7 +1470,8 @@ function send(s, n, retx) {
   // 预设：5 号第一次发出时丢在半路
   if (!retx && s.drop.has(n)) { s.drop.delete(n); p.lost = true; p.lostAt = LOSE_AT; }
   s.packets.push(p);
-  s.marks = s.marks.filter(m => m.n !== n);
+  // 重发了，这个包的叉号就擦掉
+  s.marks = s.marks.filter(m => m.kind !== 'data' || m.n !== n);
   s.last = s.t;
   if (s.base === n || s.next === s.base) s.timer = s.t;
 }
@@ -1169,6 +1518,8 @@ function step(s) {
     }
   }
   s.packets = s.packets.filter(p => !p.done);
+  // 数据包的叉号留到它被重发或者被确认；打掉的 ACK 没人重发，叉号留一会儿就擦掉
+  s.marks = s.marks.filter(m => (m.kind === 'data' ? m.n >= s.base : s.t - m.at < 1500));
   if (s.base <= N && s.base < s.next && s.t - s.timer >= RTO) {
     s.retx = s.base;
     s.timer = s.t;
@@ -1260,7 +1611,20 @@ root.querySelector('.again').addEventListener('click', restart);
 // 拖动时只改数字，松手再从头跑
 slider.addEventListener('input', () => { root.querySelector('output').textContent = slider.value; });
 slider.addEventListener('change', restart);
-// 点空中的包，把它打掉
+// 把一个还在路上的包打掉：当场拿走，原地留个叉
+function knock(p) {
+  const f = Math.min(1, (sim.t - p.t0) / D);
+  sim.packets = sim.packets.filter(q => q !== p);
+  sim.marks.push({ n: p.n, col: p.col, f: p.kind === 'data' ? f : 1 - f, kind: p.kind, at: sim.t });
+  draw();
+}
+// 按钮挑的是飞得最久的数据包；路上没有数据包，就挑 ACK
+root.querySelector('.drop').addEventListener('click', () => {
+  const flying = sim.packets.filter(p => !p.lost);
+  const data = flying.filter(p => p.kind === 'data'), pool = data.length ? data : flying;
+  if (pool.length) knock(pool.reduce((a, b) => (a.t0 <= b.t0 ? a : b)));
+});
+// 也可以直接点空中的包
 svg.addEventListener('pointerdown', e => {
   const g = geo(), box = svg.getBoundingClientRect(), k = width / box.width;
   const x = (e.clientX - box.left) * k, y = (e.clientY - box.top) * k;
@@ -1272,10 +1636,7 @@ svg.addEventListener('pointerdown', e => {
     const d = Math.hypot(x - (g.pad + (p.col + .5) * g.cw), y - py);
     if (d < bestD) { best = p; bestD = d; }
   }
-  if (!best) return;
-  best.lost = true;
-  best.lostAt = Math.min(1, (sim.t - best.t0) / D) + .001;
-  draw();
+  if (best) knock(best);
 });
 new ResizeObserver(([entry]) => {
   const w = Math.floor(entry.contentRect.width);
@@ -1291,17 +1652,17 @@ root.querySelector('output').textContent = slider.value;
 
 一个包丢了，后面的到得再多，接收方的 ACK 也只能一直要它。发送方连着收到三个重复的 ACK，不等超时就重发，这叫**快速重传**。一两个重复 ACK 可能只是乱序，晚一步就到；三个基本可以断定是丢了。连重复 ACK 都等不来时（比如最后几个包全丢了），只能等计时器超时。
 
-打掉一个 ACK 往往什么事都没有：ACK 是累计的，后面的一到，前面的就都算确认了。
+空中的包点一下就能打掉。平时打掉一个 ACK 往往什么事都没有：ACK 是累计的，后面的一到，前面的就都算确认了。可要是打掉的是图里这三个重复 ACK 中的一个，发送方凑不够三个，就只能等超时。
 
 窗口是 1，就退回了一来一回的笨办法。窗口至少得装满一个来回：100 Mbps、150 毫秒的线路，一个来回能装 1.9 MB，窗口小于这个数，管子就填不满。
 
 顺序也有代价。前面缺一个，后面先到的只能在缓冲区里干等，一个都交不出去，这叫**队头阻塞**，讲 HTTP/3 时还会碰到。
 
-还有一点常被问：TCP 是字节流，不认“消息”。你分两次写进去 `hello` 和 `world`，对面可能一次读出 `helloworld`，也可能先读出 `hel`。这就是所谓的“粘包”。其实 TCP 本来就没有包的边界，一条消息从哪到哪，得由应用自己定，比如在前面先写上长度。
+还有一点容易误会：TCP 是字节流，不认“消息”。你分两次写进去 `hello` 和 `world`，对面可能一次读出 `helloworld`，也可能先读出 `hel`。这就是所谓的“粘包”。TCP 本来就没有消息的边界，一条消息从哪到哪，得由应用自己定，比如在前面先写上长度。UDP 没有这个问题：发一次就是一个包，对面收到的也是完整的一个。
 
 ## 握手和挥手
 
-开始传数据之前，双方得先对一下序号。初始序号不从 0 开始，而是各自随机挑，免得跟之前同一对端口上残留的旧包混在一起，也让别人没那么容易伪造。
+TCP 说的“连接”，是两头各自记着的一份状态：自己发到了几号，对方发到了几号，窗口多大。路上的路由器不知道有它。传数据之前，两头得先把这份状态建起来，互相报一下序号。初始序号各自随机挑，不从 0 开始，免得跟之前同一对端口上残留的旧包混在一起，也让别人没那么容易伪造。
 
 ```text
 客户端 → 服务器   SYN       seq=x
@@ -1317,91 +1678,145 @@ root.querySelector('output').textContent = slider.value;
 <style>
   .hs { --blue: #356f9b; font-size: 13px; line-height: 1.5; font-variant-ligatures: none; }
   :root[data-theme="dark"] .hs { --blue: #95bfdc; }
+  .top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 20px; }
   .seg { display: flex; flex-wrap: wrap; gap: 0 18px; }
   .seg button { min-height: 40px; padding: 4px 0; border: 0; border-bottom: 2px solid var(--rule); background: none; color: var(--muted); font-size: 14px; cursor: pointer; }
   .seg button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+  .key { min-height: 38px; padding: 0 14px; border: 1px solid var(--rule-strong); border-radius: 6px; background: var(--bg-raised); box-shadow: 0 2px 0 var(--rule); color: var(--text); font-size: 13px; cursor: pointer; }
+  .key:hover { border-color: var(--text); }
   .hs svg { display: block; width: 100%; height: auto; margin-top: 12px; overflow: visible; }
+  .scrub { display: flex; align-items: center; gap: 10px; margin-top: 4px; color: var(--muted); font-size: 12px; }
+  .scrub input { flex: 1; min-width: 0; min-height: 36px; margin: 0; accent-color: var(--accent); }
   .life { stroke: var(--rule-strong); stroke-width: 2; }
+  .cursor { stroke: var(--rule-strong); stroke-dasharray: 2 4; }
   .who { fill: var(--text); font-size: 14px; font-weight: 600; text-anchor: middle; }
   .msg { fill: none; stroke: var(--text); stroke-width: 1.5; }
   .msg.old { stroke: var(--muted); stroke-dasharray: 5 4; }
   .msg.rst { stroke: var(--blue); }
-  .head { fill: var(--text); }
-  .head.old { fill: var(--muted); }
-  .head.rst { fill: var(--blue); }
+  .head, .tip { fill: var(--text); }
+  .head.old, .tip.old { fill: var(--muted); }
+  .head.rst, .tip.rst { fill: var(--blue); }
   .lab { fill: var(--text); font: 12.5px var(--font-mono); }
   .lab.old { fill: var(--muted); }
   .lab.rst { fill: var(--blue); }
   .note { fill: var(--muted); font-size: 12.5px; }
-  .stuck { fill: var(--muted); font-size: 12.5px; dominant-baseline: central; }
   .x { stroke: var(--muted); stroke-width: 2; stroke-linecap: round; }
   .state { fill: var(--accent-soft); stroke: var(--accent); }
   .state-lab { fill: var(--accent-ink); font-size: 12.5px; }
-  .gone { fill: var(--rule); stroke: var(--rule-strong); }
   .q { fill: var(--muted); font-size: 16px; font-weight: 600; text-anchor: middle; dominant-baseline: central; }
-  .fade { animation: fade .5s ease-out; }
-  @keyframes fade { from { opacity: 0; } }
-  @media (prefers-reduced-motion: reduce) { .fade { animation: none; } }
 </style>
 <section class="hs" aria-label="一个滞留很久的旧 SYN 到了服务器：两次握手会白白建立连接，三次握手能把它拒掉">
-  <div class="seg" role="group" aria-label="握手方式">
-    <button type="button" data-m="2" aria-pressed="true">两次握手</button>
-    <button type="button" data-m="3" aria-pressed="false">三次握手</button>
+  <div class="top">
+    <div class="seg" role="group" aria-label="握手方式">
+      <button type="button" data-m="2" aria-pressed="true">两次握手</button>
+      <button type="button" data-m="3" aria-pressed="false">三次握手</button>
+    </div>
+    <button type="button" class="key play">播放</button>
   </div>
   <svg role="img"></svg>
+  <label class="scrub"><span>时间</span><input type="range" min="0" max="1000" value="1000" aria-label="时间"/></label>
 </section>
 <script>
-const root = document.querySelector('.hs'), svg = root.querySelector('svg');
-let mode = 2, width = 0;
+// 时间从上往下走，一共 END 格。旧 SYN 在 0.6 出发，1.2 卡在半路，5.4 才放行，6 到服务器
+const END = 10, PLAY_MS = 6500;
+const T = { syn: .6, stuck: 1.2, quit: 3, free: 5.4, arrive: 6, reply: 6.2, back: 7.4, rst: 7.6, idle: 8.6, drop: 8.8 };
+const root = document.querySelector('.hs'), svg = root.querySelector('svg'), range = root.querySelector('input');
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let mode = 2, width = 0, now = END, raf = 0;
 
-function msg(cls, x1, y1, x2, y2) {
+function arrow(cls, x1, y1, x2, y2) {
   const a = Math.atan2(y2 - y1, x2 - x1), p = (d, s) => `${(x2 - Math.cos(a + d) * s).toFixed(1)},${(y2 - Math.sin(a + d) * s).toFixed(1)}`;
   return `<line class="msg ${cls}" x1="${x1}" y1="${y1}" x2="${x2 - Math.cos(a) * 6}" y2="${y2 - Math.sin(a) * 6}"/><polygon class="head ${cls}" points="${x2},${y2} ${p(.38, 10)} ${p(-.38, 10)}"/>`;
 }
 
 function draw() {
-  const narrow = width < 460, C = narrow ? 34 : width * .2, S = width - (narrow ? 34 : width * .2);
-  const top = 28, H = 352, mid = (C + S) / 2;
+  if (!width) return;
+  const narrow = width < 460, C = narrow ? 34 : width * .2, S = width - C, mid = (C + S) / 2;
+  const top = 28, H = 352, y = t => top + t * (H - top - 8) / END;
+  // 一段路：t1 出发，t2 到；还没走完时只画到当前位置，头上带一个圆点
+  const part = (cls, x1, t1, x2, t2, head) => {
+    if (now <= t1) return '';
+    const f = Math.min(1, (now - t1) / (t2 - t1));
+    const xb = x1 + (x2 - x1) * f, yb = y(t1) + (y(t2) - y(t1)) * f;
+    if (f === 1 && head) return arrow(cls, x1, y(t1), xb, yb);
+    return `<line class="msg ${cls}" x1="${x1}" y1="${y(t1)}" x2="${xb}" y2="${yb}"/>` + (f < 1 ? `<circle class="tip ${cls}" cx="${xb}" cy="${yb}" r="4"/>` : '');
+  };
+  const cross = (x, yy) => `<path class="x" d="M${x - 6} ${yy - 6}l12 12M${x + 6} ${yy - 6}l-12 12"/>`;
+
   let s = `<text class="who" x="${C}" y="16">客户端</text><text class="who" x="${S}" y="16">服务器</text>`;
   s += `<line class="life" x1="${C}" x2="${C}" y1="${top}" y2="${H - 6}"/><line class="life" x1="${S}" x2="${S}" y1="${top}" y2="${H - 6}"/>`;
+  if (now < END) s += `<line class="cursor" x1="0" x2="${width}" y1="${y(now)}" y2="${y(now)}"/>`;
+
   // 旧 SYN：出门不久就卡在半路，很久以后才到
-  const y0 = top + 16, yStuck = y0 + 22, yFree = 190, yArrive = 214;
-  s += `<path class="msg old" d="M${C} ${y0}L${mid} ${yStuck}V${yFree}"/>` + msg('old', mid, yFree, S, yArrive);
-  s += `<text class="lab old" x="${C + 10}" y="${y0 - 6}">SYN seq=100</text>`;
-  s += `<text class="stuck" x="${mid + 10}" y="${(yStuck + yFree) / 2}">滞留</text>`;
-  const yGive = 112;
-  s += `<path class="x" d="M${C - 6} ${yGive - 6}l12 12M${C + 6} ${yGive - 6}l-12 12"/><text class="note" x="${C + 12}" y="${yGive + 4}">超时放弃</text>`;
-  // 服务器回 SYN+ACK
-  const ySa = yArrive + 6, yBack = ySa + 44;
-  s += msg('', S, ySa, C, yBack);
-  s += `<text class="lab" x="${(C + S) / 2}" y="${(ySa + yBack) / 2 + 20}" text-anchor="middle">SYN+ACK ack=101</text>`;
-  const bw = 12, bx = S + 6;
+  s += part('old', C, T.syn, mid, T.stuck) + part('old', mid, T.stuck, mid, T.free) + part('old', mid, T.free, S, T.arrive, true);
+  if (now > T.syn) s += `<text class="lab old" x="${C + 10}" y="${y(T.syn) - 6}">SYN seq=100</text>`;
+  if (now > T.stuck + .6) s += `<text class="note" x="${mid + 10}" y="${y((T.stuck + T.free) / 2) + 4}">滞留</text>`;
+  if (now >= T.quit) s += cross(C, y(T.quit)) + `<text class="note" x="${C + 12}" y="${y(T.quit) + 4}">超时放弃</text>`;
+
+  // 服务器收到以后回 SYN+ACK
+  s += part('', S, T.reply, C, T.back, true);
+  if (now > T.reply) s += `<text class="lab" x="${mid}" y="${y((T.reply + T.back) / 2) + 20}" text-anchor="middle">SYN+ACK ack=101</text>`;
+
+  const bx = S + 6, bw = 12;
+  if (now > T.arrive) {
+    // 服务器这头的状态：两次握手收到 SYN 就算连上了，三次握手还要等客户端确认
+    const until = mode === 2 ? Math.min(now, END) : Math.min(now, T.drop);
+    s += `<rect class="state" x="${bx}" y="${y(T.arrive)}" width="${bw}" height="${Math.max(1, y(until) - y(T.arrive))}" rx="2"/>`;
+    if (mode === 3) s += `<text class="state-lab" x="${S - 8}" y="${y(T.arrive) + 34}" text-anchor="end">等确认</text>`;
+  }
   if (mode === 2) {
-    s += `<g class="fade"><rect class="state" x="${bx}" y="${ySa}" width="${bw}" height="${H - 6 - ySa}" rx="2"/>`;
-    s += `<text class="state-lab" x="${bx - 6}" y="${H - 14}" text-anchor="end">已连接，空等</text>`;
-    s += `<text class="q" x="${C - 14}" y="${yBack}">?</text></g>`;
+    if (now >= T.back) s += `<text class="q" x="${C - 14}" y="${y(T.back)}">?</text>`;
+    // 标签放在回信下面，免得和 SYN+ACK 的字挤在一起
+    if (now >= T.idle) s += `<text class="state-lab" x="${S - 8}" y="${y(T.idle)}" text-anchor="end">已连接，空等</text>`;
   } else {
-    const yRst = yBack + 6, yGot = yRst + 44;
-    s += `<g class="fade"><rect class="state" x="${bx}" y="${ySa}" width="${bw}" height="${yGot - ySa}" rx="2"/>`;
-    s += `<text class="state-lab" x="${bx - 8}" y="${ySa + 34}" text-anchor="end">等确认</text>`;
-    s += msg('rst', C, yRst, S, yGot) + `<text class="lab rst" x="${(C + S) / 2}" y="${(yRst + yGot) / 2 + 20}" text-anchor="middle">RST</text>`;
-    s += `<path class="x" d="M${bx + bw / 2 - 6} ${yGot + 4}l12 12M${bx + bw / 2 + 6} ${yGot + 4}l-12 12"/>`;
-    s += `<text class="note" x="${S - 10}" y="${yGot + 16}" text-anchor="end">释放</text></g>`;
+    s += part('rst', C, T.rst, S, T.drop, true);
+    if (now > T.rst) s += `<text class="lab rst" x="${mid}" y="${y((T.rst + T.drop) / 2) + 20}" text-anchor="middle">RST</text>`;
+    if (now >= T.drop) s += cross(bx + bw / 2, y(T.drop) + 10) + `<text class="note" x="${S - 10}" y="${y(T.drop) + 16}" text-anchor="end">释放</text>`;
   }
   svg.setAttribute('viewBox', `0 0 ${width} ${H}`);
   svg.innerHTML = s;
+}
+
+function sync() {
+  range.value = Math.round(now / END * 1000);
+  draw();
+}
+
+function play() {
+  cancelAnimationFrame(raf);
+  if (reduce) { now = END; return sync(); }
+  const t0 = performance.now();
+  const step = t => {
+    now = Math.min(END, Math.max(0, (t - t0) / PLAY_MS * END));
+    sync();
+    if (now < END) raf = requestAnimationFrame(step);
+  };
+  now = 0;
+  sync();
+  raf = requestAnimationFrame(step);
+}
+
+function label() {
   svg.setAttribute('aria-label', mode === 2 ? '两次握手：服务器为旧 SYN 建立了连接，一直空等' : '三次握手：客户端回 RST，服务器释放半开的连接');
 }
 
 root.querySelectorAll('[data-m]').forEach(b => b.addEventListener('click', () => {
   mode = Number(b.dataset.m);
   root.querySelectorAll('[data-m]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  label();
   draw();
 }));
+root.querySelector('.play').addEventListener('click', play);
+range.addEventListener('input', () => {
+  cancelAnimationFrame(raf);
+  now = range.value / 1000 * END;
+  draw();
+});
 new ResizeObserver(([entry]) => {
   const w = Math.floor(entry.contentRect.width);
   if (w !== width) { width = w; draw(); }
 }).observe(svg);
+label();
 </script>
 ```
 
@@ -1430,12 +1845,12 @@ new ResizeObserver(([entry]) => {
 1988 年，Van Jacobson 给 TCP 加上了**拥塞控制**。发送方自己维护一个拥塞窗口 `cwnd`，在路上的数据既不能超过接收窗口，也不能超过它。它不知道路有多宽，只能试：
 
 - **慢启动**：从很小开始（现在一般是 10 个包），每过一个来回翻一倍。名字叫慢，其实涨得飞快。
-- **拥塞避免**：过了一个阈值以后，每个来回只加 1。
+- **拥塞避免**：过了一个阈值以后，每个来回只加 1。阈值一开始定得很高，丢过一次包，就改成当时窗口的一半。
 - **丢包**：说明堵了，窗口砍半，接着慢慢往上加。要是一直等到超时，说明堵得厉害，窗口直接打回起点，重新慢启动。
 
 加法慢慢加，乘法一刀砍，叫 AIMD。画出来是一把锯子：
 
-```render html
+```render html title="示意：窗口和容量都按包数算，窗口从 1 起步；超过容量的那个来回算丢包"
 <style>
   .cw { --blue: #356f9b; font-size: 13px; line-height: 1.5; font-variant-ligatures: none; }
   :root[data-theme="dark"] .cw { --blue: #95bfdc; }
@@ -1530,7 +1945,9 @@ new ResizeObserver(([entry]) => {
 </script>
 ```
 
-两条连接走同一段路时，一起砍半，差距就缩小一半；一起加 1，差距不变。来回几次，两条就差不多平分了带宽。谁也没跟谁商量，结果却是公平的。
+最左边陡的那一下是慢启动，冲过了容量才第一次丢包。之后的每一个齿，都是一格一格加到丢包，再砍半。
+
+点开“第二条连接”，让两条连接走同一段路。一起砍半，差距就缩小一半；一起加 1，差距不变。来回几次，两条就差不多平分了带宽，谁也没跟谁商量。
 
 现在 Linux 默认用 CUBIC，窗口按三次函数长，在又宽又长的线路上恢复得更快。Google 的 BBR 换了思路，不等丢包，直接估计带宽和最小延迟，按估出来的速度发。
 
@@ -1540,7 +1957,7 @@ new ResizeObserver(([entry]) => {
 
 全世界的名字太多，还天天在变，放不进一台服务器。DNS 按名字的层级分开管，从右往左读：根知道每个顶级域（`com`、`cn`、`org`……）归谁管；`com` 的服务器知道 `example.com` 归谁管；只有 `example.com` 自己的服务器，才知道 `www.example.com` 的地址。每一层只管把你指给下一层，像问路时听到的“我不清楚，你去问他”。
 
-你的电脑不自己跑这一圈。它把问题丢给一个**递归解析器**，运营商的（地址是 DHCP 一起发的），或者 `223.5.5.5`、`8.8.8.8` 这种公共的，由解析器挨个去问，问到了再交回来：
+你的电脑不自己跑这一圈。它把问题丢给一个**递归解析器**，由解析器挨个去问，问到了再交回来。解析器一般是运营商的，也可以换成 `223.5.5.5`、`8.8.8.8` 这种公共的；找谁问，是 DHCP 发地址时一起告诉电脑的，家里的路由器常把自己报上去，收到了再转给运营商。
 
 ```render html
 <style>
@@ -1643,7 +2060,7 @@ show(0, false);
 </script>
 ```
 
-每个答案都带一个 TTL，说明能缓存多少秒。根和 `com` 给出的指引一般能缓存两天，热门网站的地址在解析器里几乎总是现成的，所以真正从根问起的时候很少。改了域名解析要过一阵才生效，也是因为各地的缓存还没过期。
+每个答案都带一个 TTL，说明能缓存多少秒（和 IP 头里那个 TTL 同名，是两回事）。根和 `com` 给出的指引一般能缓存两天，热门网站的地址在解析器里几乎总是现成的，所以真正从根问起的时候很少。改了域名解析要过一阵才生效，也是因为各地的缓存还没过期。
 
 根服务器只有 13 个名字，`a.root-servers.net` 到 `m.root-servers.net`，背后是分布在全球的上千台机器。它们用 anycast：同一个地址在很多地方同时用 BGP 宣告，你的查询自然就落到最近的那台。
 
@@ -1677,9 +2094,128 @@ Content-Length: 1256
 
 HTTP 本身不记事，每个请求都是独立的。网站要记住“你已经登录了”，就在响应里塞一个 Cookie，浏览器之后每次请求都原样带回去。
 
+HTTP/1.1 的一条连接上，同一时刻只能跑一个请求，前一个的响应没收完，后一个就得排队。一个网页有上百个文件要拿，浏览器只好对同一个网站同时开好几条连接。HTTP/2 把一条连接分成很多条流，请求和响应切成小块、交错着发，一条连接上能同时跑很多个请求。
+
+这样一来，TCP 的队头阻塞就更碍事了。TCP 只认字节的先后，不知道哪些字节属于哪个请求：丢一个包，后面到的全得等，不管是谁的。HTTP/3 干脆换掉了 TCP，底下用的是 QUIC。QUIC 跑在 UDP 上，编号、确认、重传这些活自己干，每个请求一条独立的流，各排各的序：
+
+```render html title="示意：三个请求的数据轮流发，一格一个包，从左到右是到达的先后；3 号丢了，重传的那份最后才到"
+<style>
+  .hb { font-size: 13px; line-height: 1.5; font-variant-ligatures: none; }
+  .top { display: flex; align-items: center; gap: 14px; }
+  .key { flex: none; min-height: 38px; padding: 0 14px; border: 1px solid var(--rule-strong); border-radius: 6px; background: var(--bg-raised); box-shadow: 0 2px 0 var(--rule); color: var(--text); font-size: 13px; cursor: pointer; }
+  .key:hover { border-color: var(--text); }
+  .scrub { display: flex; flex: 1; min-width: 0; max-width: 360px; align-items: center; gap: 10px; color: var(--muted); }
+  .scrub input { flex: 1; min-width: 0; min-height: 36px; margin: 0; accent-color: var(--accent); }
+  .panes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 32px; margin-top: 14px; }
+  @media (max-width: 600px) { .panes { grid-template-columns: minmax(0, 1fr); } }
+  .head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0 12px; margin-bottom: 6px; color: var(--muted); }
+  .head b { color: var(--text); font-size: 14px; font-weight: 650; }
+  .head output { color: var(--text); font: 600 14px var(--font-mono); }
+  .row { display: grid; grid-template-columns: 2.6em repeat(10, minmax(0, 1fr)); gap: 3px; align-items: center; margin-top: 3px; }
+  .row > span { color: var(--muted); font-size: 12px; white-space: nowrap; }
+  .p { display: grid; place-items: center; height: 26px; border: 1px solid var(--rule-strong); border-radius: 3px; color: var(--faint); font: 12px var(--font-mono); font-style: normal; }
+  .p.held { border: 1px dashed var(--accent); background: var(--accent-soft); color: var(--accent-ink); }
+  .p.done { border-color: var(--accent); background: var(--accent); color: var(--bg); font-weight: 650; }
+  .p.lost { border: 1px dashed var(--muted); color: var(--muted); text-decoration: line-through; }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 18px; margin-top: 14px; color: var(--muted); font-size: 12.5px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend .p { width: 18px; height: 14px; }
+</style>
+<section class="hb" aria-label="三个请求共用一条 TCP 连接时，丢一个包，后面到的数据不管是谁的都得等；QUIC 里只有丢包的那个请求在等">
+  <div class="top">
+    <button type="button" class="key play">播放</button>
+    <label class="scrub"><span>时间</span><input type="range" min="0" max="10" step="1" value="9" aria-label="时间：到了第几个包"/></label>
+  </div>
+  <div class="panes">
+    <div class="pane" data-p="tcp"><div class="head"><b>HTTP/2 · 一条 TCP 连接</b><span>浏览器拿到 <output></output></span></div></div>
+    <div class="pane" data-p="quic"><div class="head"><b>HTTP/3 · QUIC</b><span>浏览器拿到 <output></output></span></div></div>
+  </div>
+  <div class="legend">
+    <span><i class="p done"></i>交给了浏览器</span>
+    <span><i class="p held"></i>到了，在等前面的</span>
+    <span><i class="p lost"></i>丢了</span>
+  </div>
+</section>
+<script>
+const N = 9, LOST = 3, END = N + 1, NAMES = ['CSS', 'JS', '图片'];
+const root = document.querySelector('.hb'), range = root.querySelector('input'), playKey = root.querySelector('.play');
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const el = (tag, className, text = '') => Object.assign(document.createElement(tag), { className, textContent: text });
+// 包轮流属于三个请求：1 号是 CSS 的，2 号是 JS 的，3 号是图片的，4 号又是 CSS 的
+const rowOf = n => (n - 1) % NAMES.length;
+// 每一列是一个时刻：前 9 列是 1 到 9 号依次到达，最后一列是重传的 3 号
+const COLS = Array.from({ length: END }, (_, c) => (c < N ? c + 1 : LOST));
+let t = N, timer = 0;
+
+const panes = [...root.querySelectorAll('.pane')].map(pane => {
+  const cells = [];
+  NAMES.forEach((name, r) => {
+    const row = el('div', 'row');
+    row.append(el('span', '', name));
+    COLS.forEach((n, c) => {
+      const mine = rowOf(n) === r;
+      const cell = row.appendChild(el('i', mine ? 'p' : '', mine ? String(n) : ''));
+      if (mine) cells[c] = cell;
+    });
+    pane.append(row);
+  });
+  return { quic: pane.dataset.p === 'quic', cells, out: pane.querySelector('output') };
+});
+
+// 第 c 列的包在时刻 t 是什么状态
+function state(c, quic) {
+  const n = COLS[c];
+  if (c + 1 > t) return '';
+  if (c + 1 === LOST) return 'lost';
+  if (c === N) return 'done';
+  // 前面有洞就得等：TCP 看的是整条连接，QUIC 只看同一个请求
+  const blocked = n > LOST && t < END && (!quic || rowOf(n) === rowOf(LOST));
+  return blocked ? 'held' : 'done';
+}
+
+function render() {
+  for (const { quic, cells, out } of panes) {
+    let got = 0;
+    cells.forEach((cell, c) => {
+      const s = state(c, quic);
+      cell.className = s ? `p ${s}` : 'p';
+      if (s === 'done') got++;
+    });
+    out.textContent = `${got} / ${N}`;
+  }
+  range.value = t;
+}
+
+function stop() {
+  clearTimeout(timer);
+  timer = 0;
+}
+function tick() {
+  t++;
+  render();
+  if (t >= END) return stop();
+  // 重传到之前多停一会儿
+  timer = setTimeout(tick, t === N ? 1800 : 550);
+}
+function play() {
+  stop();
+  if (reduce) { t = END; return render(); }
+  t = 0;
+  render();
+  timer = setTimeout(tick, 550);
+}
+
+playKey.addEventListener('click', play);
+range.addEventListener('input', () => { stop(); t = Number(range.value); render(); });
+render();
+</script>
+```
+
+3 号包装的是图片的数据。左边，CSS 和 JS 后面的包都到了，却被它堵着交不出去；右边只有图片在等。
+
 ## 拆开一个包
 
-上面那个 GET 请求真正发出去时，网卡上走的是这样一串字节：
+前面那个 GET 请求真正发出去时，网卡上走的是这样一串字节：
 
 ```render html
 <style>
@@ -1705,7 +2241,9 @@ HTTP 本身不记事，每个请求都是独立的。网站要记住“你已经
   .b.layer.pick { color: var(--bg); background: var(--accent); }
   .b.first { border-radius: 3px 0 0 3px; }
   .b.last { border-radius: 0 3px 3px 0; }
-  .read { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 14px; min-height: 28px; margin-top: 12px; }
+  .foot { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+  .step { flex: none; min-width: 38px; padding: 0; }
+  .read { display: flex; flex: 1; flex-wrap: wrap; align-items: baseline; gap: 2px 14px; min-width: 0; margin: 0; }
   .read b { color: var(--accent-ink); font-size: 14px; font-weight: 600; }
   .read span { color: var(--text); font: 500 14px var(--font-mono); overflow-wrap: anywhere; }
   @media (max-width: 520px) {
@@ -1717,10 +2255,14 @@ HTTP 本身不记事，每个请求都是独立的。网站要记住“你已经
 <section class="by" aria-label="一个发出 HTTP 请求的以太网帧，按字节看每一层的头">
   <div class="top">
     <div class="seg" role="group" aria-label="哪一层"></div>
-    <button type="button" class="key" aria-pressed="false">HTTPS</button>
+    <button type="button" class="key tls" aria-pressed="false">HTTPS</button>
   </div>
   <div class="dump"><div class="off"></div><div class="hex"></div><div class="asc"></div></div>
-  <p class="read" aria-live="polite"><b></b><span></span></p>
+  <div class="foot">
+    <button type="button" class="key step" data-d="-1" aria-label="上一个字段">←</button>
+    <button type="button" class="key step" data-d="1" aria-label="下一个字段">→</button>
+    <p class="read" aria-live="polite"><b></b><span></span></p>
+  </div>
 </section>
 <script>
 const HTTP = 'GET / HTTP/1.1\r\nHost: www.example.com\r\nAccept: text/html\r\n\r\n';
@@ -1789,7 +2331,7 @@ function build(https) {
 }
 
 let https = false, frame = build(false), layer = 1, field = 9, perRow = 16;
-const seg = root.querySelector('.seg'), key = root.querySelector('.key');
+const seg = root.querySelector('.seg'), key = root.querySelector('.tls');
 
 function render() {
   perRow = root.clientWidth < 520 ? 8 : 16;
@@ -1832,6 +2374,19 @@ root.querySelector('.dump').addEventListener('click', e => {
   field = frame.layers[layer].fields.findIndex(f => i >= f.from && i < f.to);
   render();
 });
+// 一个字段一个字段往前、往后翻；翻过一层的头尾，就进相邻的那一层
+root.querySelectorAll('.step').forEach(b => b.addEventListener('click', () => {
+  const layers = frame.layers;
+  field += Number(b.dataset.d);
+  if (field < 0) {
+    layer = (layer + layers.length - 1) % layers.length;
+    field = layers[layer].fields.length - 1;
+  } else if (field >= layers[layer].fields.length) {
+    layer = (layer + 1) % layers.length;
+    field = 0;
+  }
+  render();
+}));
 key.addEventListener('click', () => {
   https = !https;
   frame = build(https);
@@ -1917,7 +2472,7 @@ new ResizeObserver(([entry]) => {
 </script>
 ```
 
-上面的应用千千万，下面的线路五花八门，中间只有一个 IP。任何网络，只要能把 IP 包从一头送到另一头，就能接进来；任何应用，只要会用 IP，就能跑在所有网络上。互联网的“互联”，靠的就是大家在这一层说同一种话。
+任何网络，只要能把 IP 包从一头送到另一头，就能接进来；任何应用，只要会收发 IP 包，就能跑在所有网络上。做线路的和写应用的不用互相认识，5G 和短视频可以各自冒出来。
 
 反过来，细腰也最难改：全世界都压在它上面。IPv6 推了二十多年，难就难在这里。
 
@@ -2064,7 +2619,7 @@ $$
 
 拿小数字试试：$p=23$，$g=5$，$a=6$，$b=15$，算出 $A=8$，$B=19$，两边最后都得到 $2$。偷听的人知道 $p$、$g$、$A$、$B$，想算出 $a$ 得解离散对数。数字一大（$p$ 取两千多位，或者换成椭圆曲线），就算不动了。
 
-但它只防偷听，防不了冒充。中间人不光听，还把包换掉，跟你做一次交换，再跟服务器做一次。两边都以为在跟对方说话，其实都在跟他说。他收到什么，解开、看完、再加密转发过去，谁也察觉不到。
+但它只防偷听，防不了冒充。把图切到“中间人”：他不光听，还把包换掉，跟你做一次交换，再跟服务器做一次。两边都以为在跟对方说话，其实都在跟他说。他收到什么，解开、看完、再加密转发过去，谁也察觉不到。
 
 所以还得确认对面到底是谁，这靠**数字签名**和**证书**。
 
@@ -2105,7 +2660,7 @@ DH 算出的共享密钥再派生出对称密钥，之后的数据全用 AES 或
 6. 发 HTTP 请求，拿回 HTML。
 7. 浏览器解析 HTML，发现还要 CSS、JS、图片，接着发更多请求。
 
-这里面最花时间的，往往不是数据量，而是来回的次数。每次握手、每次请求，都得等一个来回；隔着太平洋，一个来回就是 150 毫秒。
+这里面最花时间的是来回的次数，数据量倒在其次。每次握手、每次请求，都得等一个来回；隔着太平洋，一个来回就是 150 毫秒。
 
 ```render html
 <style>
@@ -2198,109 +2753,9 @@ new ResizeObserver(([entry]) => {
 
 一个 100 KB 的网页，在 100 Mbps 的宽带上传完只要 8 毫秒。想让网页快，要么少几个来回，要么让来回变短。
 
-少几个来回：TLS 1.3 把握手从两个来回压到一个。HTTP/3 底下换成了 QUIC，跑在 UDP 上，把传输和加密的握手合成一次；访问过的网站还能 0-RTT，第一个包里就带上请求。QUIC 顺手也解决了队头阻塞：HTTP/2 把一个页面的所有请求塞进同一条 TCP 连接，丢一个包，所有请求一起等；QUIC 里每个请求是一条独立的流，丢了谁只耽误谁。
+少几个来回：TLS 1.3 把握手从两个来回压到一个。QUIC 更进一步，把传输和加密的握手合成一次；访问过的网站还能 0-RTT，第一个包里就带上请求。
 
 让来回变短：光速改不了，那就把内容搬近。CDN 在各地的机房里，甚至运营商的机房里，放好网站的副本，DNS 按你在哪返回最近那台的地址。你打开的大网站，内容多半就在同一座城市里，来回只要几毫秒。
-
-## 面试常问
-
-<details>
-<summary>从输入网址到页面显示，发生了什么？</summary>
-
-DNS 解析出 IP；判断不在本网络，ARP 拿到网关的 MAC；包经过 NAT 和一路路由器到达服务器；TCP 三次握手；TLS 握手并验证证书；发 HTTP 请求，收到 HTML；浏览器解析，再请求 CSS、JS、图片，最后渲染。
-
-</details>
-
-<details>
-<summary>一台电脑刚连上网，怎么拿到 IP 地址？</summary>
-
-DHCP：广播 DISCOVER，服务器回 OFFER，电脑广播 REQUEST，服务器回 ACK。一起拿到的还有子网掩码、网关和 DNS 服务器地址。地址有租期，到期前续租。
-
-</details>
-
-<details>
-<summary>有了 IP 地址，为什么还要 MAC 地址？</summary>
-
-分工不同。IP 是分层的，负责跨网络找路，从头到尾不变；MAC 是平的，只负责在同一个网络里交给下一台设备，每过一跳换一次。
-
-</details>
-
-<details>
-<summary>交换机和路由器有什么区别？</summary>
-
-交换机在链路层，按 MAC 在同一个网络里转发，表是自己学的；路由器在网络层，按 IP 在网络之间转发，用最长前缀匹配查路由表，每过一台 TTL 减 1。
-
-</details>
-
-<details>
-<summary>TCP 和 UDP 有什么区别？</summary>
-
-TCP 面向连接，有握手，保证可靠、有序，带流量控制和拥塞控制，是字节流；UDP 无连接，只加端口和校验和，不保证送达，保留消息边界，开销小、延迟低。
-
-</details>
-
-<details>
-<summary>TCP 怎么保证可靠？</summary>
-
-序号、累积确认、超时重传和快速重传；接收方按序号排序、去重；校验和检错；滑动窗口做流量控制，拥塞窗口做拥塞控制。
-
-</details>
-
-<details>
-<summary>为什么是三次握手，不是两次？</summary>
-
-双方都要确认对方收到了自己的初始序号，服务器的 ACK 和 SYN 合成一个包，所以是三次。两次的话，网络里滞留的旧 SYN 到达后，服务器会建立一个没人用的连接；第三步让客户端有机会用 RST 拒掉它。
-
-</details>
-
-<details>
-<summary>为什么挥手要四次？TIME_WAIT 为什么要等 2MSL？</summary>
-
-两个方向分别关闭，一方发完了，另一方可能还有数据，所以 ACK 和 FIN 分开发。等 2MSL，一是最后的 ACK 丢了还能重发，二是让这条连接的旧包在网络里过期，不干扰之后的新连接。
-
-</details>
-
-<details>
-<summary>服务器上大量 TIME_WAIT 或 CLOSE_WAIT 是怎么回事？</summary>
-
-TIME_WAIT 多，说明这台机器在主动关闭大量短连接，可以改用长连接或连接池，客户端一侧还能开 `tcp_tw_reuse`。CLOSE_WAIT 多，是对方已经关了，自己的程序却没调用 `close`，多半是代码漏了。
-
-</details>
-
-<details>
-<summary>流量控制和拥塞控制有什么区别？</summary>
-
-流量控制防止发送方撑爆接收方，靠接收方在 ACK 里通告的窗口；拥塞控制防止把网络堵死，靠发送方自己根据丢包和延迟估出来的拥塞窗口。实际发送量取两者的较小值。
-
-</details>
-
-<details>
-<summary>什么是粘包，怎么解决？</summary>
-
-TCP 是字节流，没有消息边界，多次写入可能被一次读出，一次写入也可能被分几次读出。解决办法是在应用层定边界：固定长度、加分隔符，或者在消息前面写上长度。
-
-</details>
-
-<details>
-<summary>HTTPS 握手过程是怎样的？为什么需要证书？</summary>
-
-TLS 1.3 里，客户端发 ClientHello 带上 DH 公开值，服务器回 ServerHello 和自己的公开值，再发证书和签名；双方算出共享密钥，派生对称密钥加密之后的数据，一共一个来回。DH 只防偷听，证书和签名证明对面真是这个域名，防中间人。
-
-</details>
-
-<details>
-<summary>HTTP/1.1、HTTP/2、HTTP/3 有什么区别？</summary>
-
-HTTP/1.1 一条连接同时只能跑一个请求，浏览器只好开好几条连接；HTTP/2 在一条 TCP 连接上多路复用，头部压缩，但 TCP 丢一个包所有请求都要等；HTTP/3 跑在 QUIC 上，流之间互不阻塞，握手也更少。
-
-</details>
-
-<details>
-<summary>DNS 用 TCP 还是 UDP？</summary>
-
-一般用 UDP 的 53 端口，一问一答，开销小。响应太大被截断时改用 TCP 重新查，区域传送也用 TCP；DoT、DoH 则跑在 TLS 或 HTTPS 上。
-
-</details>
 
 ## 参考资料
 

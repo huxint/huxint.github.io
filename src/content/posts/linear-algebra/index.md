@@ -1,11 +1,12 @@
 ---
 title: "线性代数到底在讲什么"
-description: "矩阵乘法为什么是行乘列？把矩阵看成一个函数、一次对空间的变换，行列式、秩、逆、特征值就都有了画面。"
+description: "矩阵乘法为什么是行乘列？把矩阵看成对空间的一次变换，乘法、行列式、秩、逆、叉积、特征值都能从同一个画面里推出来。"
 pubDate: 2026-11-09
+updatedDate: 2026-11-11
 tags: ["数学", "线性代数", "计算机图形学"]
 ---
 
-第一次学矩阵乘法，规则大概是这样给的：
+第一次学矩阵乘法，规则是这样给的：
 
 $$
 \begin{bmatrix}1&2\\3&4\end{bmatrix}
@@ -16,88 +17,77 @@ $$
 \begin{bmatrix}19&22\\43&50\end{bmatrix}
 $$
 
-左边取一行，右边取一列，对应相乘再相加。规则不难记，难的是它为什么长这样。矩阵加法是对应位置相加，乘法为什么不是对应位置相乘？为什么 $AB$ 和 $BA$ 不一样？行列式那一串交错的正负号又是从哪来的？
+左边取一行，右边取一列，对应相乘再相加。照着算不难，怪的是它为什么长这样。加法是对应位置相加，乘法凭什么不是对应位置相乘？$AB$ 为什么不等于 $BA$？行列式那串一正一负的符号又是哪来的？
 
-课本通常先给定义，再证性质，最后举例。这些定义其实都是从一个画面里推出来的，只是画面被省掉了。
+这些规则都是从同一个画面里推出来的。课本把画面省了，只留下推完的结果。
 
-这个画面是：**矩阵不是一张数表，是一个函数。** 它吃进一个向量，吐出一个向量；放到整个空间上看，它把空间拉伸、旋转、剪切成另一个样子。接受了这一点，矩阵乘法就是两个函数接连做，行列式是面积放大了几倍，逆矩阵是把变换倒着放一遍，特征向量是变换里方向不变的那几根轴。
+画面是这样的：**矩阵是一个函数。** 吃进一个向量，吐出一个向量；放到整个平面上看，它把平面拉伸、旋转、推斜成另一副样子。认了这一点，后面的东西一件件都有着落——矩阵乘法是两个变换接着做，行列式是面积放大了几倍，逆矩阵是把变换倒着放，特征向量是没被转走的那几个方向。
 
-这篇从向量开始，一步一步搭到特征值和奇异值分解，再看它们在计算机图形学、搜索引擎和机器学习里干什么。中间会穿插写代码的视角：线性变换是一种特别守规矩的函数，矩阵是把它存下来的那张表。
+下面的图都能动手：按钮会把变换的过程放一遍，箭头尖上的圆点可以拖。
 
-文中的图都能动手：点播放看变换的过程，拖动箭头头上的圆点改矩阵。
+## 向量：能相加，能伸缩
 
-## 向量：箭头，也是一组数
+向量是一支箭头：尾巴钉在原点，箭头尖落在哪，它就是哪个向量。把尖的坐标记下来，比如 $(3,2)$，往右 3、往上 2。箭头和这组数说的是同一个东西。
 
-向量有三种常见的说法。
+它只有两种运算。相加是接着走：先沿 $\mathbf{v}$ 走到头，再沿 $\mathbf{w}$ 走，到的地方就是 $\mathbf{v}+\mathbf{w}$。数乘是伸缩：$2\mathbf{v}$ 同方向、两倍长，$-\mathbf{v}$ 掉头。
 
-- 物理里，它是一支箭头，有长度，有方向。
-- 写程序时，它是一组有顺序的数，比如 `[3, 2]`。
-- 数学里，只要能相加、能乘一个数，并且满足几条运算规矩的东西，都叫向量。
+线性代数从头到尾只用这两种运算。所以任何东西只要能这样相加、伸缩——多项式、一段声音、一张图片的像素——后面的结论对它原样成立。这门课用途那么广，原因就在这。
 
-前两种在线性代数里是同一件事：把箭头的尾巴钉在原点，箭头尖的坐标就是那组数。$(3,2)$ 的意思是往右走 3，往上走 2。
+## 基：坐标是一份配方
 
-向量只有两种基本运算。相加是首尾相接、接着走：先走 $\mathbf{v}$，再走 $\mathbf{w}$，终点就是 $\mathbf{v}+\mathbf{w}$。数乘是把箭头拉长、缩短或者掉头：$2\mathbf{v}$ 是同方向两倍长，$-\mathbf{v}$ 是反过来。
-
-整个线性代数，都是在这两种运算上搭起来的。第三种说法先放着，到后面会发现，函数、多项式、一段声音，也都能这样相加和数乘，于是这篇里的一切对它们同样成立。
-
-## 坐标是配方
-
-$(3,2)$ 还有一层意思常被跳过。平面上有两个特殊的单位向量：往右的 $\hat\imath=(1,0)$，往上的 $\hat\jmath=(0,1)$。于是
+$(3,2)$ 里藏着两个没写出来的向量：往右一格的 $\hat\imath=(1,0)$，往上一格的 $\hat\jmath=(0,1)$。
 
 $$
-\begin{bmatrix}3\\2\end{bmatrix}=3\hat\imath+2\hat\jmath .
+\begin{bmatrix}3\\2\end{bmatrix}=3\,\hat\imath+2\,\hat\jmath
 $$
 
-坐标是一份配方：取 3 份 $\hat\imath$，2 份 $\hat\jmath$，加起来。
+坐标是一份配方：3 份 $\hat\imath$，2 份 $\hat\jmath$，加起来。
 
-把几个向量各乘一个数再加起来，叫线性组合：$a\mathbf{v}+b\mathbf{w}$。$a$、$b$ 取遍所有实数，能配出来的向量合在一起，叫 $\mathbf{v}$ 和 $\mathbf{w}$ 张成的空间。
+配料可以换。把几个向量各乘一个数再相加，叫它们的线性组合；所有配得出来的结果合在一起，叫它们张成的空间。两个不共线的平面向量能配出平面上任何一点；共线的两个，怎么配都出不了那条直线。
 
-- 两个不共线的平面向量，能张成整个平面。
-- 两个共线的，只能张成一条过原点的直线。
-- 两个都是零向量，只剩原点一个点。
+配料里没有多余的（谁也不能被其余几个配出来，这叫线性无关），又刚好够配出整个空间，这样一组向量叫一组**基**。选定一组基，每个向量的配方只有一份，这份配方就是它在这组基下的坐标。
 
-到了三维也一样。两个不共线的向量张成一个过原点的平面；再来第三个向量，只有它不落在这个平面里，才能把张成的空间撑成整个三维。如果每个向量都贡献了别人配不出来的新方向，就说它们线性无关；有一个能被其他几个配出来，它就是多余的，叫线性相关。
+图里橙色的 $\mathbf{b}_1$ 和蓝色的 $\mathbf{b}_2$ 是另一组基，斜网格是它们眼里的“横平竖直”。三个圆点都能拖：
 
-一组线性无关、又能张成整个空间的向量，叫一组基。选定了基，每个向量的配方就唯一确定，这份配方就是它在这组基下的坐标。
-
-$\hat\imath$ 和 $\hat\jmath$ 只是最顺手的一组基，不是唯一的一组。换一组基，同一支箭头的坐标就变了。拖动 $\mathbf{b}_1$、$\mathbf{b}_2$ 和 $\mathbf{v}$ 头上的圆点试试：
-
-```render html title="同一个点，在两组基下的配方"
+```render html
 <style>
-  .la { --blue: #356f9b; --blue-soft: rgb(53 111 155 / .14); font-size: 13px; line-height: 1.5; font-variant-ligatures: none; }
-  :root[data-theme="dark"] .la { --blue: #95bfdc; --blue-soft: rgb(149 191 220 / .16); }
-  .stage { position: relative; }
+  .la { --blue: #356f9b; font-size: 13px; line-height: 1.5; font-variant-ligatures: none; }
+  :root[data-theme="dark"] .la { --blue: #95bfdc; }
+  .bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 18px; }
+  .key { min-height: 36px; padding: 0 14px; border: 1px solid var(--rule-strong); border-radius: 6px; background: var(--bg-raised); box-shadow: 0 2px 0 var(--rule); color: var(--text); font-size: 13px; cursor: pointer; }
+  .key:hover { border-color: var(--text); }
+  .stage { position: relative; margin-top: 10px; }
   .stage canvas { display: block; width: 100%; touch-action: pan-y; }
-  .knob { position: absolute; left: 0; top: 0; width: 32px; height: 32px; margin: -16px 0 0 -16px; padding: 0; border: 0; border-radius: 50%; background: none; cursor: grab; touch-action: none; }
-  .knob::after { content: ""; position: absolute; inset: 9px; border: 2px solid currentColor; border-radius: 50%; background: var(--bg); }
-  .knob.i { color: var(--accent); } .knob.j { color: var(--blue); } .knob.v { color: var(--text); }
+  .knob { position: absolute; left: 0; top: 0; width: 36px; height: 36px; margin: -18px 0 0 -18px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--text); cursor: grab; touch-action: none; }
+  .knob::after { content: ""; position: absolute; inset: 11px; border: 2px solid currentColor; border-radius: 50%; background: var(--bg); }
+  .knob.i { color: var(--accent); } .knob.j { color: var(--blue); }
   .knob:active { cursor: grabbing; }
-  .knob:focus-visible { outline: 2px solid var(--accent); outline-offset: 0; }
-  .read { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 20px; margin-top: 8px; font: 13px var(--font-mono); }
-  .read p { margin: 0; }
-  .read small { display: block; color: var(--muted); font: 12px var(--font-sans); }
-  .read .i { color: var(--accent-ink); } .read .j { color: var(--blue); }
-  .note { margin: 6px 0 0; min-height: 1.5em; color: var(--muted); font-size: 13px; }
-  @media (max-width: 520px) { .read { grid-template-columns: 1fr; } }
+  .read { font: 13px var(--font-mono); }
+  .read + .stage + .read { margin-top: 4px; }
+  .i { color: var(--accent-ink); } .j { color: var(--blue); }
 </style>
-<section class="la" aria-label="拖动两个基向量和 v，比较 v 在标准基和新基下的坐标">
-  <div class="stage"><canvas role="img" aria-label="平面网格、两个基向量和向量 v"></canvas></div>
-  <div class="read">
-    <p><small>用 î、ĵ 配</small><span class="std"></span></p>
-    <p><small>用 b₁、b₂ 配</small><span class="new"></span></p>
+<section class="la" aria-label="同一支箭头在两组基下的坐标">
+  <div class="bar">
+    <span class="read r0"></span>
+    <button type="button" class="key play">按配方走一遍</button>
   </div>
-  <p class="note" aria-live="polite"></p>
+  <div class="stage"><canvas role="img"></canvas></div>
+  <div class="read r1"></div>
 </section>
 <script>
 const root = document.querySelector('.la');
 const stage = root.querySelector('.stage'), cv = stage.querySelector('canvas'), ctx = cv.getContext('2d');
+const r0 = root.querySelector('.r0'), r1 = root.querySelector('.r1');
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const C = {};
-let W = 0, H = 0, S = 40;
+let W = 0, H = 0, S = 40, t = 1, raf = 0;
 let b1 = [2, 1], b2 = [-1, 1], v = [1, 2];
 
-const theme = () => { const s = getComputedStyle(root); for (const k of ['text', 'muted', 'faint', 'rule', 'rule-strong', 'accent', 'accent-ink', 'accent-soft', 'bg', 'blue', 'blue-soft']) C[k] = s.getPropertyValue(`--${k}`).trim(); };
+const theme = () => { const s = getComputedStyle(root); for (const k of ['text', 'muted', 'faint', 'rule', 'rule-strong', 'accent', 'accent-ink', 'accent-soft', 'bg', 'blue']) C[k] = s.getPropertyValue(`--${k}`).trim(); };
 const P = ([x, y]) => [W / 2 + x * S, H / 2 - y * S];
 const U = (px, py) => [(px - W / 2) / S, (H / 2 - py) / S];
+const ap = (m, [x, y]) => [m[0] * x + m[1] * y, m[2] * x + m[3] * y];
+const ease = (x) => x * x * (3 - 2 * x);
 const num = (x) => String(Math.round(x * 100) / 100 || 0).replace('-', '−');
 const snap = (p) => p.map((q, k) => { const lim = (k ? H : W) / 2 / S - .4, r = Math.round(q), s = Math.abs(q - r) < .15 ? r : Math.round(q * 10) / 10; return Math.max(-lim, Math.min(lim, s)); });
 
@@ -115,7 +105,6 @@ function arrow(to, color, w = 2.6, from = [0, 0]) {
   ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(bx - uy * h * .45, by + ux * h * .45); ctx.lineTo(bx + uy * h * .45, by - ux * h * .45);
   ctx.closePath(); ctx.fillStyle = color; ctx.fill();
 }
-// 标签放在箭头尖外侧，顺着箭头的方向
 function label(text, at, color, from = [0, 0]) {
   const [x, y] = P(at), [ox, oy] = P(from), L = Math.hypot(x - ox, y - oy) || 1;
   ctx.fillStyle = color; ctx.font = '600 15px KaTeX_Main, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -123,72 +112,76 @@ function label(text, at, color, from = [0, 0]) {
   ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic';
 }
 
+// v = c1·b1 + c2·b2，两列共线时没有解
+function recipe() {
+  const D = b1[0] * b2[1] - b2[0] * b1[1];
+  if (Math.abs(D) < 1e-6) return null;
+  return [(v[0] * b2[1] - b2[0] * v[1]) / D, (b1[0] * v[1] - v[0] * b1[1]) / D];
+}
+
 function draw() {
   ctx.clearRect(0, 0, W, H);
-  const R = Math.ceil(Math.hypot(W, H) / 2 / S) + 1;
+  const R = Math.ceil(Math.hypot(W, H) / 2 / S) + 1, m = [b1[0], b2[0], b1[1], b2[1]], c = recipe();
   for (let k = -R; k <= R; k++) { seg([k, -R], [k, R], C.rule); seg([-R, k], [R, k], C.rule); }
-  seg([-R, 0], [R, 0], C['rule-strong'], 1.4); seg([0, -R], [0, R], C['rule-strong'], 1.4);
-
-  const det = b1[0] * b2[1] - b1[1] * b2[0];
-  const flat = Math.abs(det) < 1e-9, zero = Math.hypot(...b1) < 1e-9 && Math.hypot(...b2) < 1e-9;
-  ctx.globalAlpha = .55;
-  if (!flat) {
-    // 新基的网格：c₁ 或 c₂ 取整数的那些线
-    // 相邻两条线隔 |det| / |b|，要铺满画面就得画到 G 条
-    const G = Math.min(60, Math.ceil(R * Math.max(Math.hypot(...b1), Math.hypot(...b2)) / Math.abs(det)) + 1);
-    const at = (c1, c2) => [c1 * b1[0] + c2 * b2[0], c1 * b1[1] + c2 * b2[1]];
-    for (let k = -G; k <= G; k++) {
-      seg(at(k, -200), at(k, 200), C.blue, k ? 1 : 1.6);
-      seg(at(-200, k), at(200, k), C.accent, k ? 1 : 1.6);
-    }
-  } else if (!zero) {
-    const d = Math.hypot(...b1) > 1e-9 ? b1 : b2, n = Math.hypot(...d);
-    seg([-60 * d[0] / n, -60 * d[1] / n], [60 * d[0] / n, 60 * d[1] / n], C.accent, 2.4);
+  ctx.globalAlpha = .4;
+  for (let k = -3 * R; k <= 3 * R; k++) {
+    seg(ap(m, [k, -3 * R]), ap(m, [k, 3 * R]), C.blue, k ? 1 : 1.6);
+    seg(ap(m, [-3 * R, k]), ap(m, [3 * R, k]), C.accent, k ? 1 : 1.6);
   }
   ctx.globalAlpha = 1;
-
-  const std = root.querySelector('.std'), nw = root.querySelector('.new'), note = root.querySelector('.note');
-  std.innerHTML = `v = ${num(v[0])}·<span class="i">î</span> + ${num(v[1])}·<span class="j">ĵ</span> → (${num(v[0])}, ${num(v[1])})`;
-  if (!flat) {
-    const c1 = (v[0] * b2[1] - v[1] * b2[0]) / det, c2 = (b1[0] * v[1] - b1[1] * v[0]) / det;
-    const p1 = [c1 * b1[0], c1 * b1[1]];
-    seg([0, 0], p1, C.accent, 2, [5, 5]);
-    seg(p1, v, C.blue, 2, [5, 5]);
-    nw.innerHTML = `v = ${num(c1)}·<span class="i">b₁</span> + ${num(c2)}·<span class="j">b₂</span> → (${num(c1)}, ${num(c2)})`;
-    note.textContent = '虚线是配方：先沿 b₁ 走 c₁ 份，再沿 b₂ 走 c₂ 份。';
-  } else {
-    nw.innerHTML = '配不出来';
-    note.textContent = zero ? 'b₁、b₂ 都是零向量，只能配出原点。' : 'b₁、b₂ 共线，只能张成一条线；v 不在线上就配不出来，它们不是一组基。';
+  if (c) {
+    // 先沿 b1 走 c1 份，再沿 b2 走 c2 份
+    const e = ease(t), p1 = Math.min(1, e * 2), p2 = Math.max(0, e * 2 - 1), mid = [c[0] * b1[0], c[0] * b1[1]];
+    seg([0, 0], [mid[0] * p1, mid[1] * p1], C.accent, 2.4, [6, 5]);
+    if (p2 > 0) seg(mid, [mid[0] + (v[0] - mid[0]) * p2, mid[1] + (v[1] - mid[1]) * p2], C.blue, 2.4, [6, 5]);
   }
-  arrow(b1, C.accent); arrow(b2, C.blue); arrow(v, C.text, 2.4);
-  label('b₁', b1, C['accent-ink']); label('b₂', b2, C.blue); label('v', v, C.text);
+  arrow(v, C.text, 2.4); label('v', v, C.text);
+  arrow(b1, C.accent); arrow(b2, C.blue);
+  label('b₁', b1, C['accent-ink']); label('b₂', b2, C.blue);
   knobs.forEach((k) => k.place());
+
+  r0.textContent = `î、ĵ 下：v = (${num(v[0])}, ${num(v[1])})`;
+  r1.innerHTML = c
+    ? `<span class="i">b₁</span>、<span class="j">b₂</span> 下：v = (${num(c[0])}, ${num(c[1])}) = ${num(c[0])}·<span class="i">b₁</span> + ${num(c[1])}·<span class="j">b₂</span>`
+    : `<span class="i">b₁</span>、<span class="j">b₂</span> 共线，不是一组基`;
+  cv.setAttribute('aria-label', c ? `v 在标准基下是 (${num(v[0])}, ${num(v[1])})，在 b₁、b₂ 下是 (${num(c[0])}, ${num(c[1])})` : 'b₁、b₂ 共线');
+}
+
+function play() {
+  cancelAnimationFrame(raf);
+  if (reduce) { t = 1; return draw(); }
+  const t0 = performance.now() + 200;
+  const step = (now) => { t = Math.max(0, Math.min(1, (now - t0) / 1800)); draw(); if (t < 1) raf = requestAnimationFrame(step); };
+  t = 0; draw(); raf = requestAnimationFrame(step);
 }
 
 function knob(cls, name, get, set) {
   const b = document.createElement('button');
   b.type = 'button'; b.className = `knob ${cls}`; b.setAttribute('aria-label', `${name}：拖动或用方向键移动`);
   stage.append(b);
-  const move = (e) => { const r = cv.getBoundingClientRect(); set(snap(U(e.clientX - r.left, e.clientY - r.top))); draw(); };
+  const take = (p) => { cancelAnimationFrame(raf); t = 1; set(snap(p)); draw(); };
+  const move = (e) => { const r = cv.getBoundingClientRect(); take(U(e.clientX - r.left, e.clientY - r.top)); };
   b.addEventListener('pointerdown', (e) => { b.setPointerCapture(e.pointerId); b.onpointermove = move; });
   b.addEventListener('pointerup', () => { b.onpointermove = null; });
+  b.addEventListener('pointercancel', () => { b.onpointermove = null; });
   b.addEventListener('keydown', (e) => {
     const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[e.key];
     if (!d) return;
     e.preventDefault();
     const s = e.shiftKey ? 1 : .1, p = get();
-    set(snap([p[0] + d[0] * s, p[1] + d[1] * s])); draw();
+    take([p[0] + d[0] * s, p[1] + d[1] * s]);
   });
   return { place() { const [x, y] = P(get()); b.style.transform = `translate(${x}px, ${y}px)`; } };
 }
 const knobs = [
-  knob('i', '基向量 b₁', () => b1, (p) => (b1 = p)),
-  knob('j', '基向量 b₂', () => b2, (p) => (b2 = p)),
-  knob('v', '向量 v', () => v, (p) => (v = p)),
+  knob('', 'v', () => v, (p) => { v = p; }),
+  knob('i', 'b₁', () => b1, (p) => { b1 = p; }),
+  knob('j', 'b₂', () => b2, (p) => { b2 = p; }),
 ];
+root.querySelector('.play').addEventListener('click', play);
 
 function size() {
-  W = cv.clientWidth; H = Math.round(Math.max(250, Math.min(360, W * .6)));
+  W = cv.clientWidth; H = Math.round(Math.max(260, Math.min(380, W * .6)));
   S = H / 8;
   const r = devicePixelRatio;
   cv.width = W * r; cv.height = H * r; cv.style.height = `${H}px`;
@@ -200,60 +193,50 @@ new ResizeObserver(() => { size(); draw(); }).observe(stage);
 </script>
 ```
 
-默认的新基是 $\mathbf{b}_1=(2,1)$、$\mathbf{b}_2=(-1,1)$。同一个 $\mathbf{v}$，用 $\hat\imath$、$\hat\jmath$ 配是 $(1,2)$，用 $\mathbf{b}_1$、$\mathbf{b}_2$ 配是 $(1,1)$：
+默认 $\mathbf{b}_1=(2,1)$、$\mathbf{b}_2=(-1,1)$。同一支 $\mathbf{v}$，在 $\hat\imath$、$\hat\jmath$ 下是 $(1,2)$，在这组基下是 $(1,1)$：
 
 $$
-1\cdot\begin{bmatrix}2\\1\end{bmatrix}+1\cdot\begin{bmatrix}-1\\1\end{bmatrix}=\begin{bmatrix}1\\2\end{bmatrix}.
+1\cdot\begin{bmatrix}2\\1\end{bmatrix}+1\cdot\begin{bmatrix}-1\\1\end{bmatrix}=\begin{bmatrix}1\\2\end{bmatrix}
 $$
 
-橙色和蓝色的斜网格，是新基眼里的“横平竖直”。把 $\mathbf{b}_2$ 拖到和 $\mathbf{b}_1$ 共线，网格就塌成一条线：两个向量只能张成一条线，线外的点怎么配也配不出来，它们不再是一组基。
+箭头没动，数变了。**坐标是向量和一组基之间的关系，换一组基就换一组数。**
 
-这件事后面会反复用到：**坐标不是向量自己的属性，是向量和一组基之间的关系。** 箭头本身没变，换一组基，描述它的数就变了。好比同一个人，在不同的语言里名字念法不一样。
+再把 $\mathbf{b}_2$ 拖到和 $\mathbf{b}_1$ 一条线上。斜网格塌成一条线，线外的 $\mathbf{v}$ 配不出来了，它俩不再是基。这个“塌掉”后面还要见好几次。
 
-## 线性变换：一种守规矩的函数
+## 线性变换：网格不许弯
 
-函数吃一个输入，吐一个输出。吃一个向量、吐一个向量的函数，在线性代数里叫变换。叫变换而不叫函数，是想让你换个方式看它：不是盯着一个输入看它变成什么，而是把平面上每一个点同时搬到它的输出位置上，看整张平面怎么动。
+吃一个向量、吐一个向量的函数叫变换。换个名字是想换个看法：别盯着一个输入，把平面上所有点同时搬到各自的输出位置，看整张平面怎么动。
 
-大多数函数会把平面揉得乱七八糟。线性变换只满足两条规矩：
-
-$$
-f(\mathbf{u}+\mathbf{v})=f(\mathbf{u})+f(\mathbf{v}),\qquad f(c\,\mathbf{v})=c\,f(\mathbf{v}).
-$$
-
-先加再变，等于先变再加；先缩放再变，等于先变再缩放。
-
-画到平面上，这两条规矩等价于一句话：**变换之后，网格线还是直线，还互相平行、间隔均匀，原点不动。** 平移不是线性变换，它把原点挪走了，$f(\mathbf{0})$ 应该等于 $f(0\cdot\mathbf{0})=0\cdot f(\mathbf{0})=\mathbf{0}$；$f(x,y)=(x^2,y)$ 也不是，它把竖线掰弯了。旋转、拉伸、剪切、镜像都是。
-
-写程序的人对这种规矩并不陌生。字符串拼接之后再求长度，等于各自求长度再相加：
-
-```ts
-(a + b).length === a.length + b.length
-```
-
-先拼接两个数组再 `map`，等于各自 `map` 再拼接。这类函数和“合并”可以交换顺序，所以能把数据切成块，各算各的，最后再合起来，MapReduce 就靠这个。线性变换就是向量上的这种函数：拆开算再合起来，和合起来再算，结果一样。
-
-这条规矩有个惊人的后果。任何一个向量都能写成 $\mathbf{v}=x\hat\imath+y\hat\jmath$，于是
+随手写一个函数，平面多半被揉得乱七八糟。线性变换只收守两条规矩的：
 
 $$
-f(\mathbf{v})=f(x\hat\imath+y\hat\jmath)=x\,f(\hat\imath)+y\,f(\hat\jmath).
+f(\mathbf{u}+\mathbf{v})=f(\mathbf{u})+f(\mathbf{v}),\qquad f(c\,\mathbf{v})=c\,f(\mathbf{v})
 $$
 
-**只要知道 $\hat\imath$ 和 $\hat\jmath$ 去了哪，就知道每一个向量去了哪。** 一个定义在无穷多个点上的函数，被两个向量完全确定了。
+先加再变等于先变再加，先伸缩再变等于先变再伸缩。画出来是一句话：**变换之后，网格线还是直的、平行的、间隔均匀的，原点不动。** 旋转、拉伸、剪切、镜像都守规矩。平移不守，它挪走了原点。
 
-把这两个落点竖着并排写，就是矩阵：
+两条规矩合起来有个后果，整门课都压在它上面。任何向量都能写成 $x\hat\imath+y\hat\jmath$，于是
+
+$$
+f(x\hat\imath+y\hat\jmath)=x\,f(\hat\imath)+y\,f(\hat\jmath)
+$$
+
+**知道 $\hat\imath$、$\hat\jmath$ 落在哪，就知道每一个向量落在哪。** 一个定义在无穷多个点上的函数，两个落点就定死了。
+
+把这两个落点竖着并排写下来，就是矩阵：
 
 $$
 A=\begin{bmatrix}a&b\\c&d\end{bmatrix}
 \qquad
-\text{第一列 }(a,c)\text{ 是 }\hat\imath\text{ 的落点，第二列 }(b,d)\text{ 是 }\hat\jmath\text{ 的落点。}
+\text{第一列 }(a,c)\text{ 是 }\hat\imath\text{ 的落点，第二列 }(b,d)\text{ 是 }\hat\jmath\text{ 的落点}
 $$
 
-点播放看变换的过程。橙色箭头是 $\hat\imath$，蓝色是 $\hat\jmath$，黑色是 $\mathbf{v}=(1,2)$。拖动两个箭头头上的圆点，可以自己定一个变换：
+橙色是 $\hat\imath$，蓝色是 $\hat\jmath$，黑色是 $\mathbf{v}=(1,2)$。两个圆点可以拖，自己定一个变换：
 
-```render html title="线性变换：网格跟着 î、ĵ 的落点一起动"
+```render html
 <style>
-  .la { --blue: #356f9b; --blue-soft: rgb(53 111 155 / .14); font-size: 13px; line-height: 1.5; font-variant-ligatures: none; }
-  :root[data-theme="dark"] .la { --blue: #95bfdc; --blue-soft: rgb(149 191 220 / .16); }
+  .la { --blue: #356f9b; font-size: 13px; line-height: 1.5; font-variant-ligatures: none; }
+  :root[data-theme="dark"] .la { --blue: #95bfdc; }
   .bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 18px; }
   .seg { display: flex; flex-wrap: wrap; gap: 0 16px; }
   .seg button { min-height: 38px; padding: 4px 0; border: 0; border-bottom: 2px solid var(--rule); background: none; color: var(--muted); font-size: 14px; cursor: pointer; }
@@ -262,38 +245,37 @@ $$
   .key:hover { border-color: var(--text); }
   .stage { position: relative; margin-top: 10px; }
   .stage canvas { display: block; width: 100%; touch-action: pan-y; }
-  .knob { position: absolute; left: 0; top: 0; width: 32px; height: 32px; margin: -16px 0 0 -16px; padding: 0; border: 0; border-radius: 50%; background: none; cursor: grab; touch-action: none; }
-  .knob::after { content: ""; position: absolute; inset: 9px; border: 2px solid currentColor; border-radius: 50%; background: var(--bg); }
+  .knob { position: absolute; left: 0; top: 0; width: 36px; height: 36px; margin: -18px 0 0 -18px; padding: 0; border: 0; border-radius: 50%; background: none; cursor: grab; touch-action: none; }
+  .knob::after { content: ""; position: absolute; inset: 11px; border: 2px solid currentColor; border-radius: 50%; background: var(--bg); }
   .knob.i { color: var(--accent); } .knob.j { color: var(--blue); }
   .knob:active { cursor: grabbing; }
-  .knob:focus-visible { outline: 2px solid var(--accent); outline-offset: 0; }
   .scrub { display: flex; align-items: center; gap: 12px; margin-top: 6px; color: var(--muted); font-size: 12px; }
   .scrub input { flex: 1; min-width: 0; accent-color: var(--accent); }
-  .foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; margin-top: 4px; font: 13px var(--font-mono); }
-  .m { display: inline-grid; grid-auto-flow: column; grid-template-rows: auto auto; gap: 0 12px; position: relative; padding: 0 9px; font: 13px var(--font-mono); text-align: right; line-height: 1.5; vertical-align: middle; }
+  .foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; margin-top: 4px; min-height: 44px; font: 13px var(--font-mono); }
+  .m { display: inline-grid; grid-auto-flow: column; grid-template-rows: auto auto; gap: 0 12px; position: relative; margin-left: 6px; padding: 0 9px; text-align: right; vertical-align: middle; }
   .m::before, .m::after { content: ""; position: absolute; top: 1px; bottom: 1px; width: 5px; border: 1.5px solid var(--muted); }
   .m::before { left: 0; border-right: 0; } .m::after { right: 0; border-left: 0; }
   .i { color: var(--accent-ink); } .j { color: var(--blue); }
 </style>
-<section class="la" aria-label="线性变换演示：选一个变换，播放网格变形">
+<section class="la" aria-label="线性变换：网格跟着 î、ĵ 的落点一起动">
   <div class="bar">
     <div class="seg" role="group" aria-label="选一个变换">
       <button type="button" data-p="0">旋转</button>
       <button type="button" data-p="1">剪切</button>
       <button type="button" data-p="2">伸缩</button>
       <button type="button" data-p="3">镜像</button>
-      <button type="button" data-p="4">随便一个</button>
+      <button type="button" data-p="4">弯的</button>
     </div>
     <button type="button" class="key play">播放</button>
   </div>
   <div class="stage"><canvas role="img"></canvas></div>
   <label class="scrub"><span>进度</span><input type="range" min="0" max="1000" value="1000" aria-label="变换进度" /></label>
-  <div class="foot"><span>A =</span><span class="m"></span><span class="read"></span></div>
+  <div class="foot"><span class="mat">A =<span class="m"></span></span><span class="read"></span></div>
 </section>
 <script>
 const root = document.querySelector('.la');
 const stage = root.querySelector('.stage'), cv = stage.querySelector('canvas'), ctx = cv.getContext('2d');
-const range = root.querySelector('input'), playBtn = root.querySelector('.play');
+const range = root.querySelector('input'), mat = root.querySelector('.mat'), read = root.querySelector('.read');
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const C = {};
 let W = 0, H = 0, S = 40, t = 1, raf = 0;
@@ -303,17 +285,18 @@ const presets = [
   { m: [1, 1, 0, 1] },
   { m: [2, 0, 0, .5] },
   { m: [0, 1, 1, 0] },
-  { m: [1.5, -.5, .5, 1] },
+  { bend: true },
 ];
-let A = presets[0].m.slice(), rot = presets[0].rot, cur = 0;
+let A = presets[0].m.slice(), rot = presets[0].rot, bend = false, cur = 0;
 const v = [1, 2];
 
-const theme = () => { const s = getComputedStyle(root); for (const k of ['text', 'muted', 'faint', 'rule', 'rule-strong', 'accent', 'accent-ink', 'accent-soft', 'bg', 'blue', 'blue-soft']) C[k] = s.getPropertyValue(`--${k}`).trim(); };
+const theme = () => { const s = getComputedStyle(root); for (const k of ['text', 'muted', 'faint', 'rule', 'rule-strong', 'accent', 'accent-ink', 'accent-soft', 'bg', 'blue']) C[k] = s.getPropertyValue(`--${k}`).trim(); };
 const P = ([x, y]) => [W / 2 + x * S, H / 2 - y * S];
 const U = (px, py) => [(px - W / 2) / S, (H / 2 - py) / S];
 const ap = (m, [x, y]) => [m[0] * x + m[1] * y, m[2] * x + m[3] * y];
 const ease = (x) => x * x * (3 - 2 * x);
 const num = (x) => String(Math.round(x * 100) / 100 || 0).replace('-', '−');
+const pair = (p) => `(${num(p[0])}, ${num(p[1])})`;
 const snap = (p) => p.map((q, k) => { const lim = (k ? H : W) / 2 / S - .4, r = Math.round(q), s = Math.abs(q - r) < .15 ? r : Math.round(q * 10) / 10; return Math.max(-lim, Math.min(lim, s)); });
 
 // 进度 t 对应的矩阵：旋转按角度走，其余从单位矩阵直线走到 A
@@ -322,11 +305,18 @@ function M(t) {
   if (rot !== undefined) { const c = Math.cos(rot * e), s = Math.sin(rot * e); return [c, -s, s, c]; }
   return [1 + (A[0] - 1) * e, A[1] * e, A[2] * e, 1 + (A[3] - 1) * e];
 }
+// 对照组：一个不线性的函数，会把直线掰弯
+const warp = ([x, y], e) => [x + e * .6 * Math.sin(1.2 * y), y + e * .16 * x * x];
 
 function seg(a, b, color, w = 1, dash = []) {
   const [x1, y1] = P(a), [x2, y2] = P(b);
   ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
   ctx.strokeStyle = color; ctx.lineWidth = w; ctx.setLineDash(dash); ctx.stroke();
+}
+function curve(fn, R, color, w) {
+  ctx.beginPath();
+  for (let k = 0; k <= R * 8; k++) { const [x, y] = P(fn(-R + k / 4)); if (k) ctx.lineTo(x, y); else ctx.moveTo(x, y); }
+  ctx.strokeStyle = color; ctx.lineWidth = w; ctx.setLineDash([]); ctx.stroke();
 }
 function arrow(to, color, w = 2.6, from = [0, 0]) {
   const [x1, y1] = P(from), [x2, y2] = P(to), L = Math.hypot(x2 - x1, y2 - y1);
@@ -337,43 +327,55 @@ function arrow(to, color, w = 2.6, from = [0, 0]) {
   ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(bx - uy * h * .45, by + ux * h * .45); ctx.lineTo(bx + uy * h * .45, by - ux * h * .45);
   ctx.closePath(); ctx.fillStyle = color; ctx.fill();
 }
-// 标签放在箭头尖外侧，顺着箭头的方向
 function label(text, at, color, from = [0, 0]) {
   const [x, y] = P(at), [ox, oy] = P(from), L = Math.hypot(x - ox, y - oy) || 1;
   ctx.fillStyle = color; ctx.font = '600 15px KaTeX_Main, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.fillText(text, x + (x - ox) / L * 22, y + (y - oy) / L * 22);
   ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic';
 }
-function grid(m, color, axis) {
-  const R = Math.ceil(Math.hypot(W, H) / 2 / S) * 3;
-  for (let k = -R; k <= R; k++) {
-    seg(ap(m, [k, -R]), ap(m, [k, R]), k ? color : axis, k ? 1 : 1.6);
-    seg(ap(m, [-R, k]), ap(m, [R, k]), k ? color : axis, k ? 1 : 1.6);
-  }
-}
 
 function draw() {
   ctx.clearRect(0, 0, W, H);
-  const m = M(t), i = [m[0], m[2]], j = [m[1], m[3]];
-  const R = Math.ceil(Math.hypot(W, H) / 2 / S) + 1;
+  const m = M(t), e = ease(t), f = bend ? (p) => warp(p, e) : (p) => ap(m, p);
+  const R = Math.ceil(Math.hypot(W, H) / 2 / S) + 2;
   for (let k = -R; k <= R; k++) { seg([k, -R], [k, R], C.rule); seg([-R, k], [R, k], C.rule); }
-  ctx.globalAlpha = .5; grid(m, C.muted, C.text); ctx.globalAlpha = 1;
-  // 单位正方形
-  const sq = [[0, 0], [1, 0], [1, 1], [0, 1]].map((p) => P(ap(m, p)));
-  ctx.beginPath(); sq.forEach(([x, y], k) => (k ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.closePath();
-  ctx.fillStyle = C['accent-soft']; ctx.globalAlpha = .75; ctx.fill(); ctx.globalAlpha = 1;
-  // v 的配方：先走 x 份 î，再走 y 份 ĵ
-  const xi = [v[0] * i[0], v[0] * i[1]], out = ap(m, v);
-  seg([0, 0], xi, C.accent, 2, [5, 5]); seg(xi, out, C.blue, 2, [5, 5]);
+  ctx.globalAlpha = .5;
+  for (let k = -3 * R; k <= 3 * R; k++) {
+    if (bend) {
+      if (Math.abs(k) > R) continue;
+      curve((s) => f([k, s]), R, k ? C.muted : C.text, k ? 1 : 1.6);
+      curve((s) => f([s, k]), R, k ? C.muted : C.text, k ? 1 : 1.6);
+    } else {
+      seg(f([k, -3 * R]), f([k, 3 * R]), k ? C.muted : C.text, k ? 1 : 1.6);
+      seg(f([-3 * R, k]), f([3 * R, k]), k ? C.muted : C.text, k ? 1 : 1.6);
+    }
+  }
+  ctx.globalAlpha = 1;
+  const i = f([1, 0]), j = f([0, 1]), out = f(v);
+  if (!bend) {
+    const sq = [[0, 0], [1, 0], [1, 1], [0, 1]].map((p) => P(f(p)));
+    ctx.beginPath(); sq.forEach(([x, y], k) => (k ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.closePath();
+    ctx.fillStyle = C['accent-soft']; ctx.globalAlpha = .75; ctx.fill(); ctx.globalAlpha = 1;
+  }
+  // v 的配方：先走 1 份 f(î)，再走 2 份 f(ĵ)
+  const xi = [v[0] * i[0], v[0] * i[1]], mix = [xi[0] + v[1] * j[0], xi[1] + v[1] * j[1]];
+  seg([0, 0], xi, C.accent, 2, [5, 5]); seg(xi, mix, C.blue, 2, [5, 5]);
+  if (bend) {
+    const [x, y] = P(mix);
+    ctx.beginPath(); ctx.arc(x, y, 5, 0, 7); ctx.setLineDash([]); ctx.strokeStyle = C.muted; ctx.lineWidth = 2; ctx.stroke();
+  }
   arrow(out, C.text, 2.4); label('v', out, C.text);
   arrow(i, C.accent); arrow(j, C.blue);
   label('î', i, C['accent-ink']); label('ĵ', j, C.blue);
   knobs.forEach((k) => k.place());
 
+  mat.hidden = bend;
   root.querySelector('.m').innerHTML = [m[0], m[2]].map((x) => `<span class="i">${num(x)}</span>`).join('') + [m[1], m[3]].map((x) => `<span class="j">${num(x)}</span>`).join('');
-  root.querySelector('.read').innerHTML = `v = (1, 2) → 1·<span class="i">(${num(i[0])}, ${num(i[1])})</span> + 2·<span class="j">(${num(j[0])}, ${num(j[1])})</span> = (${num(out[0])}, ${num(out[1])})`;
+  read.innerHTML = bend
+    ? `1·<span class="i">f(î)</span> + 2·<span class="j">f(ĵ)</span> = ${pair(mix)}　f(v) = ${pair(out)}`
+    : `v → 1·<span class="i">${pair(i)}</span> + 2·<span class="j">${pair(j)}</span> = ${pair(out)}`;
   range.value = Math.round(t * 1000);
-  cv.setAttribute('aria-label', `î 落在 (${num(i[0])}, ${num(i[1])})，ĵ 落在 (${num(j[0])}, ${num(j[1])})，v 落在 (${num(out[0])}, ${num(out[1])})`);
+  cv.setAttribute('aria-label', `î 落在 ${pair(i)}，ĵ 落在 ${pair(j)}，v 落在 ${pair(out)}`);
 }
 
 function play() {
@@ -383,30 +385,374 @@ function play() {
   const step = (now) => { t = Math.max(0, Math.min(1, (now - t0) / 1500)); draw(); if (t < 1) raf = requestAnimationFrame(step); };
   t = 0; draw(); raf = requestAnimationFrame(step);
 }
+const mark = () => root.querySelectorAll('[data-p]').forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.p) === cur)));
 function pick(p) {
-  cur = p; A = presets[p].m.slice(); rot = presets[p].rot;
-  root.querySelectorAll('[data-p]').forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.p) === p)));
-  play();
+  const q = presets[p];
+  cur = p; bend = Boolean(q.bend); rot = q.rot;
+  if (q.m) A = q.m.slice();
+  mark(); play();
 }
 
 function knob(cls, name, get, set) {
   const b = document.createElement('button');
   b.type = 'button'; b.className = `knob ${cls}`; b.setAttribute('aria-label', `${name}：拖动或用方向键移动`);
   stage.append(b);
-  const take = (p) => {
-    cancelAnimationFrame(raf); t = 1; rot = undefined; set(p);
-    root.querySelectorAll('[data-p]').forEach((x) => x.setAttribute('aria-pressed', 'false'));
-    draw();
-  };
-  const move = (e) => { const r = cv.getBoundingClientRect(); take(snap(U(e.clientX - r.left, e.clientY - r.top))); };
+  const take = (p) => { cancelAnimationFrame(raf); t = 1; rot = undefined; cur = -1; set(snap(p)); mark(); draw(); };
+  const move = (e) => { const r = cv.getBoundingClientRect(); take(U(e.clientX - r.left, e.clientY - r.top)); };
   b.addEventListener('pointerdown', (e) => { b.setPointerCapture(e.pointerId); b.onpointermove = move; });
   b.addEventListener('pointerup', () => { b.onpointermove = null; });
+  b.addEventListener('pointercancel', () => { b.onpointermove = null; });
   b.addEventListener('keydown', (e) => {
     const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[e.key];
     if (!d) return;
     e.preventDefault();
     const s = e.shiftKey ? 1 : .1, p = get();
-    take(snap([p[0] + d[0] * s, p[1] + d[1] * s]));
+    take([p[0] + d[0] * s, p[1] + d[1] * s]);
+  });
+  return { place() { const [x, y] = P(get()); b.style.transform = `translate(${x}px, ${y}px)`; b.style.display = bend ? 'none' : ''; } };
+}
+const knobs = [
+  knob('i', 'î 的落点', () => { const m = M(t); return [m[0], m[2]]; }, (p) => { A[0] = p[0]; A[2] = p[1]; }),
+  knob('j', 'ĵ 的落点', () => { const m = M(t); return [m[1], m[3]]; }, (p) => { A[1] = p[0]; A[3] = p[1]; }),
+];
+
+root.querySelectorAll('[data-p]').forEach((b) => b.addEventListener('click', () => pick(Number(b.dataset.p))));
+root.querySelector('.play').addEventListener('click', play);
+range.addEventListener('input', () => { cancelAnimationFrame(raf); t = range.value / 1000; draw(); });
+
+function size() {
+  W = cv.clientWidth; H = Math.round(Math.max(260, Math.min(380, W * .6)));
+  S = H / 8;
+  const r = devicePixelRatio;
+  cv.width = W * r; cv.height = H * r; cv.style.height = `${H}px`;
+  ctx.setTransform(r, 0, 0, r, 0, 0);
+}
+theme(); mark();
+window.addEventListener('themechange', () => { theme(); draw(); });
+new ResizeObserver(() => { size(); draw(); }).observe(stage);
+new IntersectionObserver(([e], o) => { if (e.isIntersecting) { o.disconnect(); play(); } }, { threshold: .6 }).observe(stage);
+</script>
+```
+
+看黑色箭头脚下那两段虚线：沿新的 $\hat\imath$ 走 1 份，再沿新的 $\hat\jmath$ 走 2 份。$\mathbf{v}$ 的配方 $(1,2)$ 没变，变的是配料。矩阵乘向量算的就是这个：
+
+$$
+\begin{bmatrix}a&b\\c&d\end{bmatrix}\begin{bmatrix}x\\y\end{bmatrix}
+=x\begin{bmatrix}a\\c\end{bmatrix}+y\begin{bmatrix}b\\d\end{bmatrix}
+=\begin{bmatrix}ax+by\\cx+dy\end{bmatrix}
+$$
+
+**拿向量的坐标当配方，去混矩阵的各列。** 课本教的“第一行乘向量得第一个数”是同一堆乘法换了个分组，按列看才看得出它在干什么。
+
+切到“弯的”再看一眼，那是个不线性的函数。网格线弯了，按配方走到的地方（空心圆）和 $\mathbf{v}$ 真正的落点对不上：知道 $f(\hat\imath)$、$f(\hat\jmath)$，推不出 $f(\mathbf{v})$。这种函数没法用四个数记下来。矩阵能存下一个函数，全靠线性。
+
+还有“镜像”。播到一半，整张平面被压成一条斜线，然后才翻过去——把一张纸翻面，中途总有一刻是侧着的。记住这一下，讲行列式时用得上。
+
+## 矩阵乘法：先做一个，再做一个
+
+先做变换 $B$，再做变换 $A$。两次下来网格还是直的、平行等距的，原点还在，所以合起来仍是一个线性变换，也有自己的矩阵，记作 $AB$。
+
+它的两列是什么？老办法，问基向量去了哪。$\hat\imath$ 先被 $B$ 送到 $B$ 的第一列，这个向量再被 $A$ 送走。所以：
+
+> [!IMPORTANT]
+> $AB$ 的第 $j$ 列，就是 $A$ 作用在 $B$ 的第 $j$ 列上。
+
+拿开头那道题试。$B$ 的第一列是 $(5,7)$，当配方去混 $A$ 的两列；第二列 $(6,8)$ 照办：
+
+$$
+5\begin{bmatrix}1\\3\end{bmatrix}+7\begin{bmatrix}2\\4\end{bmatrix}=\begin{bmatrix}19\\43\end{bmatrix},
+\qquad
+6\begin{bmatrix}1\\3\end{bmatrix}+8\begin{bmatrix}2\\4\end{bmatrix}=\begin{bmatrix}22\\50\end{bmatrix}
+$$
+
+正是答案的两列。“行乘列”也跟着出来了：结果第 $i$ 行第 $j$ 列的那个数，是“$A$ 作用在 $B$ 的第 $j$ 列上”得到的向量的第 $i$ 个分量。把它单拎出来算，恰好是 $A$ 的第 $i$ 行和 $B$ 的第 $j$ 列对应相乘再相加。
+
+没人规定乘法要这么算，是“接着做两次变换”逼出来的。历史上也是这个顺序：1858 年凯莱定义矩阵乘法，为的就是把两次线性代换合成一次。
+
+$AB$ 要从右往左读，和 $f(g(x))$ 一样，先做 $B$。
+
+顺序要紧吗？$S$ 是向右剪切，$R$ 是逆时针转 90°，两种顺序各走一遍：
+
+```render html
+<style>
+  .la { --blue: #356f9b; font-size: 13px; line-height: 1.5; font-variant-ligatures: none; }
+  :root[data-theme="dark"] .la { --blue: #95bfdc; }
+  .bar { display: flex; align-items: center; gap: 14px; }
+  .key { flex: none; min-height: 36px; padding: 0 14px; border: 1px solid var(--rule-strong); border-radius: 6px; background: var(--bg-raised); box-shadow: 0 2px 0 var(--rule); color: var(--text); font-size: 13px; cursor: pointer; }
+  .key:hover { border-color: var(--text); }
+  .scrub { display: flex; flex: 1; min-width: 0; align-items: center; gap: 12px; color: var(--muted); font-size: 12px; }
+  .scrub span { flex: none; min-width: 4.2em; }
+  .scrub input { flex: 1; min-width: 0; accent-color: var(--accent); }
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 22px; margin-top: 10px; }
+  figure { margin: 0; min-width: 0; }
+  figcaption { color: var(--muted); font-size: 13px; }
+  canvas { display: block; width: 100%; }
+  .foot { display: flex; align-items: center; gap: 6px; margin-top: 2px; font: 13px var(--font-mono); }
+  .m { display: inline-grid; grid-auto-flow: column; grid-template-rows: auto auto; gap: 0 12px; position: relative; padding: 0 9px; text-align: right; }
+  .m::before, .m::after { content: ""; position: absolute; top: 1px; bottom: 1px; width: 5px; border: 1.5px solid var(--muted); }
+  .m::before { left: 0; border-right: 0; } .m::after { right: 0; border-left: 0; }
+  .i { color: var(--accent-ink); } .j { color: var(--blue); }
+  @media (max-width: 520px) { .duo { grid-template-columns: 1fr; } }
+</style>
+<section class="la" aria-label="同样两个变换，两种先后顺序">
+  <div class="bar">
+    <label class="scrub"><span class="stepname"></span><input type="range" min="0" max="2000" value="2000" aria-label="进度：两步变换" /></label>
+    <button type="button" class="key play">播放</button>
+  </div>
+  <div class="duo">
+    <figure><figcaption>先剪切 S，再旋转 R</figcaption><canvas role="img"></canvas><div class="foot"></div></figure>
+    <figure><figcaption>先旋转 R，再剪切 S</figcaption><canvas role="img"></canvas><div class="foot"></div></figure>
+  </div>
+</section>
+<script>
+const root = document.querySelector('.la');
+const range = root.querySelector('input'), stepname = root.querySelector('.stepname');
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const C = {};
+let t = 2, raf = 0; // 0→1 做第一步，1→2 做第二步
+
+const theme = () => { const s = getComputedStyle(root); for (const k of ['text', 'muted', 'rule', 'accent', 'accent-ink', 'blue']) C[k] = s.getPropertyValue(`--${k}`).trim(); };
+const ap = (m, [x, y]) => [m[0] * x + m[1] * y, m[2] * x + m[3] * y];
+const mul = (a, b) => [a[0] * b[0] + a[1] * b[2], a[0] * b[1] + a[1] * b[3], a[2] * b[0] + a[3] * b[2], a[2] * b[1] + a[3] * b[3]];
+const ease = (x) => x * x * (3 - 2 * x);
+const clamp = (x) => Math.max(0, Math.min(1, x));
+const num = (x) => String(Math.round(x * 100) / 100 || 0).replace('-', '−');
+const rotate = (e) => { const c = Math.cos(Math.PI / 2 * e), s = Math.sin(Math.PI / 2 * e); return [c, -s, s, c]; };
+const shear = (e) => [1, e, 0, 1];
+const orders = [{ f: [shear, rotate], name: ['S', 'RS'] }, { f: [rotate, shear], name: ['R', 'SR'] }];
+// 后做的写在左边
+const M = (o) => mul(orders[o].f[1](ease(clamp(t - 1))), orders[o].f[0](ease(clamp(t))));
+const F = [[[.3, .2], [.3, 1.8]], [[.3, 1.8], [1.3, 1.8]], [[.3, 1], [1, 1]]];
+
+const panels = [...root.querySelectorAll('figure')].map((fig, o) => {
+  const cv = fig.querySelector('canvas'), ctx = cv.getContext('2d'), foot = fig.querySelector('.foot');
+  let W = 0, H = 0, S = 30;
+  const P = ([x, y]) => [W / 2 + x * S, H * .58 - y * S];
+  function seg(a, b, color, w = 1) {
+    const [x1, y1] = P(a), [x2, y2] = P(b);
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+    ctx.strokeStyle = color; ctx.lineWidth = w; ctx.stroke();
+  }
+  function arrow(to, color, text, ink) {
+    const [x1, y1] = P([0, 0]), [x2, y2] = P(to), L = Math.hypot(x2 - x1, y2 - y1);
+    if (L < 2) return;
+    const ux = (x2 - x1) / L, uy = (y2 - y1) / L, h = Math.min(11, L * .5), bx = x2 - ux * h, by = y2 - uy * h;
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(bx, by); ctx.strokeStyle = color; ctx.lineWidth = 2.6; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(bx - uy * h * .45, by + ux * h * .45); ctx.lineTo(bx + uy * h * .45, by - ux * h * .45);
+    ctx.closePath(); ctx.fillStyle = color; ctx.fill();
+    ctx.fillStyle = ink; ctx.font = '600 15px KaTeX_Main, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(text, x2 + ux * 16, y2 + uy * 16);
+  }
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    const m = M(o), R = Math.ceil(Math.hypot(W, H) / S) + 1;
+    ctx.lineCap = 'butt';
+    for (let k = -R; k <= R; k++) { seg([k, -R], [k, R], C.rule); seg([-R, k], [R, k], C.rule); }
+    ctx.globalAlpha = .45;
+    for (let k = -R; k <= R; k++) {
+      seg(ap(m, [k, -R]), ap(m, [k, R]), k ? C.muted : C.text, k ? 1 : 1.5);
+      seg(ap(m, [-R, k]), ap(m, [R, k]), k ? C.muted : C.text, k ? 1 : 1.5);
+    }
+    ctx.globalAlpha = 1; ctx.lineCap = 'round';
+    F.forEach(([a, b]) => seg(ap(m, a), ap(m, b), C.text, 5));
+    arrow([m[0], m[2]], C.accent, 'î', C['accent-ink']); arrow([m[1], m[3]], C.blue, 'ĵ', C.blue);
+    foot.innerHTML = `<span>${orders[o].name[t > 1 ? 1 : 0]} =</span><span class="m">` +
+      [m[0], m[2]].map((x) => `<span class="i">${num(x)}</span>`).join('') + [m[1], m[3]].map((x) => `<span class="j">${num(x)}</span>`).join('') + '</span>';
+    cv.setAttribute('aria-label', `î 落在 (${num(m[0])}, ${num(m[2])})，ĵ 落在 (${num(m[1])}, ${num(m[3])})`);
+  }
+  function size() {
+    W = cv.clientWidth; H = Math.round(Math.max(210, Math.min(300, W * .8)));
+    S = H / 6.4;
+    const r = devicePixelRatio;
+    cv.width = W * r; cv.height = H * r; cv.style.height = `${H}px`;
+    ctx.setTransform(r, 0, 0, r, 0, 0);
+  }
+  new ResizeObserver(() => { size(); draw(); }).observe(fig);
+  return draw;
+});
+
+function draw() {
+  panels.forEach((d) => d());
+  range.value = Math.round(t * 1000);
+  stepname.textContent = t > 1 ? '第 2 步' : '第 1 步';
+}
+function play() {
+  cancelAnimationFrame(raf);
+  if (reduce) { t = 2; return draw(); }
+  const t0 = performance.now() + 250;
+  const step = (now) => { t = 2 * clamp((now - t0) / 3400); draw(); if (t < 2) raf = requestAnimationFrame(step); };
+  t = 0; draw(); raf = requestAnimationFrame(step);
+}
+root.querySelector('.play').addEventListener('click', play);
+range.addEventListener('input', () => { cancelAnimationFrame(raf); t = range.value / 1000; draw(); });
+theme();
+window.addEventListener('themechange', () => { theme(); draw(); });
+new IntersectionObserver(([e], o) => { if (e.isIntersecting) { o.disconnect(); play(); } }, { threshold: .5 }).observe(root);
+</script>
+```
+
+F 最后躺的姿势不一样，矩阵也不一样：
+
+$$
+RS=\begin{bmatrix}0&-1\\1&1\end{bmatrix},\qquad SR=\begin{bmatrix}1&-1\\1&0\end{bmatrix}
+$$
+
+每张图里 $\hat\imath$、$\hat\jmath$ 最后停的位置，就是下面那个矩阵的两列。照这个办法，不背规则也能把任何两个矩阵乘出来。
+
+把乘法当成“接着做”，几条性质不用证：
+
+- **不能交换。** 先穿袜子再穿鞋，和先穿鞋再穿袜子，不是一回事。
+- **能结合。** $(AB)C$ 和 $A(BC)$ 都是先 $C$、后 $B$、再 $A$，括号只管先把哪两步合并。用下标硬证，要写半页求和号。
+- **单位矩阵 $I$** 是什么都不做的那个变换。
+
+写程序的人有个现成的词可以对上：矩阵乘法就是函数复合。$m\times n$ 的矩阵吃 $n$ 维、吐 $m$ 维；“左边的列数要等于右边的行数”查的是前一个函数的输出能不能喂给后一个，形状就是类型签名。
+
+“接着做还是线性的”还有一个用处。神经网络的每一层都要先乘一个矩阵。层与层之间要是什么都不夹，一百层乘下来还是一个矩阵，和一层没有分别。所以每层后面都跟着一个不线性的函数，比如把负数全压成 0 的 ReLU。
+
+## 行列式：面积放大了几倍
+
+$\hat\imath$ 和 $\hat\jmath$ 围着一个面积为 1 的正方形。变换之后，它成了以矩阵两列为边的平行四边形。
+
+网格变换后还是平行、等距的，所以每个小方格都变成同样大的平行四边形。任何形状都能拿足够小的方格去拼，于是**平面上所有形状的面积，被放大了同一个倍数**。这个倍数叫行列式，记作 $\det A$。
+
+图里除了单位正方形，还放了一个圆盘。换几个变换，或者拖箭头尖上的圆点，对比两个形状各放大了几倍：
+
+```render html
+<style>
+  .la { --blue: #356f9b; font-size: 13px; line-height: 1.5; font-variant-ligatures: none; }
+  :root[data-theme="dark"] .la { --blue: #95bfdc; }
+  .bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 18px; }
+  .seg { display: flex; flex-wrap: wrap; gap: 0 16px; }
+  .seg button { min-height: 38px; padding: 4px 0; border: 0; border-bottom: 2px solid var(--rule); background: none; color: var(--muted); font-size: 14px; cursor: pointer; }
+  .seg button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+  .key { min-height: 36px; padding: 0 14px; border: 1px solid var(--rule-strong); border-radius: 6px; background: var(--bg-raised); box-shadow: 0 2px 0 var(--rule); color: var(--text); font-size: 13px; cursor: pointer; }
+  .key:hover { border-color: var(--text); }
+  .stage { position: relative; margin-top: 10px; }
+  .stage canvas { display: block; width: 100%; touch-action: pan-y; }
+  .knob { position: absolute; left: 0; top: 0; width: 36px; height: 36px; margin: -18px 0 0 -18px; padding: 0; border: 0; border-radius: 50%; background: none; cursor: grab; touch-action: none; }
+  .knob::after { content: ""; position: absolute; inset: 11px; border: 2px solid currentColor; border-radius: 50%; background: var(--bg); }
+  .knob.i { color: var(--accent); } .knob.j { color: var(--blue); }
+  .knob:active { cursor: grabbing; }
+  .scrub { display: flex; align-items: center; gap: 12px; margin-top: 6px; color: var(--muted); font-size: 12px; }
+  .scrub input { flex: 1; min-width: 0; accent-color: var(--accent); }
+  .read { display: flex; flex-wrap: wrap; gap: 2px 22px; margin-top: 4px; min-height: 22px; font: 13px var(--font-mono); }
+  .read b { font-weight: 650; }
+  .i { color: var(--accent-ink); } .j { color: var(--blue); }
+</style>
+<section class="la" aria-label="行列式：正方形和圆的面积被放大同一个倍数，翻面时为负">
+  <div class="bar">
+    <div class="seg" role="group" aria-label="选一个变换">
+      <button type="button" data-p="0">放大</button>
+      <button type="button" data-p="1">剪切</button>
+      <button type="button" data-p="2">压扁</button>
+      <button type="button" data-p="3">翻面</button>
+    </div>
+    <button type="button" class="key play">播放</button>
+  </div>
+  <div class="stage"><canvas role="img"></canvas></div>
+  <label class="scrub"><span>进度</span><input type="range" min="0" max="1000" value="1000" aria-label="变换进度" /></label>
+  <div class="read"></div>
+</section>
+<script>
+const root = document.querySelector('.la');
+const stage = root.querySelector('.stage'), cv = stage.querySelector('canvas'), ctx = cv.getContext('2d');
+const range = root.querySelector('input'), read = root.querySelector('.read');
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const C = {};
+let W = 0, H = 0, S = 40, t = 1, raf = 0, cur = 0;
+// 每个矩阵按 [a, b, c, d] 存：î 落在 (a, c)，ĵ 落在 (b, d)
+const presets = [[2, 1, 0, 1.5], [1, 1, 0, 1], [2, 1, 1, .5], [1, 2, 2, 1]];
+let A = presets[0].slice();
+const disc = Array.from({ length: 48 }, (_, k) => [-1.2 + .6 * Math.cos(k * Math.PI / 24), 1 + .6 * Math.sin(k * Math.PI / 24)]);
+
+const theme = () => { const s = getComputedStyle(root); for (const k of ['text', 'muted', 'rule', 'accent', 'accent-ink', 'bg', 'blue']) C[k] = s.getPropertyValue(`--${k}`).trim(); };
+const P = ([x, y]) => [W / 2 + x * S, H / 2 - y * S];
+const U = (px, py) => [(px - W / 2) / S, (H / 2 - py) / S];
+const ap = (m, [x, y]) => [m[0] * x + m[1] * y, m[2] * x + m[3] * y];
+const ease = (x) => x * x * (3 - 2 * x);
+const num = (x) => String(Math.round(x * 100) / 100 || 0).replace('-', '−');
+const sg = (x) => (x < -.004 ? `(${num(x)})` : num(x));
+const snap = (p) => p.map((q, k) => { const lim = (k ? H : W) / 2 / S - .4, r = Math.round(q), s = Math.abs(q - r) < .15 ? r : Math.round(q * 10) / 10; return Math.max(-lim, Math.min(lim, s)); });
+const M = (t) => { const e = ease(t); return [1 + (A[0] - 1) * e, A[1] * e, A[2] * e, 1 + (A[3] - 1) * e]; };
+
+function seg(a, b, color, w = 1) {
+  const [x1, y1] = P(a), [x2, y2] = P(b);
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+  ctx.strokeStyle = color; ctx.lineWidth = w; ctx.setLineDash([]); ctx.stroke();
+}
+function arrow(to, color, text, ink) {
+  const [x1, y1] = P([0, 0]), [x2, y2] = P(to), L = Math.hypot(x2 - x1, y2 - y1);
+  if (L < 2) return;
+  const ux = (x2 - x1) / L, uy = (y2 - y1) / L, h = Math.min(12, L * .5), bx = x2 - ux * h, by = y2 - uy * h;
+  ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(bx, by); ctx.strokeStyle = color; ctx.lineWidth = 2.6; ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(bx - uy * h * .45, by + ux * h * .45); ctx.lineTo(bx + uy * h * .45, by - ux * h * .45);
+  ctx.closePath(); ctx.fillStyle = color; ctx.fill();
+  ctx.fillStyle = ink; ctx.font = '600 15px KaTeX_Main, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(text, x2 + ux * 22, y2 + uy * 22);
+  ctx.lineCap = 'butt';
+}
+function shape(pts, color) {
+  ctx.beginPath(); pts.map(P).forEach(([x, y], k) => (k ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.closePath();
+  ctx.globalAlpha = .2; ctx.fillStyle = color; ctx.fill(); ctx.globalAlpha = 1;
+  ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.setLineDash([]); ctx.stroke();
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  const m = M(t), d = m[0] * m[3] - m[1] * m[2], R = Math.ceil(Math.hypot(W, H) / 2 / S) + 2;
+  for (let k = -R; k <= R; k++) { seg([k, -R], [k, R], C.rule); seg([-R, k], [R, k], C.rule); }
+  ctx.globalAlpha = .5;
+  for (let k = -3 * R; k <= 3 * R; k++) {
+    seg(ap(m, [k, -3 * R]), ap(m, [k, 3 * R]), k ? C.muted : C.text, k ? 1 : 1.6);
+    seg(ap(m, [-3 * R, k]), ap(m, [3 * R, k]), k ? C.muted : C.text, k ? 1 : 1.6);
+  }
+  ctx.globalAlpha = 1;
+  // 翻面以后换一种颜色
+  const tint = d < 0 ? C.blue : C.accent;
+  shape([[0, 0], [1, 0], [1, 1], [0, 1]].map((p) => ap(m, p)), tint);
+  shape(disc.map((p) => ap(m, p)), tint);
+  // 正方形里的 R 跟着变换走：把画布自己的坐标也乘上这个矩阵
+  ctx.save();
+  ctx.transform(m[0], -m[2], -m[1], m[3], W / 2, H / 2);
+  ctx.fillStyle = C.text; ctx.font = `600 ${S * .62}px Inter Variable, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('R', S * .5, -S * .5);
+  ctx.restore();
+  arrow([m[0], m[2]], C.accent, 'î', C['accent-ink']); arrow([m[1], m[3]], C.blue, 'ĵ', C.blue);
+  knobs.forEach((k) => k.place());
+
+  const area = Math.abs(d), state = area < .005 ? '压成了一条线' : d < 0 ? '翻面了' : '';
+  read.innerHTML =
+    `<span>det = <span class="i">${sg(m[0])}</span>·<span class="j">${sg(m[3])}</span> − <span class="j">${sg(m[1])}</span>·<span class="i">${sg(m[2])}</span> = <b>${num(d)}</b></span>` +
+    `<span>方格 1 → ${num(area)}</span><span>圆 1.13 → ${num(1.131 * area)}</span><span>${state}</span>`;
+  range.value = Math.round(t * 1000);
+  cv.setAttribute('aria-label', `行列式 ${num(d)}：面积变成 ${num(area)} 倍${d < 0 ? '，并且翻了面' : ''}`);
+}
+
+function play() {
+  cancelAnimationFrame(raf);
+  if (reduce) { t = 1; return draw(); }
+  const t0 = performance.now() + 250;
+  const step = (now) => { t = Math.max(0, Math.min(1, (now - t0) / 1700)); draw(); if (t < 1) raf = requestAnimationFrame(step); };
+  t = 0; draw(); raf = requestAnimationFrame(step);
+}
+const mark = () => root.querySelectorAll('[data-p]').forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.p) === cur)));
+
+function knob(cls, name, get, set) {
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = `knob ${cls}`; b.setAttribute('aria-label', `${name}：拖动或用方向键移动`);
+  stage.append(b);
+  const take = (p) => { cancelAnimationFrame(raf); t = 1; cur = -1; set(snap(p)); mark(); draw(); };
+  const move = (e) => { const r = cv.getBoundingClientRect(); take(U(e.clientX - r.left, e.clientY - r.top)); };
+  b.addEventListener('pointerdown', (e) => { b.setPointerCapture(e.pointerId); b.onpointermove = move; });
+  b.addEventListener('pointerup', () => { b.onpointermove = null; });
+  b.addEventListener('pointercancel', () => { b.onpointermove = null; });
+  b.addEventListener('keydown', (e) => {
+    const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[e.key];
+    if (!d) return;
+    e.preventDefault();
+    const s = e.shiftKey ? 1 : .1, p = get();
+    take([p[0] + d[0] * s, p[1] + d[1] * s]);
   });
   return { place() { const [x, y] = P(get()); b.style.transform = `translate(${x}px, ${y}px)`; } };
 }
@@ -415,8 +761,246 @@ const knobs = [
   knob('j', 'ĵ 的落点', () => { const m = M(t); return [m[1], m[3]]; }, (p) => { A[1] = p[0]; A[3] = p[1]; }),
 ];
 
-root.querySelectorAll('[data-p]').forEach((b) => b.addEventListener('click', () => pick(Number(b.dataset.p))));
-playBtn.addEventListener('click', play);
+root.querySelectorAll('[data-p]').forEach((b) => b.addEventListener('click', () => { cur = Number(b.dataset.p); A = presets[cur].slice(); mark(); play(); }));
+root.querySelector('.play').addEventListener('click', play);
+range.addEventListener('input', () => { cancelAnimationFrame(raf); t = range.value / 1000; draw(); });
+
+function size() {
+  W = cv.clientWidth; H = Math.round(Math.max(260, Math.min(380, W * .6)));
+  S = H / 8;
+  const r = devicePixelRatio;
+  cv.width = W * r; cv.height = H * r; cv.style.height = `${H}px`;
+  ctx.setTransform(r, 0, 0, r, 0, 0);
+}
+theme(); mark();
+window.addEventListener('themechange', () => { theme(); draw(); });
+new ResizeObserver(() => { size(); draw(); }).observe(stage);
+new IntersectionObserver(([e], o) => { if (e.isIntersecting) { o.disconnect(); play(); } }, { threshold: .6 }).observe(stage);
+</script>
+```
+
+“剪切”把正方形推歪了，面积还是 1：底没变，高也没变。“压扁”让两列躺到同一条线上，平行四边形没了面积，行列式是 0。
+
+“翻面”的结果是 $-3$。面积不会是负的，负号记的是另一件事：正方形里的 R 成了镜像。原来从 $\hat\imath$ 逆时针转过去是 $\hat\jmath$，现在得顺时针转，平面被翻了个面。拉着进度条慢慢走，行列式从 1 一路降到 $-3$，中间非经过 0 不可。前面说的那张纸，翻面途中侧过来的一刻，就是这里的 0。
+
+三维里一样：行列式是单位立方体变成的平行六面体的体积，负号表示右手系变成了左手系。
+
+### ad − bc 从哪来
+
+二维的公式能从图上直接量出来。$\hat\imath$ 落在 $(a,c)$，$\hat\jmath$ 落在 $(b,d)$，拿外面的大矩形减掉四周的边角：
+
+```render html title="图里 a = 3，c = 1，b = 1，d = 2"
+<style>
+  .ab { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px 32px; font-size: 14px; line-height: 1.5; font-variant-ligatures: none; }
+  .ab svg { flex: none; display: block; width: 240px; max-width: 100%; height: auto; }
+  .sum { display: grid; grid-template-columns: max-content max-content; gap: 6px 16px; font-family: var(--font-mono); }
+  .sum span:nth-child(odd) { color: var(--muted); font-family: var(--font-sans); }
+  .sum span.hit { color: var(--accent-ink); font-weight: 650; }
+</style>
+<div class="ab" role="img" aria-label="大矩形减去四个三角形和两个小矩形，剩下的平行四边形面积是 ad − bc">
+  <svg viewBox="6 30 214 172" xmlns="http://www.w3.org/2000/svg" font-family="Inter Variable, sans-serif">
+    <g stroke="var(--rule-strong)" stroke-width="1.2">
+      <path d="M30 175 L165 175 L165 130 Z M75 85 L75 40 L210 40 Z" fill="var(--bg-sunken)" />
+      <path d="M30 175 L75 85 L30 85 Z M165 130 L210 130 L210 40 Z" fill="var(--bg-sunken)" />
+      <path d="M165 130 H210 V175 H165 Z M30 40 H75 V85 H30 Z" fill="var(--surface)" />
+    </g>
+    <path d="M30 175 L165 130 L210 40 L75 85 Z" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2" />
+    <rect x="30" y="40" width="180" height="135" fill="none" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="4 4" />
+    <g font-size="12" fill="var(--muted)" text-anchor="middle">
+      <text x="120" y="165">ac/2</text>
+      <text x="120" y="56">ac/2</text>
+      <text x="46" y="118">bd/2</text>
+      <text x="195" y="104">bd/2</text>
+      <text x="187" y="157">bc</text>
+      <text x="52" y="67">bc</text>
+    </g>
+    <g font-size="12" fill="var(--faint)" text-anchor="middle">
+      <text x="97" y="194">a</text>
+      <text x="187" y="194">b</text>
+      <text x="16" y="133">d</text>
+      <text x="16" y="66">c</text>
+    </g>
+    <text x="120" y="112" font-size="17" font-weight="600" fill="var(--accent-ink)" text-anchor="middle">ad − bc</text>
+  </svg>
+  <div class="sum">
+    <span>大矩形</span><span>(a+b)(c+d)</span>
+    <span>四个三角</span><span>− ac − bd</span>
+    <span>两个小矩形</span><span>− 2bc</span>
+    <span class="hit">剩下</span><span class="hit">ad − bc</span>
+  </div>
+</div>
+```
+
+图里是 $3\cdot2-1\cdot1=5$。
+
+### 几条性质，看图就有
+
+- $\det(AB)=\det A\cdot\det B$。先放大 $\det B$ 倍，再放大 $\det A$ 倍。拿公式硬证三阶的情形，要展开一百多项。
+- $\det A=0$，是平面被压成了一条线或一个点。压扁要丢东西，下一节会看到，这样的变换倒不回去。
+- 把一行的若干倍加到另一行，行列式不变。这是一次剪切，剪切不改面积。高斯消元干的主要就是这个：一路剪切，把矩阵化成上三角，行列式就是对角线上几个数的乘积；途中每交换一次两行，等于照一次镜子，符号翻一次。计算机就这么算行列式，$O(n^3)$。按定义展开的式子有 $n!$ 项，20 阶就是 $2.4\times10^{18}$ 项。
+
+开头问的那串一正一负，也是从“翻面”来的。平行四边形的一条边拉长两倍，面积就两倍；一条边拆成两段相加，面积也是两块相加。行列式对每一列都是线性的。
+
+那就把每一列拆开。第一列是 $a\hat\imath+c\hat\jmath$，第二列是 $b\hat\imath+d\hat\jmath$，行列式跟着拆成四项，每一项从两列里各挑一根轴：
+
+$$
+\det\begin{bmatrix}a&b\\c&d\end{bmatrix}
+=ab\underbrace{\det\begin{bmatrix}\hat\imath&\hat\imath\end{bmatrix}}_{0}
++ad\underbrace{\det\begin{bmatrix}\hat\imath&\hat\jmath\end{bmatrix}}_{1}
++cb\underbrace{\det\begin{bmatrix}\hat\jmath&\hat\imath\end{bmatrix}}_{-1}
++cd\underbrace{\det\begin{bmatrix}\hat\jmath&\hat\jmath\end{bmatrix}}_{0}
+$$
+
+两列挑了同一根轴的，压扁了，是 0。两根轴原样放着的是单位正方形，1。两根轴对调的，照了一次镜子，$-1$。剩下 $ad-bc$。
+
+三阶照办：从三列里各挑一根互不相同的轴，有 6 种挑法，相当于把三根轴重新排一遍队。排队要对调奇数次的带负号，所以三正三负。$n$ 阶有 $n!$ 种排法，上面说的 $n!$ 项就是这么来的。
+
+## 逆矩阵与 Ax = b：倒着找输入
+
+一个方程组：
+
+$$
+\begin{aligned}
+2x-y&=0\\
+x+y&=3
+\end{aligned}
+\qquad\Longleftrightarrow\qquad
+\begin{bmatrix}2&-1\\1&1\end{bmatrix}\begin{bmatrix}x\\y\end{bmatrix}=\begin{bmatrix}0\\3\end{bmatrix}
+$$
+
+一行一行看，是两条直线求交点。换成变换来看，$A\mathbf{x}=\mathbf{b}$ 问的是另一件事：**哪个向量被 $A$ 搬过之后，正好落在 $\mathbf{b}$ 上？** 变换和落点都知道，要找的是出发点。
+
+图里画的是变换之后的样子，黑色箭头已经落在 $\mathbf{b}$ 上。按“倒放”，看它是从哪出发的。$\mathbf{b}$ 上的圆点可以拖：
+
+```render html
+<style>
+  .la { --blue: #356f9b; font-size: 13px; line-height: 1.5; font-variant-ligatures: none; }
+  :root[data-theme="dark"] .la { --blue: #95bfdc; }
+  .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+  .key { min-height: 36px; padding: 0 14px; border: 1px solid var(--rule-strong); border-radius: 6px; background: var(--bg-raised); box-shadow: 0 2px 0 var(--rule); color: var(--text); font-size: 13px; cursor: pointer; }
+  .key:hover { border-color: var(--text); }
+  .scrub { display: flex; flex: 1; min-width: 180px; align-items: center; gap: 10px; color: var(--muted); font-size: 12px; }
+  .scrub input { flex: 1; min-width: 0; accent-color: var(--accent); }
+  .stage { position: relative; margin-top: 10px; }
+  .stage canvas { display: block; width: 100%; touch-action: pan-y; }
+  .knob { position: absolute; left: 0; top: 0; width: 36px; height: 36px; margin: -18px 0 0 -18px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--text); cursor: grab; touch-action: none; }
+  .knob::after { content: ""; position: absolute; inset: 11px; border: 2px solid currentColor; border-radius: 50%; background: var(--bg); }
+  .knob:active { cursor: grabbing; }
+  .read { display: flex; flex-wrap: wrap; gap: 2px 22px; margin-top: 6px; font: 13px var(--font-mono); }
+  .i { color: var(--accent-ink); } .j { color: var(--blue); }
+</style>
+<section class="la" aria-label="解 Ax = b：把变换倒着放，b 回到它的出发点 x">
+  <div class="bar">
+    <button type="button" class="key back">倒放</button>
+    <button type="button" class="key fwd">正放</button>
+    <label class="scrub"><span>变换前</span><input type="range" min="0" max="1000" value="1000" aria-label="进度：最左是变换前，最右是变换后" /><span>变换后</span></label>
+  </div>
+  <div class="stage"><canvas role="img"></canvas></div>
+  <div class="read"></div>
+</section>
+<script>
+const root = document.querySelector('.la');
+const stage = root.querySelector('.stage'), cv = stage.querySelector('canvas'), ctx = cv.getContext('2d');
+const range = root.querySelector('input'), read = root.querySelector('.read');
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const C = {};
+let W = 0, H = 0, S = 40, t = 1, raf = 0;
+const A = [2, -1, 1, 1]; // î 落在 (2, 1)，ĵ 落在 (−1, 1)
+let b = [0, 3];
+
+const theme = () => { const s = getComputedStyle(root); for (const k of ['text', 'muted', 'rule', 'accent', 'accent-ink', 'bg', 'blue']) C[k] = s.getPropertyValue(`--${k}`).trim(); };
+const P = ([x, y]) => [W / 2 + x * S, H / 2 - y * S];
+const U = (px, py) => [(px - W / 2) / S, (H / 2 - py) / S];
+const ap = (m, [x, y]) => [m[0] * x + m[1] * y, m[2] * x + m[3] * y];
+const ease = (x) => x * x * (3 - 2 * x);
+const num = (x) => String(Math.round(x * 100) / 100 || 0).replace('-', '−');
+const pair = (p) => `(${num(p[0])}, ${num(p[1])})`;
+const snap = (p) => p.map((q, k) => { const lim = (k ? H : W) / 2 / S - .4, r = Math.round(q), s = Math.abs(q - r) < .15 ? r : Math.round(q * 10) / 10; return Math.max(-lim, Math.min(lim, s)); });
+const M = (t) => { const e = ease(t); return [1 + (A[0] - 1) * e, A[1] * e, A[2] * e, 1 + (A[3] - 1) * e]; };
+// x = A⁻¹b
+const solve = () => { const d = A[0] * A[3] - A[1] * A[2]; return [(A[3] * b[0] - A[1] * b[1]) / d, (A[0] * b[1] - A[2] * b[0]) / d]; };
+
+function seg(p, q, color, w = 1, dash = []) {
+  const [x1, y1] = P(p), [x2, y2] = P(q);
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+  ctx.strokeStyle = color; ctx.lineWidth = w; ctx.setLineDash(dash); ctx.stroke();
+}
+function arrow(to, color, w = 2.6) {
+  const [x1, y1] = P([0, 0]), [x2, y2] = P(to), L = Math.hypot(x2 - x1, y2 - y1);
+  if (L < 2) return;
+  const ux = (x2 - x1) / L, uy = (y2 - y1) / L, h = Math.min(12, L * .5), bx = x2 - ux * h, by = y2 - uy * h;
+  ctx.setLineDash([]); ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(bx, by); ctx.strokeStyle = color; ctx.lineWidth = w; ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(bx - uy * h * .45, by + ux * h * .45); ctx.lineTo(bx + uy * h * .45, by - ux * h * .45);
+  ctx.closePath(); ctx.fillStyle = color; ctx.fill();
+  ctx.lineCap = 'butt';
+}
+function tag(text, at, color, dx, dy) {
+  const [x, y] = P(at);
+  ctx.fillStyle = color; ctx.font = '600 15px KaTeX_Main, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(text, x + dx, y + dy);
+  ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic';
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  const m = M(t), x = solve(), R = Math.ceil(Math.hypot(W, H) / 2 / S) + 2;
+  for (let k = -R; k <= R; k++) { seg([k, -R], [k, R], C.rule); seg([-R, k], [R, k], C.rule); }
+  ctx.globalAlpha = .5;
+  for (let k = -3 * R; k <= 3 * R; k++) {
+    seg(ap(m, [k, -3 * R]), ap(m, [k, 3 * R]), k ? C.muted : C.text, k ? 1 : 1.6);
+    seg(ap(m, [-3 * R, k]), ap(m, [3 * R, k]), k ? C.muted : C.text, k ? 1 : 1.6);
+  }
+  ctx.globalAlpha = 1;
+  // 箭头尖走过的路：从出发点 x 到落点 b
+  seg(x, b, C.muted, 1.6, [5, 5]);
+  const [sx, sy] = P(x);
+  ctx.beginPath(); ctx.arc(sx, sy, 5, 0, 7); ctx.setLineDash([]);
+  ctx.fillStyle = C.bg; ctx.fill(); ctx.strokeStyle = C.muted; ctx.lineWidth = 2; ctx.stroke();
+  const i = [m[0], m[2]], j = [m[1], m[3]];
+  arrow(i, C.accent); arrow(j, C.blue);
+  tag('î', i, C['accent-ink'], 0, 18); tag('ĵ', j, C.blue, -14, -10);
+  arrow(ap(m, x), C.text);
+  tag('x', x, C.muted, 16, 4); tag('b', b, C.text, 20, -12);
+  knob.place();
+
+  read.innerHTML =
+    `<span>x = A⁻¹b = ${pair(x)}</span>` +
+    `<span>Ax = ${num(x[0])}·<span class="i">(2, 1)</span> + ${num(x[1])}·<span class="j">(−1, 1)</span> = ${pair(b)}</span>`;
+  range.value = Math.round(t * 1000);
+  cv.setAttribute('aria-label', `落在 b = ${pair(b)} 上的是 x = ${pair(x)}`);
+}
+
+// to = 0 倒放回变换前，to = 1 正放到变换后
+function run(to) {
+  cancelAnimationFrame(raf);
+  if (reduce) { t = to; return draw(); }
+  const from = 1 - to, t0 = performance.now() + 200;
+  const step = (now) => { const p = Math.max(0, Math.min(1, (now - t0) / 1700)); t = from + (to - from) * p; draw(); if (p < 1) raf = requestAnimationFrame(step); };
+  t = from; draw(); raf = requestAnimationFrame(step);
+}
+
+const knob = (() => {
+  const el = document.createElement('button');
+  el.type = 'button'; el.className = 'knob'; el.setAttribute('aria-label', '落点 b：拖动或用方向键移动');
+  stage.append(el);
+  const take = (p) => { cancelAnimationFrame(raf); t = 1; b = snap(p); draw(); };
+  const move = (e) => { const r = cv.getBoundingClientRect(); take(U(e.clientX - r.left, e.clientY - r.top)); };
+  el.addEventListener('pointerdown', (e) => { el.setPointerCapture(e.pointerId); el.onpointermove = move; });
+  el.addEventListener('pointerup', () => { el.onpointermove = null; });
+  el.addEventListener('pointercancel', () => { el.onpointermove = null; });
+  el.addEventListener('keydown', (e) => {
+    const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[e.key];
+    if (!d) return;
+    e.preventDefault();
+    const s = e.shiftKey ? 1 : .1;
+    take([b[0] + d[0] * s, b[1] + d[1] * s]);
+  });
+  return { place() { const [x, y] = P(b); el.style.transform = `translate(${x}px, ${y}px)`; } };
+})();
+
+root.querySelector('.back').addEventListener('click', () => run(0));
+root.querySelector('.fwd').addEventListener('click', () => run(1));
 range.addEventListener('input', () => { cancelAnimationFrame(raf); t = range.value / 1000; draw(); });
 
 function size() {
@@ -427,563 +1011,50 @@ function size() {
   ctx.setTransform(r, 0, 0, r, 0, 0);
 }
 theme();
-root.querySelectorAll('[data-p]').forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.p) === cur)));
 window.addEventListener('themechange', () => { theme(); draw(); });
 new ResizeObserver(() => { size(); draw(); }).observe(stage);
-new IntersectionObserver(([e], o) => { if (e.isIntersecting) { o.disconnect(); play(); } }, { threshold: .6 }).observe(stage);
 </script>
 ```
 
-每个变换看完，留意两件事。一是网格线始终是直的、平行的、等距的，原点一直没动。二是黑色的 $\mathbf{v}$ 走的虚线：先沿新的 $\hat\imath$ 走 1 份，再沿新的 $\hat\jmath$ 走 2 份。$\mathbf{v}$ 原来的配方是 $(1,2)$，变换之后配方没变，变的是配料。
+倒放到头，箭头停在 $(1,2)$：$x=1$，$y=2$。
 
-这就是矩阵乘向量的真实含义：
-
-$$
-\begin{bmatrix}a&b\\c&d\end{bmatrix}\begin{bmatrix}x\\y\end{bmatrix}
-=x\begin{bmatrix}a\\c\end{bmatrix}+y\begin{bmatrix}b\\d\end{bmatrix}
-=\begin{bmatrix}ax+by\\cx+dy\end{bmatrix}.
-$$
-
-**拿 $\mathbf{v}$ 的坐标当配方，把 $A$ 的各列混起来。** 课本上“第一行点乘向量得第一个分量”的算法，是同一堆乘法换了个分组方式；按列来看，才看得出它在干什么。
-
-镜像那个例子值得多看一眼：播放到一半，整张平面被压成了一条斜线，然后才翻过去。把一张纸翻面，中途总有一刻它是侧着的。这个“压扁”后面讲行列式时还会出现。
-
-### 矩阵是函数存下来的那张表
-
-用代码说一遍。向量是一组数，矩阵按列存，`A[j]` 就是第 $j$ 个基向量的落点：
-
-```ts title="linear.ts"
-type Vec = number[];
-type Mat = Vec[]; // 按列存：A[j] 是第 j 个基向量的落点
-
-const add = (u: Vec, v: Vec): Vec => u.map((x, i) => x + v[i]);
-const scale = (c: number, v: Vec): Vec => v.map((x) => c * x);
-const basis = (n: number): Vec[] =>
-  Array.from({ length: n }, (_, j) => Array.from({ length: n }, (_, i) => (i === j ? 1 : 0)));
-
-// 表 → 函数：拿 v 的坐标当配方，把 A 的各列混起来
-const apply = (A: Mat) => (v: Vec): Vec =>
-  A.map((col, j) => scale(v[j], col)).reduce(add);
-
-// 函数 → 表：只问它每个基向量去了哪
-const tabulate = (f: (v: Vec) => Vec, n: number): Mat => basis(n).map(f);
-```
-
-`tabulate` 把一个函数变成一张表，`apply` 把表变回函数。拿逆时针转 90° 试试：
-
-```ts
-const rotate = ([x, y]: Vec): Vec => [-y, x];
-
-tabulate(rotate, 2);                // î 去了 (0, 1)，ĵ 去了 (-1, 0)
-apply(tabulate(rotate, 2))([3, 2]); // [-2, 3]，和 rotate([3, 2]) 一样
-```
-
-函数定义在无穷多个输入上，表只有 $n$ 列。能压缩成这样，全靠线性：只要 $f$ 守那两条规矩，`apply(tabulate(f, n))` 和 $f$ 在每个输入上都给出同样的结果。
-
-换一个不守规矩的函数，表就不够用了：
-
-```ts
-const square = ([x, y]: Vec): Vec => [x * x, y];
-
-apply(tabulate(square, 2))([3, 2]); // [3, 2]
-square([3, 2]);                     // [9, 2]
-```
-
-知道 $f(\hat\imath)$ 和 $f(\hat\jmath)$，推不出 $f(3\hat\imath+2\hat\jmath)$。线性函数之所以能被一个矩阵记住，是因为它对配方是透明的：输入怎么配，输出就怎么配。
-
-所以说矩阵是函数，不只是打比方。一个 $m\times n$ 的矩阵，和一个从 $\mathbb{R}^n$ 到 $\mathbb{R}^m$ 的线性函数，是同一个东西的两种存法。
-
-## 矩阵乘法：先做一个，再做一个
-
-先用 $B$ 变换一次，再用 $A$ 变换一次。两次接连做，网格线依旧是直的、平行等距的，原点依旧不动，所以合起来还是一个线性变换，也就有自己的矩阵。把它记作 $AB$。
-
-它的每一列怎么求？还是只问基向量去了哪。$\hat\imath$ 先被 $B$ 送到 $B$ 的第一列，再被 $A$ 送到“$A$ 作用在 $B$ 的第一列上”的位置。$\hat\jmath$ 同理。于是：
-
-> [!IMPORTANT]
-> $AB$ 的第 $j$ 列，等于 $A$ 作用在 $B$ 的第 $j$ 列上。
-
-拿开头那道题验证。$B$ 的第一列是 $(5,7)$，用它当配方去混 $A$ 的两列：
+倒放也是一个变换，网格照样是直的、等距的，原点没动。它把每个落点送回出发点，叫 $A$ 的**逆矩阵**，记作 $A^{-1}$：
 
 $$
-5\begin{bmatrix}1\\3\end{bmatrix}+7\begin{bmatrix}2\\4\end{bmatrix}=\begin{bmatrix}19\\43\end{bmatrix},
-\qquad
-6\begin{bmatrix}1\\3\end{bmatrix}+8\begin{bmatrix}2\\4\end{bmatrix}=\begin{bmatrix}22\\50\end{bmatrix}.
+A^{-1}A=I,\qquad \mathbf{x}=A^{-1}\mathbf{b}
 $$
 
-正是 $\begin{bmatrix}19&22\\43&50\end{bmatrix}$ 的两列。“行乘列”的规则就是这么来的：结果第 $i$ 行第 $j$ 列那个数，是 $A$ 作用在 $B$ 第 $j$ 列上之后的第 $i$ 个分量，按行去算它，恰好是 $A$ 的第 $i$ 行和 $B$ 的第 $j$ 列对应相乘再相加。规则不是规定出来的，是从“接连做两次变换”推出来的。
+先做 $A$ 再做 $A^{-1}$，等于什么都没做。两步接着做的变换，倒放要反着来：$(AB)^{-1}=B^{-1}A^{-1}$。穿的时候先袜子后鞋，脱的时候先鞋后袜子。
 
-写成代码，矩阵乘法就是函数复合，再存成表：
-
-```ts
-const compose = <A, B, C>(f: (b: B) => C, g: (a: A) => B) => (x: A): C => f(g(x));
-
-const mul = (A: Mat, B: Mat): Mat => tabulate(compose(apply(A), apply(B)), B.length);
-```
-
-展开 `tabulate` 会发现，它就是把 `apply(A)` 作用到 $B$ 的每一列上：`B.map(apply(A))`。
-
-$AB$ 的写法也要从右往左读，和 $f(g(x))$ 一样：先做 $B$，再做 $A$。
-
-顺序到底要不要紧，看一个例子。$R$ 是逆时针转 90°，$S$ 是向右剪切。对一个字母 F 分别试两种顺序：
-
-```render html title="先剪切再旋转，和先旋转再剪切"
-<style>
-  .la { --blue: #356f9b; --blue-soft: rgb(53 111 155 / .14); font-size: 13px; line-height: 1.5; font-variant-ligatures: none; }
-  :root[data-theme="dark"] .la { --blue: #95bfdc; --blue-soft: rgb(149 191 220 / .16); }
-  .bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 18px; }
-  .seg { display: flex; flex-wrap: wrap; gap: 0 16px; }
-  .seg button { min-height: 38px; padding: 4px 0; border: 0; border-bottom: 2px solid var(--rule); background: none; color: var(--muted); font-size: 14px; cursor: pointer; }
-  .seg button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
-  .key { min-height: 36px; padding: 0 14px; border: 1px solid var(--rule-strong); border-radius: 6px; background: var(--bg-raised); box-shadow: 0 2px 0 var(--rule); color: var(--text); font-size: 13px; cursor: pointer; }
-  .key:hover { border-color: var(--text); }
-  canvas { display: block; width: 100%; margin-top: 10px; }
-  .steps { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 6px; font: 13px var(--font-mono); }
-  .steps .st { display: inline-flex; align-items: center; gap: 6px; color: var(--faint); transition: color .2s; }
-  .steps .st.on { color: var(--text); }
-  .steps .st small { font: 12px var(--font-sans); }
-  .m { display: inline-grid; grid-auto-flow: column; grid-template-rows: auto auto; gap: 0 12px; position: relative; padding: 0 9px; text-align: right; line-height: 1.5; }
-  .m::before, .m::after { content: ""; position: absolute; top: 1px; bottom: 1px; width: 5px; border: 1.5px solid currentColor; }
-  .m::before { left: 0; border-right: 0; } .m::after { right: 0; border-left: 0; }
-  .track { margin: 6px 0 0; color: var(--muted); font: 13px var(--font-mono); }
-  .track .i { color: var(--accent-ink); } .track .j { color: var(--blue); }
-</style>
-<section class="la" aria-label="同样两个变换，换个顺序，结果不同">
-  <div class="bar">
-    <div class="seg" role="group" aria-label="顺序">
-      <button type="button" data-o="0" aria-pressed="true">先剪切，再旋转</button>
-      <button type="button" data-o="1" aria-pressed="false">先旋转，再剪切</button>
-    </div>
-    <button type="button" class="key play">播放</button>
-  </div>
-  <canvas role="img"></canvas>
-  <div class="steps"></div>
-  <p class="track"></p>
-</section>
-<script>
-const root = document.querySelector('.la');
-const cv = root.querySelector('canvas'), ctx = cv.getContext('2d');
-const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const C = {};
-let W = 0, H = 0, S = 40, t = 2, raf = 0, order = 0;
-
-const Rm = { name: 'R', m: [0, -1, 1, 0], rot: Math.PI / 2, say: '旋转' };
-const Sm = { name: 'S', m: [1, 1, 0, 1], say: '剪切' };
-const F = [[0, 0], [0, 2], [1.3, 2], [1.3, 1.6], [.45, 1.6], [.45, 1.18], [1.05, 1.18], [1.05, .78], [.45, .78], [.45, 0]];
-
-const theme = () => { const s = getComputedStyle(root); for (const k of ['text', 'muted', 'faint', 'rule', 'rule-strong', 'accent', 'accent-ink', 'accent-soft', 'bg', 'blue', 'blue-soft']) C[k] = s.getPropertyValue(`--${k}`).trim(); };
-const P = ([x, y]) => [W / 2 + x * S, H / 2 - y * S];
-const ap = (m, [x, y]) => [m[0] * x + m[1] * y, m[2] * x + m[3] * y];
-const mm = (a, b) => [a[0] * b[0] + a[1] * b[2], a[0] * b[1] + a[1] * b[3], a[2] * b[0] + a[3] * b[2], a[2] * b[1] + a[3] * b[3]];
-const ease = (x) => x * x * (3 - 2 * x);
-const num = (x) => String(Math.round(x * 100) / 100 || 0).replace('-', '−');
-const vec = ([x, y]) => `(${num(x)}, ${num(y)})`;
-
-function part(T, e) {
-  if (T.rot) { const c = Math.cos(T.rot * e), s = Math.sin(T.rot * e); return [c, -s, s, c]; }
-  return [1 + (T.m[0] - 1) * e, T.m[1] * e, T.m[2] * e, 1 + (T.m[3] - 1) * e];
-}
-const seq = () => (order ? [Rm, Sm] : [Sm, Rm]);
-// t 在 [0, 1] 做第一步，[1, 2] 做第二步
-function M(t) {
-  const [a, b] = seq();
-  return t <= 1 ? part(a, ease(t)) : mm(part(b, ease(t - 1)), a.m);
-}
-
-function seg(a, b, color, w = 1, dash = []) {
-  const [x1, y1] = P(a), [x2, y2] = P(b);
-  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
-  ctx.strokeStyle = color; ctx.lineWidth = w; ctx.setLineDash(dash); ctx.stroke();
-}
-function arrow(to, color, w = 2.6, from = [0, 0]) {
-  const [x1, y1] = P(from), [x2, y2] = P(to), L = Math.hypot(x2 - x1, y2 - y1);
-  if (L < 2) return;
-  const ux = (x2 - x1) / L, uy = (y2 - y1) / L, h = Math.min(12, L * .5), bx = x2 - ux * h, by = y2 - uy * h;
-  ctx.setLineDash([]); ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(bx, by); ctx.strokeStyle = color; ctx.lineWidth = w; ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(bx - uy * h * .45, by + ux * h * .45); ctx.lineTo(bx + uy * h * .45, by - ux * h * .45);
-  ctx.closePath(); ctx.fillStyle = color; ctx.fill();
-}
-function grid(m, color, axis) {
-  const R = Math.ceil(Math.hypot(W, H) / 2 / S) * 3;
-  for (let k = -R; k <= R; k++) {
-    seg(ap(m, [k, -R]), ap(m, [k, R]), k ? color : axis, k ? 1 : 1.6);
-    seg(ap(m, [-R, k]), ap(m, [R, k]), k ? color : axis, k ? 1 : 1.6);
-  }
-}
-const mat = (m) => `<span class="m">${[m[0], m[2], m[1], m[3]].map((x) => `<span>${num(x)}</span>`).join('')}</span>`;
-
-function draw() {
-  ctx.clearRect(0, 0, W, H);
-  const m = M(t), R = Math.ceil(Math.hypot(W, H) / 2 / S) + 1;
-  for (let k = -R; k <= R; k++) { seg([k, -R], [k, R], C.rule); seg([-R, k], [R, k], C.rule); }
-  ctx.globalAlpha = .5; grid(m, C.muted, C.text); ctx.globalAlpha = 1;
-  // 原来的 F 留一个虚影
-  const path = (pts) => { ctx.beginPath(); pts.forEach((p, k) => { const [x, y] = P(p); k ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); ctx.closePath(); };
-  path(F); ctx.setLineDash([4, 4]); ctx.strokeStyle = C.faint; ctx.lineWidth = 1.2; ctx.stroke(); ctx.setLineDash([]);
-  path(F.map((p) => ap(m, p)));
-  ctx.fillStyle = C['accent-soft']; ctx.fill(); ctx.strokeStyle = C.accent; ctx.lineWidth = 2; ctx.stroke();
-  arrow([m[0], m[2]], C.accent); arrow([m[1], m[3]], C.blue);
-
-  const [a, b] = seq(), prod = mm(b.m, a.m), stage = t <= 0 ? -1 : t <= 1 ? 0 : t < 2 ? 1 : 2;
-  root.querySelector('.steps').innerHTML =
-    `<span class="st${stage === 0 ? ' on' : ''}"><small>第一步 ${a.say}</small>${a.name} = ${mat(a.m)}</span>` +
-    `<span class="st${stage === 1 ? ' on' : ''}"><small>第二步 ${b.say}</small>${b.name} = ${mat(b.m)}</span>` +
-    `<span class="st${stage === 2 ? ' on' : ''}"><small>合起来</small>${b.name}${a.name} = ${mat(prod)}</span>`;
-  const i1 = [a.m[0], a.m[2]], j1 = [a.m[1], a.m[3]];
-  root.querySelector('.track').innerHTML =
-    `<span class="i">î：(1, 0) → ${vec(i1)} → ${vec(ap(b.m, i1))}</span><br><span class="j">ĵ：(0, 1) → ${vec(j1)} → ${vec(ap(b.m, j1))}</span>`;
-  cv.setAttribute('aria-label', `先${a.say}再${b.say}，合起来的矩阵第一列 ${vec([prod[0], prod[2]])}，第二列 ${vec([prod[1], prod[3]])}`);
-}
-
-function play() {
-  cancelAnimationFrame(raf);
-  if (reduce) { t = 2; return draw(); }
-  const t0 = performance.now() + 250;
-  // 两步之间停一下，看清中间状态
-  const step = (now) => { const k = (now - t0) / 1300; t = k < 1 ? Math.max(0, k) : k < 1.35 ? 1 : Math.min(2, k - .35); draw(); if (t < 2) raf = requestAnimationFrame(step); };
-  t = 0; draw(); raf = requestAnimationFrame(step);
-}
-root.querySelectorAll('[data-o]').forEach((btn) => btn.addEventListener('click', () => {
-  order = Number(btn.dataset.o);
-  root.querySelectorAll('[data-o]').forEach((x) => x.setAttribute('aria-pressed', String(x === btn)));
-  play();
-}));
-root.querySelector('.play').addEventListener('click', play);
-
-function size() {
-  W = cv.clientWidth; H = Math.round(Math.max(240, Math.min(320, W * .5)));
-  S = H / 7;
-  const r = devicePixelRatio;
-  cv.width = W * r; cv.height = H * r; cv.style.height = `${H}px`;
-  ctx.setTransform(r, 0, 0, r, 0, 0);
-}
-theme();
-window.addEventListener('themechange', () => { theme(); draw(); });
-new ResizeObserver(() => { size(); draw(); }).observe(cv);
-new IntersectionObserver(([e], o) => { if (e.isIntersecting) { o.disconnect(); play(); } }, { threshold: .6 }).observe(cv);
-</script>
-```
-
-两种顺序，F 最后躺的姿势不一样，合起来的矩阵也不一样：
+二阶的逆有现成的式子：
 
 $$
-RS=\begin{bmatrix}0&-1\\1&1\end{bmatrix},\qquad SR=\begin{bmatrix}1&-1\\1&0\end{bmatrix}.
+\begin{bmatrix}a&b\\c&d\end{bmatrix}^{-1}=\frac{1}{ad-bc}\begin{bmatrix}d&-b\\-c&a\end{bmatrix}
 $$
 
-图下面跟踪了 $\hat\imath$、$\hat\jmath$ 的两段旅程，终点就是合起来那个矩阵的两列。用这种方法，不用背规则也能算出任何两个矩阵的乘积。
+前面的 $\frac{1}{ad-bc}$ 是把面积缩回去：$A$ 把面积放大了 $\det A$ 倍，倒放就得缩小同样的倍数。$\det A=0$ 时这一项没法算，逆矩阵不存在。平面压扁以后，挤在同一个点上的那些向量各自从哪来，已经分不清了。
 
-从“函数复合”出发，矩阵乘法的性质几乎都不用证：
+把 $\mathbf{b}$ 拖到别处，出发点跟着变，但始终只有一个。没被压扁的变换，每个落点都有唯一的来处。
 
-- **不能交换。** 先穿袜子再穿鞋，和先穿鞋再穿袜子，不是一回事。
-- **满足结合律。** $(AB)C$ 和 $A(BC)$ 都是先做 $C$，再做 $B$，最后做 $A$，括号只决定先把哪两个合成一张表。用下标求和去证，要写半页 $\sum$；用函数看，一句话。
-- **单位矩阵 $I$ 是什么也不做的函数**，`x => x`。
+### 同一个方程，三种读法
 
-### 形状就是类型签名
-
-一个 $m\times n$ 的矩阵有 $n$ 列，每列 $m$ 个数：它吃 $n$ 维向量，吐 $m$ 维向量，是一个 $\mathbb{R}^n\to\mathbb{R}^m$ 的函数。
-
-两个矩阵能不能相乘，就是两个函数能不能复合：
+按行读，是两条直线求交点。按变换读，是找落在 $\mathbf{b}$ 上的那个 $\mathbf{x}$。还可以按列读：$A\mathbf{x}$ 是拿 $x$、$y$ 当配方去混 $A$ 的两列，所以方程也在问，这两列怎么配才能配出 $\mathbf{b}$。
 
 $$
-\underbrace{A}_{p\times m}\;\underbrace{B}_{m\times n}=\underbrace{AB}_{p\times n}
-\qquad\Longleftrightarrow\qquad
-(\mathbb{R}^m\to\mathbb{R}^p)\circ(\mathbb{R}^n\to\mathbb{R}^m)=(\mathbb{R}^n\to\mathbb{R}^p).
+1\begin{bmatrix}2\\1\end{bmatrix}+2\begin{bmatrix}-1\\1\end{bmatrix}=\begin{bmatrix}0\\3\end{bmatrix}
 $$
 
-$B$ 吐出来的是 $m$ 维，$A$ 吃进去的也得是 $m$ 维。中间那两个数对不上，就是类型错误。“左边的列数等于右边的行数”这条规定，本来就是在做类型检查。
+这两列就是讲基那张图里的橙色和蓝色箭头。回去把那张图的 $\mathbf{v}$ 拖到 $(0,3)$，底下读出来的配方正是 $(1,2)$。那张图一直在解方程组：**解 $A\mathbf{x}=\mathbf{b}$，就是求 $\mathbf{b}$ 在“$A$ 的各列”这组基下的坐标。**
 
-### 同一个乘法，四种看法
+真要解方程组，很少先求出 $A^{-1}$ 再去乘。高斯消元的每一步——把一行的若干倍加到另一行、给某一行乘个数、交换两行——各是一个简单的变换：剪切、伸缩、镜像。一步步做到 $A$ 变成 $I$，同样的步骤用在 $\mathbf{b}$ 上，$\mathbf{b}$ 就变成了解。这些小步骤接起来正好是 $A^{-1}$，消元是把倒放拆成一小步一小步来做。
 
-矩阵乘法里那 $n^3$ 次乘法，可以有四种分组方式，每种对应一个视角。设 $A$ 的列是 $\mathbf{a}_k$、行是 $\mathbf{r}_i^\top$，$B$ 的列是 $\mathbf{b}_j$、行是 $\mathbf{s}_k^\top$：
+## 秩、列空间、零空间：压扁以后
 
-| 看法 | 写法 | 它在说什么 |
-| --- | --- | --- |
-| 按列 | $AB=\begin{bmatrix}A\mathbf{b}_1&\cdots&A\mathbf{b}_n\end{bmatrix}$ | $A$ 作用在 $B$ 的每一列上，就是复合 |
-| 按行 | 第 $i$ 行 $=\mathbf{r}_i^\top B$ | 用 $A$ 的一行当配方，去混 $B$ 的各行 |
-| 按元素 | $(AB)_{ij}=\mathbf{r}_i\cdot\mathbf{b}_j$ | 课本上的行乘列，适合算单个数 |
-| 按外积 | $AB=\sum_k \mathbf{a}_k\,\mathbf{s}_k^\top$ | 拆成若干个“一列乘一行”的叠加 |
+$\det A=0$ 的变换倒不回去，因为它丢了东西。丢的是什么，拿 $A=\begin{bmatrix}2&4\\1&2\end{bmatrix}$ 来看。它的第二列正好是第一列的两倍。
 
-按行看，是高斯消元的视角：左乘一个矩阵，就是对右边矩阵的行做组合。按外积看，每一项 $\mathbf{a}_k\mathbf{s}_k^\top$ 都是一个最简单的矩阵，所有列都是同一个向量的倍数。这种“一层一层叠起来”的看法，到奇异值分解时会变成主角。
+两列共线，怎么配都出不了 $(2,1)$ 所在的那条直线。播放一遍，再把 $\mathbf{b}$ 从虚线上拖开：
 
-## 行列式：面积被放大了几倍
-
-$\hat\imath$ 和 $\hat\jmath$ 围出一个面积为 1 的单位正方形。变换之后，它变成以 $A$ 的两列为边的平行四边形。
-
-网格变换后依旧平行、等距，所以平面上每一个小方格都变成了同样大小的平行四边形。任何形状都能用足够小的方格去拼，于是**所有形状的面积，都被放大了同一个倍数**。这个倍数就是行列式 $\det A$。
-
-拖动 $\hat\imath$、$\hat\jmath$ 的落点，看平行四边形的面积；试试把 $\hat\jmath$ 拖到 $\hat\imath$ 的右手边：
-
-```render html title="行列式：单位正方形变成了多大的平行四边形"
-<style>
-  .la { --blue: #356f9b; --blue-soft: rgb(53 111 155 / .16); font-size: 13px; line-height: 1.5; font-variant-ligatures: none; }
-  :root[data-theme="dark"] .la { --blue: #95bfdc; --blue-soft: rgb(149 191 220 / .18); }
-  .bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 18px; }
-  .seg { display: flex; flex-wrap: wrap; gap: 0 16px; }
-  .seg button { min-height: 38px; padding: 4px 0; border: 0; border-bottom: 2px solid var(--rule); background: none; color: var(--muted); font-size: 14px; cursor: pointer; }
-  .seg button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
-  .key { min-height: 36px; padding: 0 14px; border: 1px solid var(--rule-strong); border-radius: 6px; background: var(--bg-raised); box-shadow: 0 2px 0 var(--rule); color: var(--text); font-size: 13px; cursor: pointer; }
-  .key:hover { border-color: var(--text); }
-  .stage { position: relative; margin-top: 10px; }
-  .stage canvas { display: block; width: 100%; touch-action: pan-y; }
-  .knob { position: absolute; left: 0; top: 0; width: 32px; height: 32px; margin: -16px 0 0 -16px; padding: 0; border: 0; border-radius: 50%; background: none; cursor: grab; touch-action: none; }
-  .knob::after { content: ""; position: absolute; inset: 9px; border: 2px solid currentColor; border-radius: 50%; background: var(--bg); }
-  .knob.i { color: var(--accent); } .knob.j { color: var(--blue); }
-  .knob:active { cursor: grabbing; }
-  .knob:focus-visible { outline: 2px solid var(--accent); outline-offset: 0; }
-  .read { margin: 6px 0 0; font: 14px var(--font-mono); }
-  .read b { font-weight: 650; }
-  .read .pos { color: var(--accent-ink); } .read .neg { color: var(--blue); }
-  .note { margin: 2px 0 0; min-height: 1.5em; color: var(--muted); }
-</style>
-<section class="la" aria-label="拖动 î、ĵ 的落点，观察单位正方形的面积和朝向">
-  <div class="bar">
-    <div class="seg" role="group" aria-label="例子">
-      <button type="button" data-p="0" aria-pressed="true">放大</button>
-      <button type="button" data-p="1" aria-pressed="false">剪切</button>
-      <button type="button" data-p="2" aria-pressed="false">翻面</button>
-      <button type="button" data-p="3" aria-pressed="false">压扁</button>
-    </div>
-    <button type="button" class="key play">播放</button>
-  </div>
-  <div class="stage"><canvas role="img"></canvas></div>
-  <p class="read"></p>
-  <p class="note" aria-live="polite"></p>
-</section>
-<script>
-const root = document.querySelector('.la');
-const stage = root.querySelector('.stage'), cv = stage.querySelector('canvas'), ctx = cv.getContext('2d');
-const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const C = {};
-let W = 0, H = 0, S = 40, t = 1, raf = 0;
-const presets = [[2, 1, 0, 1.5], [1, 1, 0, 1], [.5, 1.5, 1.5, .5], [1, 2, .5, 1]];
-let A = presets[0].slice();
-
-const theme = () => { const s = getComputedStyle(root); for (const k of ['text', 'muted', 'faint', 'rule', 'rule-strong', 'accent', 'accent-ink', 'accent-soft', 'bg', 'blue', 'blue-soft']) C[k] = s.getPropertyValue(`--${k}`).trim(); };
-const P = ([x, y]) => [W / 2 + x * S, H / 2 - y * S];
-const U = (px, py) => [(px - W / 2) / S, (H / 2 - py) / S];
-const ap = (m, [x, y]) => [m[0] * x + m[1] * y, m[2] * x + m[3] * y];
-const ease = (x) => x * x * (3 - 2 * x);
-const num = (x) => String(Math.round(x * 100) / 100 || 0).replace('-', '−');
-const snap = (p) => p.map((q, k) => { const lim = (k ? H : W) / 2 / S - .4, r = Math.round(q), s = Math.abs(q - r) < .15 ? r : Math.round(q * 10) / 10; return Math.max(-lim, Math.min(lim, s)); });
-const M = (t) => { const e = ease(t); return [1 + (A[0] - 1) * e, A[1] * e, A[2] * e, 1 + (A[3] - 1) * e]; };
-
-function seg(a, b, color, w = 1, dash = []) {
-  const [x1, y1] = P(a), [x2, y2] = P(b);
-  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
-  ctx.strokeStyle = color; ctx.lineWidth = w; ctx.setLineDash(dash); ctx.stroke();
-}
-function arrow(to, color, w = 2.6, from = [0, 0]) {
-  const [x1, y1] = P(from), [x2, y2] = P(to), L = Math.hypot(x2 - x1, y2 - y1);
-  if (L < 2) return;
-  const ux = (x2 - x1) / L, uy = (y2 - y1) / L, h = Math.min(12, L * .5), bx = x2 - ux * h, by = y2 - uy * h;
-  ctx.setLineDash([]); ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(bx, by); ctx.strokeStyle = color; ctx.lineWidth = w; ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(bx - uy * h * .45, by + ux * h * .45); ctx.lineTo(bx + uy * h * .45, by - ux * h * .45);
-  ctx.closePath(); ctx.fillStyle = color; ctx.fill();
-}
-function label(text, at, color, from = [0, 0]) {
-  const [x, y] = P(at), [ox, oy] = P(from), L = Math.hypot(x - ox, y - oy) || 1;
-  ctx.fillStyle = color; ctx.font = '600 15px KaTeX_Main, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText(text, x + (x - ox) / L * 22, y + (y - oy) / L * 22);
-  ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic';
-}
-function grid(m, color, axis) {
-  const R = Math.ceil(Math.hypot(W, H) / 2 / S) * 3;
-  for (let k = -R; k <= R; k++) {
-    seg(ap(m, [k, -R]), ap(m, [k, R]), k ? color : axis, k ? 1 : 1.6);
-    seg(ap(m, [-R, k]), ap(m, [R, k]), k ? color : axis, k ? 1 : 1.6);
-  }
-}
-
-function draw() {
-  ctx.clearRect(0, 0, W, H);
-  const m = M(t), i = [m[0], m[2]], j = [m[1], m[3]], det = m[0] * m[3] - m[1] * m[2];
-  const R = Math.ceil(Math.hypot(W, H) / 2 / S) + 1;
-  for (let k = -R; k <= R; k++) { seg([k, -R], [k, R], C.rule); seg([-R, k], [R, k], C.rule); }
-  ctx.globalAlpha = .45; grid(m, C.muted, C.text); ctx.globalAlpha = 1;
-
-  const flat = Math.abs(det) < .005;
-  const sq = [[0, 0], i, [i[0] + j[0], i[1] + j[1]], j].map(P);
-  ctx.beginPath(); sq.forEach(([x, y], k) => (k ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.closePath();
-  ctx.fillStyle = det >= 0 ? C['accent-soft'] : C['blue-soft']; ctx.fill();
-  ctx.strokeStyle = flat ? C.text : det >= 0 ? C.accent : C.blue; ctx.lineWidth = flat ? 2.4 : 1.2; ctx.setLineDash([]); ctx.stroke();
-
-  // 从 î 转到 ĵ 的方向：逆时针是正，顺时针是负
-  const ai = Math.atan2(i[1], i[0]), aj = Math.atan2(j[1], j[0]);
-  let sw = aj - ai; while (sw > Math.PI) sw -= 2 * Math.PI; while (sw <= -Math.PI) sw += 2 * Math.PI;
-  if (!flat && Math.hypot(...i) > .3 && Math.hypot(...j) > .3) {
-    const [ox, oy] = P([0, 0]), r = .55 * S, end = ai + sw * .92, col = det > 0 ? C['accent-ink'] : C.blue;
-    ctx.beginPath(); ctx.arc(ox, oy, r, -ai, -end, sw > 0); ctx.strokeStyle = col; ctx.lineWidth = 1.6; ctx.stroke();
-    const ex = ox + r * Math.cos(end), ey = oy - r * Math.sin(end), s = Math.sign(sw), tx = -Math.sin(end) * s, ty = -Math.cos(end) * s;
-    ctx.beginPath(); ctx.moveTo(ex + tx * 7, ey + ty * 7); ctx.lineTo(ex - ty * 4, ey + tx * 4); ctx.lineTo(ex + ty * 4, ey - tx * 4); ctx.closePath(); ctx.fillStyle = col; ctx.fill();
-  }
-  if (!flat) {
-    const c = P([(i[0] + j[0]) / 2, (i[1] + j[1]) / 2]);
-    ctx.fillStyle = det >= 0 ? C['accent-ink'] : C.blue; ctx.font = '600 15px JetBrains Mono Variable, monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(num(det), c[0], c[1]); ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic';
-  }
-  arrow(i, C.accent); arrow(j, C.blue);
-  label('î', i, C['accent-ink']); label('ĵ', j, C.blue);
-  knobs.forEach((k) => k.place());
-
-  const cls = det > .005 ? 'pos' : det < -.005 ? 'neg' : '';
-  root.querySelector('.read').innerHTML = `det = ${num(m[0])}·${num(m[3])} − ${num(m[1])}·${num(m[2])} = <b class="${cls}">${num(det)}</b>`;
-  root.querySelector('.note').textContent = flat
-    ? '面积是 0：整个平面被压成了一条线（或一个点）。'
-    : det > 0
-      ? `面积放大到 ${num(det)} 倍；从 î 到 ĵ 仍是逆时针。`
-      : `面积放大到 ${num(-det)} 倍，但平面翻了个面：从 î 到 ĵ 变成了顺时针，所以带负号。`;
-  cv.setAttribute('aria-label', `行列式 ${num(det)}`);
-}
-
-function play() {
-  cancelAnimationFrame(raf);
-  if (reduce) { t = 1; return draw(); }
-  const t0 = performance.now() + 250;
-  const step = (now) => { t = Math.max(0, Math.min(1, (now - t0) / 1500)); draw(); if (t < 1) raf = requestAnimationFrame(step); };
-  t = 0; draw(); raf = requestAnimationFrame(step);
-}
-function knob(cls, name, get, set) {
-  const b = document.createElement('button');
-  b.type = 'button'; b.className = `knob ${cls}`; b.setAttribute('aria-label', `${name}：拖动或用方向键移动`);
-  stage.append(b);
-  const take = (p) => { cancelAnimationFrame(raf); t = 1; set(p); root.querySelectorAll('[data-p]').forEach((x) => x.setAttribute('aria-pressed', 'false')); draw(); };
-  const move = (e) => { const r = cv.getBoundingClientRect(); take(snap(U(e.clientX - r.left, e.clientY - r.top))); };
-  b.addEventListener('pointerdown', (e) => { b.setPointerCapture(e.pointerId); b.onpointermove = move; });
-  b.addEventListener('pointerup', () => { b.onpointermove = null; });
-  b.addEventListener('keydown', (e) => {
-    const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[e.key];
-    if (!d) return;
-    e.preventDefault();
-    const s = e.shiftKey ? 1 : .1, p = get();
-    take(snap([p[0] + d[0] * s, p[1] + d[1] * s]));
-  });
-  return { place() { const [x, y] = P(get()); b.style.transform = `translate(${x}px, ${y}px)`; } };
-}
-const knobs = [
-  knob('i', 'î 的落点', () => { const m = M(t); return [m[0], m[2]]; }, (p) => { A[0] = p[0]; A[2] = p[1]; }),
-  knob('j', 'ĵ 的落点', () => { const m = M(t); return [m[1], m[3]]; }, (p) => { A[1] = p[0]; A[3] = p[1]; }),
-];
-root.querySelectorAll('[data-p]').forEach((btn) => btn.addEventListener('click', () => {
-  A = presets[Number(btn.dataset.p)].slice();
-  root.querySelectorAll('[data-p]').forEach((x) => x.setAttribute('aria-pressed', String(x === btn)));
-  play();
-}));
-root.querySelector('.play').addEventListener('click', play);
-
-function size() {
-  W = cv.clientWidth; H = Math.round(Math.max(260, Math.min(360, W * .58)));
-  S = H / 7;
-  const r = devicePixelRatio;
-  cv.width = W * r; cv.height = H * r; cv.style.height = `${H}px`;
-  ctx.setTransform(r, 0, 0, r, 0, 0);
-}
-theme();
-window.addEventListener('themechange', () => { theme(); draw(); });
-new ResizeObserver(() => { size(); draw(); }).observe(stage);
-new IntersectionObserver(([e], o) => { if (e.isIntersecting) { o.disconnect(); play(); } }, { threshold: .6 }).observe(stage);
-</script>
-```
-
-剪切那个例子，形状歪了，面积却还是 1：底没变，高也没变。翻面那个例子，面积是 2，行列式却是 $-2$。
-
-**负号表示平面被翻了个面。** 原本从 $\hat\imath$ 逆时针转一个小角度就到 $\hat\jmath$；翻面之后，得顺时针转。就像把一张透明纸翻过来，上面的字全成了镜像。点“翻面”的播放，留意行列式从 1 一路减到 $-2$，中途必定经过 0：要翻面，平面总得先被压扁一下。
-
-三维里，行列式是单位立方体变成的平行六面体的体积；符号看右手定则：$\hat\imath$、$\hat\jmath$、$\hat k$ 变换后还满足右手定则就是正，变成左手就是负。
-
-### ad − bc 是怎么来的
-
-二维的公式可以直接从图上读出来。设 $\hat\imath$ 落到 $(a,c)$，$\hat\jmath$ 落到 $(b,d)$，用外面那个大矩形减掉周围的边角：
-
-```render svg title="(a+b)(c+d) − ac − bd − 2bc = ad − bc，图里 a=3, c=1, b=1, d=2"
-<svg viewBox="0 0 560 210" xmlns="http://www.w3.org/2000/svg" font-family="Inter Variable, sans-serif">
-  <g stroke="var(--rule-strong)" stroke-width="1.2">
-    <path d="M30 175 L165 175 L165 130 Z M75 85 L75 40 L210 40 Z" fill="var(--bg-sunken)" />
-    <path d="M30 175 L75 85 L30 85 Z M165 130 L210 130 L210 40 Z" fill="var(--bg-sunken)" />
-    <path d="M165 130 H210 V175 H165 Z M30 40 H75 V85 H30 Z" fill="var(--surface)" />
-  </g>
-  <path d="M30 175 L165 130 L210 40 L75 85 Z" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2" />
-  <rect x="30" y="40" width="180" height="135" fill="none" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="4 4" />
-  <g font-size="12" fill="var(--muted)" text-anchor="middle">
-    <text x="120" y="165">ac/2</text>
-    <text x="120" y="56">ac/2</text>
-    <text x="46" y="118">bd/2</text>
-    <text x="195" y="104">bd/2</text>
-    <text x="187" y="157">bc</text>
-    <text x="52" y="67">bc</text>
-  </g>
-  <g font-size="12" fill="var(--faint)" text-anchor="middle">
-    <text x="97" y="194">a</text>
-    <text x="187" y="194">b</text>
-    <text x="16" y="133">d</text>
-    <text x="16" y="66">c</text>
-  </g>
-  <text x="120" y="112" font-size="17" font-weight="600" fill="var(--accent-ink)" text-anchor="middle">ad − bc</text>
-  <g font-size="15" fill="currentColor" font-family="JetBrains Mono Variable, monospace">
-    <text x="262" y="78">大矩形  (a+b)(c+d)</text>
-    <text x="262" y="106">四个三角  − ac − bd</text>
-    <text x="262" y="134">两个小矩形 − 2bc</text>
-    <text x="262" y="166" fill="var(--accent-ink)" font-weight="600">剩下  ad − bc</text>
-  </g>
-</svg>
-```
-
-$(a+b)(c+d)=ac+ad+bc+bd$，减掉 $ac+bd+2bc$，剩下 $ad-bc$。图里是 $3\cdot2-1\cdot1=5$。
-
-### 性质都能从画面里读出来
-
-- **$\det(AB)=\det A\cdot\det B$。** 先放大 $\det B$ 倍，再放大 $\det A$ 倍。用公式硬证三阶的情况，要展开几十项。
-- **$\det A=0$ 意味着空间被压扁了**，二维压成线或点，三维压成面、线或点。压扁会丢信息，后面马上会看到，这时变换没法撤回。
-- **把一行的若干倍加到另一行上，行列式不变。** 这在几何上是一次剪切，剪切不改变面积。高斯消元主要就是不停地做剪切，把矩阵化成上三角，行列式等于对角线的乘积；中途遇到要交换两行，就照一次镜子，符号翻一次。计算机算行列式就是这么做的，$O(n^3)$；课本上按定义展开的公式有 $n!$ 项，二十阶就算不动了。
-
-至于三阶以上那串交错的正负号，它们是“朝向”在代数里的影子：交换两个基向量，等于照一次镜子，符号就翻一次。
-
-## 逆矩阵与 Ax = b：倒着找输入
-
-一个方程组：
-
-$$
-\begin{aligned}
-2x+y&=5\\
-x+3y&=5
-\end{aligned}
-\qquad\Longleftrightarrow\qquad
-\begin{bmatrix}2&1\\1&3\end{bmatrix}\begin{bmatrix}x\\y\end{bmatrix}=\begin{bmatrix}5\\5\end{bmatrix}.
-$$
-
-左边一行一行看，是两条直线求交点。换成变换的眼光，$A\mathbf{x}=\mathbf{b}$ 问的是：**哪个向量经过 $A$ 变换之后，正好落在 $\mathbf{b}$ 上？**
-
-再换一种说法。$A\mathbf{x}=x\,\mathbf{a}_1+y\,\mathbf{a}_2$，所以它也在问：用 $A$ 的两列当配料，怎么配才能配出 $\mathbf{b}$？答案是 $x=2$、$y=1$：
-
-$$
-2\begin{bmatrix}2\\1\end{bmatrix}+1\begin{bmatrix}1\\3\end{bmatrix}=\begin{bmatrix}5\\5\end{bmatrix}.
-$$
-
-这又绕回了开头的“坐标是配方”：**解方程组，就是求 $\mathbf{b}$ 在“$A$ 的各列”这组基下的坐标。** 第一张图其实一直在解方程组：$\mathbf{b}_1$、$\mathbf{b}_2$ 是 $A$ 的两列，$\mathbf{v}$ 是 $\mathbf{b}$，右边读出来的配方就是解。
-
-只要 $\det A\ne0$，变换没有把空间压扁，每个输出都恰好来自一个输入，变换就能撤回。撤回它的那个变换叫逆矩阵 $A^{-1}$：
-
-$$
-A^{-1}A=I,\qquad \mathbf{x}=A^{-1}\mathbf{b}.
-$$
-
-$A$ 把电影往前放，$A^{-1}$ 倒着放。写代码的说法是：一个函数有反函数，当且仅当它是一一对应的。二阶的逆矩阵有个现成公式：
-
-$$
-\begin{bmatrix}a&b\\c&d\end{bmatrix}^{-1}=\frac{1}{ad-bc}\begin{bmatrix}d&-b\\-c&a\end{bmatrix}.
-$$
-
-前面那个 $\frac{1}{ad-bc}$ 是在把面积缩回去：$A$ 放大了 $\det A$ 倍，$A^{-1}$ 就得缩小同样的倍数。$\det A=0$ 时这一项没有意义，逆矩阵也就不存在。
-
-实际计算时，很少真的去求 $A^{-1}$ 再乘 $\mathbf{b}$。高斯消元每一步都是一个简单的变换：把一行的倍数加到另一行（剪切）、某一行乘个数（伸缩）、交换两行（镜像）。不停地做，直到 $A$ 变成 $I$；同样的操作作用在 $\mathbf{b}$ 上，$\mathbf{b}$ 就变成了解。这些小变换乘起来正好是 $A^{-1}$。所以消元法还顺便说明了一件事：**任何可逆的变换，都能拆成一串剪切、伸缩和镜像。**
-
-## 秩、列空间、零空间：压扁之后剩下什么
-
-$\det A=0$ 时会发生什么？看 $A=\begin{bmatrix}2&4\\1&2\end{bmatrix}$，它的第二列正好是第一列的两倍。
-
-先选“秩 1”，点播放。再拖动 $\mathbf{b}$，看哪些输入会落到它上面：
-
-```render html title="把平面压成一条线：哪些 x 会落到 b 上"
+```render html
 <style>
   .la { --blue: #356f9b; --blue-soft: rgb(53 111 155 / .14); font-size: 13px; line-height: 1.5; font-variant-ligatures: none; }
   :root[data-theme="dark"] .la { --blue: #95bfdc; --blue-soft: rgb(149 191 220 / .16); }
@@ -1003,10 +1074,10 @@ $\det A=0$ 时会发生什么？看 $A=\begin{bmatrix}2&4\\1&2\end{bmatrix}$，�
   .scrub input { flex: 1; min-width: 0; accent-color: var(--accent); }
   .read { display: flex; flex-wrap: wrap; gap: 2px 22px; margin: 4px 0 0; font: 13px var(--font-mono); }
   .read small { color: var(--muted); font: 12px var(--font-sans); margin-right: 6px; }
-  .note { margin: 4px 0 0; min-height: 3em; color: var(--muted); }
+  .note { margin: 4px 0 0; min-height: 1.5em; color: var(--muted); font: 13px var(--font-mono); }
   .note b { color: var(--text); font-weight: 600; }
 </style>
-<section class="la" aria-label="满秩和秩 1 的矩阵，观察 b 的原像">
+<section class="la" aria-label="秩 1 的矩阵把平面压成一条线：b 在线上有无穷多解，不在线上无解">
   <div class="bar">
     <div class="seg" role="group" aria-label="矩阵">
       <button type="button" data-r="2" aria-pressed="false">满秩</button>
@@ -1090,9 +1161,9 @@ function draw() {
       if (t > 0) { ctx.globalAlpha = .6; seg(a, c, C.text, 1.6, [6, 5]); ctx.globalAlpha = 1; }
       seg(ap(m, a), ap(m, c), C.text, 3.2);
       dot(ap(m, p0), C.text);
-      note.innerHTML = `<b>无穷多个解</b>：x + 2y = ${num(k)} 这一整条线都落到 b 上。随便找一个解，比如 x₀ = ${vec(p0)}，再加上零空间里的任意向量：x = x₀ + s·(2, −1)。`;
+      note.innerHTML = `<b>无穷多解</b>　x = ${vec(p0)} + s·(2, −1)`;
     } else {
-      note.innerHTML = '<b>无解</b>：b 不在列空间那条线上，没有任何输入能落到这里。把 b 拖到虚线附近，它会吸附上去。';
+      note.innerHTML = '<b>无解</b>　b 不在列空间上';
     }
     read.innerHTML = `<span><small>秩</small>1</span><span><small>列空间</small>过 (2, 1) 的直线</span><span><small>零空间</small>过 (2, −1) 的直线</span>`;
   } else {
@@ -1100,7 +1171,7 @@ function draw() {
     const x = [(A[3] * b[0] - A[1] * b[1]) / d, (A[0] * b[1] - A[2] * b[0]) / d];
     dot(ap(m, x), C.accent, 6);
     if (t < .98) text('x', ap(m, x), C['accent-ink'], 10, -10);
-    note.innerHTML = `<b>恰好一个解</b>：x = A⁻¹b = ${vec(x)}。平面没被压扁，每个 b 都有唯一的来处。`;
+    note.innerHTML = `<b>唯一解</b>　x = ${vec(x)}`;
     read.innerHTML = `<span><small>秩</small>2</span><span><small>列空间</small>整个平面</span><span><small>零空间</small>只有原点</span>`;
   }
   dot([0, 0], C.text, 2.5);
@@ -1167,149 +1238,233 @@ new IntersectionObserver(([e], o) => { if (e.isIntersecting) { o.disconnect(); p
 </script>
 ```
 
-整个平面被压到了一条线上。这条线就是 $A$ 所有可能的输出，叫**列空间**：输出总是 $x\,\mathbf{a}_1+y\,\mathbf{a}_2$，能配出来的只有 $A$ 的各列张成的那部分。用函数的话说，列空间就是值域。
+$A$ 的输出永远是它各列的线性组合。所以全部可能的输出，就是各列张成的那块空间，叫**列空间**。把矩阵当函数看，它是值域。这里是那条虚线。
 
-列空间是几维的，叫矩阵的**秩**，也就是变换之后还剩几维。二阶矩阵秩为 2，平面还是平面；秩为 1，压成一条线；秩为 0，全压到原点，那是零矩阵。方阵的秩等于阶数，叫满秩，一个维度都没丢。
+列空间有几维，叫矩阵的**秩**，也就是变换之后空间还剩几维。二阶矩阵秩是 2，平面还是平面；秩是 1，压成一条线；秩是 0 的只有零矩阵。方阵的秩等于阶数，叫满秩，一维都没丢。图上可以切到一个满秩的矩阵对比。
 
-橙色那条线上的向量全都被压到了原点。所有 $A\mathbf{x}=\mathbf{0}$ 的 $\mathbf{x}$ 叫**零空间**，又叫核：被变换彻底抹掉的那些方向。满秩时零空间只有原点自己。
+橙线上的向量全被压到了原点。满足 $A\mathbf{x}=\mathbf{0}$ 的所有 $\mathbf{x}$ 合起来叫**零空间**，是被这个变换抹掉的方向。满秩的时候，零空间里只有原点自己。
 
-图里的蓝线是和零空间平行的其他直线，每一条都被压成了列空间上的一个点。于是 $A\mathbf{x}=\mathbf{b}$ 只有两种情况：
+蓝线都和零空间平行，每一条被压成列空间上的一个点。于是压扁之后，$A\mathbf{x}=\mathbf{b}$ 只剩两种结局：
 
-- $\mathbf{b}$ 不在列空间上：没有任何输入能到那里，**无解**。
-- $\mathbf{b}$ 在列空间上：落到 $\mathbf{b}$ 的不是一个点，是一整条线，**无穷多解**。
+- $\mathbf{b}$ 不在列空间上，没有哪个输入能落到那里，无解；
+- $\mathbf{b}$ 在列空间上，落到它上面的是一整条线，无穷多解。
 
-第二种情况的结构值得记住。如果 $A\mathbf{x}_0=\mathbf{b}$，$\mathbf{n}$ 在零空间里，那么
+第二种情况里，那条线是零空间平移出来的。设 $A\mathbf{x}_0=\mathbf{b}$，$\mathbf{n}$ 是零空间里的任意一个向量：
 
 $$
-A(\mathbf{x}_0+\mathbf{n})=A\mathbf{x}_0+A\mathbf{n}=\mathbf{b}+\mathbf{0}=\mathbf{b}.
+A(\mathbf{x}_0+\mathbf{n})=A\mathbf{x}_0+A\mathbf{n}=\mathbf{b}+\mathbf{0}=\mathbf{b}
 $$
 
 **通解 = 一个特解 + 整个零空间。**
 
-这句话你其实早就见过：
+这个结构其实早就见过：
 
 $$
-\int 2x\,\mathrm{d}x=x^2+C.
+\int 2x\,\mathrm{d}x=x^2+C
 $$
 
-求导是一个线性变换，$(f+g)'=f'+g'$，$(cf)'=cf'$；它会把所有常数函数压成 0，零空间就是常数函数。所以“哪个函数求导得 $2x$”的答案，是一个特解 $x^2$ 加上整个零空间 $C$。微分方程里“齐次解加特解”的套路，和这里是同一条定理。
+求导守那两条规矩，$(f+g)'=f'+g'$，$(cf)'=cf'$，它是线性的。它把所有常数函数都压成 0，零空间就是常数函数。“哪个函数求导得 $2x$”的答案，是一个特解 $x^2$，加上整个零空间 $C$。
 
-### 维度守恒
+### 维数对得上账
 
-这个例子里，输入是 2 维，列空间 1 维，零空间 1 维。一般地，对 $m\times n$ 的矩阵：
-
-$$
-\underbrace{n}_{\text{输入的维数}}=\underbrace{\operatorname{rank}A}_{\text{活下来的}}+\underbrace{\dim\operatorname{Null}A}_{\text{被压扁的}}.
-$$
-
-这叫秩–零化度定理。读成大白话：输入的每一个维度，要么活到了输出里，要么被压没了，不会凭空多出来，也不会凭空消失。
-
-被压掉的维度找不回来。拍照（先不管透视）可以看成一个从三维到二维的投影，零空间是视线方向，深度信息就在那个方向上被压没了。所以一张照片推不出物体离你多远，要靠两只眼睛、深度传感器，或者别的线索去补。
-
-秩为 1 的矩阵还有一个很有用的样子：它总能写成一列乘一行 $\mathbf{u}\mathbf{v}^\top$。作用在 $\mathbf{x}$ 上是 $\mathbf{u}(\mathbf{v}^\top\mathbf{x})$：先用 $\mathbf{v}$ 量出一个数，再沿 $\mathbf{u}$ 的方向放出去。刚才那个 $A$ 就是 $\begin{bmatrix}2\\1\end{bmatrix}\begin{bmatrix}1&2\end{bmatrix}$。
-
-## 非方阵：在不同维度之间搬运
-
-前面都是方阵，输入输出一样多维。$m\times n$ 的矩阵把 $n$ 维送到 $m$ 维，形状本身就说明了它在干什么：
-
-- **$3\times2$**：两个基向量，各自落到三维空间里。平面被放进三维，成了一张斜着的平面。列空间最多二维，三维里绝大多数的 $\mathbf{b}$ 都够不着，方程组往往无解。这就是数据点比参数多的拟合问题，后面最小二乘会处理。
-- **$2\times3$**：三个基向量落到平面上。三维被压成二维，零空间至少一维。把三维模型画到屏幕上，就是这一类。
-- **$1\times n$**：$n$ 维送到一条数轴上，每个向量变成一个数。这是一种“测量”，下一节的点积就是它。
-
-## 点积：把一个向量当成一把尺子
-
-点积的定义有两个，看上去毫不相干：
+这个例子里，输入 2 维，列空间 1 维，零空间 1 维。对任何 $m\times n$ 的矩阵都有
 
 $$
-\mathbf{u}\cdot\mathbf{v}=u_1v_1+u_2v_2+\cdots+u_nv_n=\lVert\mathbf{u}\rVert\,\lVert\mathbf{v}\rVert\cos\theta .
+\underbrace{n}_{\text{输入的维数}}=\underbrace{\operatorname{rank}A}_{\text{留下来的}}+\underbrace{\dim\operatorname{Null}A}_{\text{压没了的}}
 $$
 
-左边是对应相乘再相加，右边是长度乘长度再乘夹角余弦。课本一般用余弦定理证明它们相等，证完了也不知道为什么。换成变换的眼光就清楚了。
+输入的每一维，要么进了输出，要么被压没了。
 
-上一节说过，$1\times2$ 的矩阵把平面送到数轴上。设 $\mathbf{u}=(u_x,u_y)$ 是单位向量，考虑“把向量投影到 $\mathbf{u}$ 所在的直线上，读出投影的长度”这个操作。投影保持加法和数乘，是线性的，所以它也是一个 $1\times2$ 的矩阵。它的两列是 $\hat\imath$ 和 $\hat\jmath$ 投影之后的长度。
+压掉的那几维找不回来。拍照（先不管透视）是一个从三维到二维的变换，零空间是视线方向，远近就丢在这个方向上。单凭一张照片算不出物体离镜头多远，得靠第二只眼睛或者别的线索补。
 
-$\hat\imath$ 投到 $\mathbf{u}$ 上有多长？看下面这张图：$\hat\imath$ 投到 $\mathbf{u}$ 上，和 $\mathbf{u}$ 投到 $x$ 轴上，两者关于角平分线对称，一样长。后者就是 $u_x$。
+### 不是方的矩阵
 
-```render svg title="î 投到 u 上的长度，等于 u 投到 x 轴上的长度 u_x"
-<svg viewBox="0 0 560 200" xmlns="http://www.w3.org/2000/svg" font-family="Inter Variable, sans-serif">
-  <path d="M40 170 H300" stroke="var(--rule-strong)" stroke-width="1.2" />
-  <path d="M40 170 L262 15" stroke="var(--rule-strong)" stroke-width="1.2" />
-  <path d="M40 170 L192.6 121.8" stroke="var(--faint)" stroke-width="1" stroke-dasharray="2 4" />
-  <path d="M240 170 L174.2 76" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="4 4" />
-  <path d="M203.8 55.2 L203.8 170" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="4 4" />
-  <path d="M40 170 L174.2 76" stroke="var(--accent)" stroke-width="5" stroke-linecap="round" opacity=".45" />
-  <path d="M40 170 H203.8" stroke="var(--accent)" stroke-width="5" stroke-linecap="round" opacity=".45" />
-  <g stroke-width="2.4" stroke-linecap="round">
-    <path d="M40 170 H232" stroke="var(--accent)" />
-    <path d="M40 170 L197 60" stroke="currentColor" />
-  </g>
-  <path d="M240 170 L229 164 L229 176 Z" fill="var(--accent)" />
-  <path d="M203.8 55.2 L193 57 L199.6 66.5 Z" fill="currentColor" />
-  <g font-size="16" font-weight="600">
-    <text x="246" y="176" fill="var(--accent-ink)">î</text>
-    <text x="205" y="48" fill="currentColor">u</text>
-  </g>
-  <g font-size="12" fill="var(--muted)">
-    <text x="94" y="112" transform="rotate(-35 94 112)">长 uₓ</text>
-    <text x="108" y="188">长 uₓ</text>
-  </g>
-  <g font-size="14" fill="currentColor">
-    <text x="320" y="82">î 投到 u 上 → 长 uₓ</text>
-    <text x="320" y="108">ĵ 投到 u 上 → 长 uᵧ</text>
-    <text x="320" y="142" fill="var(--accent-ink)" font-weight="600">“投到 u 上”这个变换</text>
-    <text x="320" y="164" fill="var(--accent-ink)" font-weight="600">的矩阵就是 [uₓ  uᵧ]</text>
-  </g>
-</svg>
+到这里矩阵都是方的，输入输出一样多维。$m\times n$ 的矩阵有 $n$ 列，每列 $m$ 个数：吃 $n$ 维，吐 $m$ 维。
+
+- $3\times2$：两个基向量各自落进三维空间，整张平面成了三维里一张斜放的面。列空间最多二维，三维里绝大多数 $\mathbf{b}$ 都够不着。方程比未知数多的方程组通常无解，说的就是这个。
+- $2\times3$：三维压进平面，零空间至少一维。把三维场景画到屏幕上属于这一类。
+- $1\times n$：$n$ 维送到一条数轴上，每个向量变成一个数。下一节的点积就是它。
+
+## 点积：把一个向量当尺子
+
+点积有两个定义，看着不相干：
+
+$$
+\mathbf{u}\cdot\mathbf{v}=u_xv_x+u_yv_y=\lVert\mathbf{u}\rVert\,\lVert\mathbf{v}\rVert\cos\theta
+$$
+
+左边是对应相乘再相加，右边是长度乘长度再乘夹角的余弦。课本拿余弦定理证它俩相等，证完还是不知道为什么。
+
+换成变换来看。取一个单位向量 $\mathbf{u}$，沿它画一条数轴，当一把尺子。“把向量垂直投到尺子上，读出刻度”是一个从平面到数轴的函数。它守那两条规矩：两个向量先相加再投，和各自投完再把读数相加，是一回事。所以它也有矩阵，一行两列，两个数分别是 $\hat\imath$ 和 $\hat\jmath$ 的读数。
+
+```render html
+<style>
+  .la { --blue: #356f9b; font-size: 13px; line-height: 1.5; font-variant-ligatures: none; }
+  :root[data-theme="dark"] .la { --blue: #95bfdc; }
+  .stage { position: relative; }
+  .stage canvas { display: block; width: 100%; touch-action: pan-y; }
+  .knob { position: absolute; left: 0; top: 0; width: 36px; height: 36px; margin: -18px 0 0 -18px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--text); cursor: grab; touch-action: none; }
+  .knob::after { content: ""; position: absolute; inset: 11px; border: 2px solid currentColor; border-radius: 50%; background: var(--bg); }
+  .knob:active { cursor: grabbing; }
+  .scrub { display: flex; align-items: center; gap: 12px; min-height: 36px; margin-top: 6px; color: var(--muted); font-size: 12px; }
+  .scrub input { flex: 1; min-width: 0; accent-color: var(--accent); }
+  .scrub output { min-width: 3em; color: var(--text); font: 13px var(--font-mono); }
+  .read { display: flex; flex-wrap: wrap; gap: 2px 22px; margin-top: 4px; font: 13px var(--font-mono); }
+  .read b { font-weight: 650; }
+  .i { color: var(--accent-ink); } .j { color: var(--blue); }
+</style>
+<section class="la" aria-label="点积：沿 u 放一把尺子，î、ĵ 的读数是 u 的两个坐标，v 的读数是点积">
+  <div class="stage"><canvas role="img"></canvas></div>
+  <label class="scrub"><span>尺子方向</span><input type="range" min="0" max="180" value="37" aria-label="尺子的方向，单位是度" /><output>37°</output></label>
+  <div class="read"></div>
+</section>
+<script>
+const root = document.querySelector('.la');
+const stage = root.querySelector('.stage'), cv = stage.querySelector('canvas'), ctx = cv.getContext('2d');
+const range = root.querySelector('input'), deg = root.querySelector('output'), read = root.querySelector('.read');
+const C = {};
+let W = 0, H = 0, S = 50;
+let u = [.8, .6], v = [2, 1];
+
+const theme = () => { const s = getComputedStyle(root); for (const k of ['text', 'muted', 'rule', 'accent', 'accent-ink', 'bg', 'blue']) C[k] = s.getPropertyValue(`--${k}`).trim(); };
+const P = ([x, y]) => [W / 2 + x * S, H / 2 - y * S];
+const U = (px, py) => [(px - W / 2) / S, (H / 2 - py) / S];
+const num = (x) => String(Math.round(x * 100) / 100 || 0).replace('-', '−');
+const sg = (x) => (x < -.004 ? `(${num(x)})` : num(x));
+const snap = (p) => p.map((q, k) => { const lim = (k ? H : W) / 2 / S - .4, r = Math.round(q), s = Math.abs(q - r) < .15 ? r : Math.round(q * 10) / 10; return Math.max(-lim, Math.min(lim, s)); });
+// 向量在尺子上的读数，和它投到尺子上的落脚点
+const along = (p) => p[0] * u[0] + p[1] * u[1];
+const foot = (p) => { const k = along(p); return [k * u[0], k * u[1]]; };
+
+function seg(p, q, color, w = 1, dash = []) {
+  const [x1, y1] = P(p), [x2, y2] = P(q);
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+  ctx.strokeStyle = color; ctx.lineWidth = w; ctx.setLineDash(dash); ctx.stroke();
+}
+function arrow(to, color, w) {
+  const [x1, y1] = P([0, 0]), [x2, y2] = P(to), L = Math.hypot(x2 - x1, y2 - y1);
+  if (L < 2) return;
+  const ux = (x2 - x1) / L, uy = (y2 - y1) / L, h = Math.min(12, L * .5), bx = x2 - ux * h, by = y2 - uy * h;
+  ctx.setLineDash([]); ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(bx, by); ctx.strokeStyle = color; ctx.lineWidth = w; ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(bx - uy * h * .45, by + ux * h * .45); ctx.lineTo(bx + uy * h * .45, by - ux * h * .45);
+  ctx.closePath(); ctx.fillStyle = color; ctx.fill();
+  ctx.lineCap = 'butt';
+}
+// 标签放在箭头尖再往外一点
+function tag(text, at, color) {
+  const [x, y] = P(at), [ox, oy] = P([0, 0]), L = Math.hypot(x - ox, y - oy) || 1;
+  ctx.fillStyle = color; ctx.font = '600 15px KaTeX_Main, serif';
+  ctx.fillText(text, x + (x - ox) / L * 18, y + (y - oy) / L * 18);
+}
+function drop(p, color) {
+  const f = foot(p), [x, y] = P(f);
+  seg(p, f, color, 1.4, [4, 4]);
+  ctx.beginPath(); ctx.arc(x, y, 4, 0, 7); ctx.fillStyle = color; ctx.fill();
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const R = Math.ceil(Math.hypot(W, H) / 2 / S) + 1;
+  for (let k = -R; k <= R; k++) { seg([k, -R], [k, R], C.rule); seg([-R, k], [R, k], C.rule); }
+  // 尺子：过原点、沿 u 的数轴，每隔一个单位一道刻度
+  seg([-R * u[0], -R * u[1]], [R * u[0], R * u[1]], C.muted, 1.6);
+  for (let k = -R; k <= R; k++) {
+    const c = [k * u[0], k * u[1]], n = [-u[1] * .12, u[0] * .12], [x, y] = P(c);
+    seg([c[0] - n[0], c[1] - n[1]], [c[0] + n[0], c[1] + n[1]], C.muted, 1.4);
+    ctx.fillStyle = C.muted; ctx.font = '11px JetBrains Mono Variable, monospace';
+    ctx.fillText(String(k).replace('-', '−'), x + u[1] * 16, y + u[0] * 16);
+  }
+  drop([1, 0], C.accent); drop([0, 1], C.blue); drop(v, C.text);
+  arrow(u, C.muted, 3.2);
+  const [tx, ty] = P(u);
+  ctx.fillStyle = C.muted; ctx.font = '600 15px KaTeX_Main, serif'; ctx.fillText('u', tx - u[1] * 16, ty - u[0] * 16);
+  arrow([1, 0], C.accent, 2.4); arrow([0, 1], C.blue, 2.4); arrow(v, C.text, 2.6);
+  tag('î', [1, 0], C['accent-ink']); tag('ĵ', [0, 1], C.blue); tag('v', v, C.text);
+  knob.place();
+
+  const d = along(v);
+  read.innerHTML =
+    `<span class="i">î → ${num(u[0])}</span><span class="j">ĵ → ${num(u[1])}</span>` +
+    `<span>v → ${num(v[0])}·<span class="i">${sg(u[0])}</span> + ${sg(v[1])}·<span class="j">${sg(u[1])}</span> = <b>${num(d)}</b></span>`;
+  cv.setAttribute('aria-label', `尺子沿 (${num(u[0])}, ${num(u[1])})：î 读数 ${num(u[0])}，ĵ 读数 ${num(u[1])}，v 读数 ${num(d)}`);
+}
+
+const knob = (() => {
+  const el = document.createElement('button');
+  el.type = 'button'; el.className = 'knob'; el.setAttribute('aria-label', 'v：拖动或用方向键移动');
+  stage.append(el);
+  const take = (p) => { v = snap(p); draw(); };
+  const move = (e) => { const r = cv.getBoundingClientRect(); take(U(e.clientX - r.left, e.clientY - r.top)); };
+  el.addEventListener('pointerdown', (e) => { el.setPointerCapture(e.pointerId); el.onpointermove = move; });
+  el.addEventListener('pointerup', () => { el.onpointermove = null; });
+  el.addEventListener('pointercancel', () => { el.onpointermove = null; });
+  el.addEventListener('keydown', (e) => {
+    const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[e.key];
+    if (!d) return;
+    e.preventDefault();
+    const s = e.shiftKey ? 1 : .1;
+    take([v[0] + d[0] * s, v[1] + d[1] * s]);
+  });
+  return { place() { const [x, y] = P(v); el.style.transform = `translate(${x}px, ${y}px)`; } };
+})();
+
+range.addEventListener('input', () => {
+  const a = range.value * Math.PI / 180;
+  u = [Math.round(Math.cos(a) * 100) / 100, Math.round(Math.sin(a) * 100) / 100];
+  deg.textContent = `${range.value}°`;
+  draw();
+});
+
+function size() {
+  W = cv.clientWidth; H = Math.round(Math.max(250, Math.min(360, W * .56)));
+  S = H / 5.4;
+  const r = devicePixelRatio;
+  cv.width = W * r; cv.height = H * r; cv.style.height = `${H}px`;
+  ctx.setTransform(r, 0, 0, r, 0, 0);
+}
+theme();
+window.addEventListener('themechange', () => { theme(); draw(); });
+new ResizeObserver(() => { size(); draw(); }).observe(stage);
+</script>
 ```
 
-同理，$\hat\jmath$ 投过去长 $u_y$。所以“投影到 $\mathbf{u}$ 上”的矩阵就是 $\begin{bmatrix}u_x&u_y\end{bmatrix}$，作用在 $\mathbf{v}$ 上，算出来正是 $u_xv_x+u_yv_y$。**对应相乘再相加，算的就是 $\mathbf{v}$ 在 $\mathbf{u}$ 方向上的投影长度**，也就是 $\lVert\mathbf{v}\rVert\cos\theta$。$\mathbf{u}$ 不是单位向量时，结果再乘上 $\lVert\mathbf{u}\rVert$。两个定义就这样接上了。
-
-这里藏着一个更深的对应：每个向量 $\mathbf{u}$ 都有一个孪生的线性函数 $\mathbf{v}\mapsto\mathbf{u}\cdot\mathbf{v}$，它的矩阵就是把 $\mathbf{u}$ 躺下来写成一行，$\mathbf{u}^\top$。反过来，任何一个从 $\mathbb{R}^n$ 到数轴的线性函数，都是和某个固定向量做点积。**向量和“测量”一一对应**，这叫对偶。
-
-写代码的人可以这样理解：点积是一个两个参数的函数，柯里化之后，`dot(u)` 就是一把尺子。
-
-```ts
-const dot = (u: Vec) => (v: Vec): number => u.reduce((s, x, i) => s + x * v[i], 0);
-
-const ruler = dot([0.6, 0.8]); // 一把沿 (0.6, 0.8) 方向量长度的尺子
-ruler([3, 4]);                 // 5
-```
-
-列向量躺下来变成行向量，就是把“一个东西”变成“沿这个东西的方向量长度的函数”。
-
-点积的符号也很有用：同向为正，垂直为 0，反向为负。
-
-- 图形学里的漫反射光照，亮度正比于 $\max(0,\mathbf{n}\cdot\mathbf{l})$：表面法向 $\mathbf{n}$ 正对光源方向 $\mathbf{l}$ 最亮，侧过去变暗，背过去全黑。
-- 推荐系统、搜索里的“余弦相似度”，就是把两个向量归一化之后点积，看方向有多接近。
-- [Transformer 的注意力](/posts/transformer/)用 $q\cdot k$ 打分，也是在量两个向量对得有多准。
-
-### 转置和正交矩阵
-
-$\mathbf{u}^\top$ 是把一个向量变成一把尺子，矩阵的转置 $A^\top$ 也有类似的含义：它满足
+$\hat\imath$ 在尺子上的读数是多少？$\hat\imath$ 和 $\mathbf{u}$ 都是单位长，谁投到谁身上，长度都是夹角的余弦。$\mathbf{u}$ 投到 $\hat\imath$ 上，量出来的就是 $\mathbf{u}$ 的横坐标 $u_x$，所以 $\hat\imath$ 的读数也是 $u_x$。同理 $\hat\jmath$ 的读数是 $u_y$。这把尺子的矩阵是 $\begin{bmatrix}u_x&u_y\end{bmatrix}$，任何向量的读数跟着就有了：
 
 $$
-(A\mathbf{x})\cdot\mathbf{y}=\mathbf{x}\cdot(A^\top\mathbf{y}).
+\begin{bmatrix}u_x&u_y\end{bmatrix}\begin{bmatrix}v_x\\v_y\end{bmatrix}=u_xv_x+u_yv_y
 $$
 
-先用 $A$ 把 $\mathbf{x}$ 变过去再用 $\mathbf{y}$ 去量，等于把尺子 $\mathbf{y}$ 用 $A^\top$ 拉回来，直接量原来的 $\mathbf{x}$。
+对应相乘再相加，算出来的是 $\mathbf{v}$ 投在 $\mathbf{u}$ 方向上的长度，也就是 $\lVert\mathbf{v}\rVert\cos\theta$。$\mathbf{u}$ 不是单位长的话，读数再乘上 $\lVert\mathbf{u}\rVert$。两个定义对上了。
 
-旋转和镜像不改变长度和夹角，所以不改变点积：$(Q\mathbf{x})\cdot(Q\mathbf{y})=\mathbf{x}\cdot\mathbf{y}$。代进上式就得到 $Q^\top Q=I$，也就是
+读数的正负也有用：同向为正，垂直为 0，反向为负。漫反射光照的亮度正比于 $\max(0,\mathbf{n}\cdot\mathbf{l})$，表面的法向 $\mathbf{n}$ 正对着光的方向 $\mathbf{l}$ 时最亮，侧过去变暗，背过去全黑。搜索和推荐里的余弦相似度，是两个向量各自缩成单位长之后的点积。[Transformer 的注意力](/posts/transformer/)拿 $\mathbf{q}\cdot\mathbf{k}$ 打分，量的也是两个向量对得多准。
 
-$$
-Q^{-1}=Q^\top .
-$$
+### 向量躺下来，就是一把尺子
 
-满足这个条件的叫正交矩阵，它的各列是互相垂直的单位向量。旋转的逆矩阵不用算，转置一下就有了。游戏引擎每帧都要用到相机矩阵的逆，靠的就是这个。
+刚才 $\mathbf{u}$ 被横过来写成了一行 $\begin{bmatrix}u_x&u_y\end{bmatrix}$，从一支箭头变成了一个把向量变成数的函数。把列改写成行叫**转置**，记作 $\mathbf{u}^\top$，所以点积也写成 $\mathbf{u}^\top\mathbf{v}$。
 
-## 叉积：把“体积函数”认成一个向量
+反过来，随便哪个从平面到数轴的线性函数，矩阵都是一行两个数（三维就是一行三个），把这一行竖起来就是一个向量。向量和这种“量一下”的函数一个对一个，数学上叫对偶。下一节的叉积要用到它。
 
-先看二维。两个平面向量 $\mathbf{v}$、$\mathbf{w}$ 的“叉积”，是它们围成的平行四边形的有向面积：
+矩阵也能转置，行列对调。$A^\top$ 和点积的关系是
 
 $$
-\mathbf{v}\times\mathbf{w}=v_xw_y-v_yw_x=\det\begin{bmatrix}v_x&w_x\\v_y&w_y\end{bmatrix}.
+(A\mathbf{x})\cdot\mathbf{y}=\mathbf{x}\cdot(A^\top\mathbf{y})
 $$
 
-正号表示 $\mathbf{w}$ 在 $\mathbf{v}$ 的逆时针一侧，负号表示顺时针一侧。写过计算几何的人天天用它：判断点在线段的哪一边、求凸包、判断两条线段是否相交，核心都是这一行：
+先把 $\mathbf{x}$ 搬过去再拿 $\mathbf{y}$ 这把尺子量，和把尺子用 $A^\top$ 拉回来、直接量原来的 $\mathbf{x}$，读数一样。
+
+旋转和镜像不改长度和夹角，所以不改点积：$(Q\mathbf{x})\cdot(Q\mathbf{y})=\mathbf{x}\cdot\mathbf{y}$。套进上面的式子得到 $Q^\top Q=I$，也就是 $Q^{-1}=Q^\top$。这种矩阵叫正交矩阵，各列是互相垂直的单位向量。旋转的逆不用算，行列对调一下就是。
+
+## 叉积：把体积认成一个向量
+
+先看二维。两个平面向量的叉积是一个数，它俩围成的平行四边形的有向面积：
+
+$$
+\mathbf{v}\times\mathbf{w}=v_xw_y-v_yw_x=\det\begin{bmatrix}v_x&w_x\\v_y&w_y\end{bmatrix}
+$$
+
+就是把 $\mathbf{v}$、$\mathbf{w}$ 当成 $\hat\imath$、$\hat\jmath$ 的落点，算行列式。正号是 $\mathbf{w}$ 在 $\mathbf{v}$ 的逆时针一侧，负号是顺时针一侧。计算几何里判断点在线段哪一边、求凸包、判断两条线段相不相交，用的都是这一行：
 
 ```cpp
 // > 0：b 在 o→a 的左边；< 0：右边；= 0：三点共线
@@ -1318,35 +1473,33 @@ long long cross(P o, P a, P b) {
 }
 ```
 
-多边形面积的鞋带公式 $\frac12\left|\sum_i(x_iy_{i+1}-x_{i+1}y_i)\right|$，也只是把多边形从原点切成一个个三角形，把它们的有向面积加起来，多出来的部分正负抵消。
-
-三维的叉积 $\mathbf{v}\times\mathbf{w}$ 是一个向量：垂直于 $\mathbf{v}$ 和 $\mathbf{w}$，长度等于它们围成的平行四边形面积，方向按右手定则。计算公式通常写成一个奇怪的行列式：
+三维的叉积是一个向量：垂直于 $\mathbf{v}$ 和 $\mathbf{w}$，长度等于它俩围成的平行四边形的面积，朝哪边按右手定则。算它的式子，通常写成一个古怪的行列式：
 
 $$
-\mathbf{v}\times\mathbf{w}=\det\begin{bmatrix}\hat\imath&v_x&w_x\\\hat\jmath&v_y&w_y\\\hat k&v_z&w_z\end{bmatrix}.
+\mathbf{v}\times\mathbf{w}=\det\begin{bmatrix}\hat\imath&v_x&w_x\\\hat\jmath&v_y&w_y\\\hat k&v_z&w_z\end{bmatrix}
 $$
 
-第一列放的是基向量，不是数。这算什么行列式？为什么算出来正好垂直，长度正好是面积？
+第一列放的是三个向量，不是数。这算哪门子行列式？算出来又凭什么刚好垂直，长度刚好是面积？
 
-答案就在上一节的对偶里。固定 $\mathbf{v}$、$\mathbf{w}$，看这个函数：
-
-$$
-f(\mathbf{x})=\det\begin{bmatrix}\mathbf{x}&\mathbf{v}&\mathbf{w}\end{bmatrix},
-$$
-
-它是 $\mathbf{x}$、$\mathbf{v}$、$\mathbf{w}$ 围成的平行六面体的有向体积。行列式对每一列都是线性的，所以 $f$ 是从三维到数轴的线性函数。按对偶，它一定等于和某个固定向量 $\mathbf{p}$ 做点积：$f(\mathbf{x})=\mathbf{p}\cdot\mathbf{x}$。这个 $\mathbf{p}$ 就是 $\mathbf{v}\times\mathbf{w}$。
-
-它为什么垂直、为什么长度是面积，从体积公式就能看出来。平行六面体的体积是底面积乘高：底是 $\mathbf{v}$、$\mathbf{w}$ 围成的平行四边形，高是 $\mathbf{x}$ 在垂直于底面方向上的分量。而 $\mathbf{p}\cdot\mathbf{x}$ 是 $\mathbf{x}$ 在 $\mathbf{p}$ 方向上的投影长度乘以 $\lVert\mathbf{p}\rVert$。要让这两者对每一个 $\mathbf{x}$ 都相等，$\mathbf{p}$ 只能垂直于底面，长度只能等于底面积。
-
-那个奇怪的行列式，也只是把 $f(\mathbf{x})$ 按 $\mathbf{x}$ 那一列展开，$\mathbf{x}$ 的三个分量的系数就是 $\mathbf{p}$ 的三个分量；把 $\hat\imath,\hat\jmath,\hat k$ 填进去，是“这里等着放 $x,y,z$”的记号。展开是：
+用上一节的对偶。固定 $\mathbf{v}$、$\mathbf{w}$，看这个函数：
 
 $$
-\mathbf{v}\times\mathbf{w}=(v_yw_z-v_zw_y,\;v_zw_x-v_xw_z,\;v_xw_y-v_yw_x).
+f(\mathbf{x})=\det\begin{bmatrix}\mathbf{x}&\mathbf{v}&\mathbf{w}\end{bmatrix}
 $$
 
-拖动画面可以转视角。$\mathbf{w}$ 绕着转一圈，看 $\mathbf{v}\times\mathbf{w}$ 的长短和朝向；再点“加上 x”，看体积怎么变成点积：
+它是 $\mathbf{x}$、$\mathbf{v}$、$\mathbf{w}$ 撑起来的平行六面体的有向体积。行列式对每一列都是线性的，所以 $f$ 是一个从三维到数轴的线性函数，一把尺子。按对偶，它一定是在和某个固定的向量 $\mathbf{p}$ 做点积：$f(\mathbf{x})=\mathbf{p}\cdot\mathbf{x}$。这个 $\mathbf{p}$ 就是 $\mathbf{v}\times\mathbf{w}$。
 
-```render html title="叉积：垂直于底面，长度等于底面积"
+垂直和长度都能从体积里读出来。体积是底面积乘高：底是 $\mathbf{v}$、$\mathbf{w}$ 围成的平行四边形，高是 $\mathbf{x}$ 垂直于底面的那一份。而 $\mathbf{p}\cdot\mathbf{x}$ 是 $\mathbf{x}$ 投在 $\mathbf{p}$ 方向上的长度，再乘 $\lVert\mathbf{p}\rVert$。两边要对每一个 $\mathbf{x}$ 都相等，$\mathbf{p}$ 只能垂直于底面，长度只能等于底面积。
+
+那个古怪的行列式，是把 $f(\mathbf{x})$ 按 $\mathbf{x}$ 那一列展开，$x$、$y$、$z$ 前面的系数就是 $\mathbf{p}$ 的三个分量。第一列写上 $\hat\imath$、$\hat\jmath$、$\hat k$ 只是个记号，意思是这一列留着放 $\mathbf{x}$。展开是
+
+$$
+\mathbf{v}\times\mathbf{w}=(v_yw_z-v_zw_y,\;v_zw_x-v_xw_z,\;v_xw_y-v_yw_x)
+$$
+
+画面可以拖着转。让 $\mathbf{w}$ 转一圈，再点“加上 x”：
+
+```render html
 <style>
   .la { --blue: #356f9b; --blue-soft: rgb(53 111 155 / .14); font-size: 13px; line-height: 1.5; font-variant-ligatures: none; }
   :root[data-theme="dark"] .la { --blue: #95bfdc; --blue-soft: rgb(149 191 220 / .16); }
@@ -1362,9 +1515,9 @@ $$
   .read small { color: var(--muted); font: 12px var(--font-sans); }
   .i { color: var(--accent-ink); } .j { color: var(--blue); } .x { color: var(--muted); }
 </style>
-<section class="la" aria-label="三维叉积演示">
+<section class="la" aria-label="叉积 v×w 垂直于 v、w 围成的平行四边形，长度等于它的面积">
   <div class="bar">
-    <button type="button" class="key pause">暂停</button>
+    <button type="button" class="key pause">转动 w</button>
     <button type="button" class="key vol" aria-pressed="false">加上 x</button>
     <label><span>w 的方向</span><input type="range" min="0" max="628" value="110" aria-label="w 绕竖轴转过的角度" /></label>
   </div>
@@ -1375,9 +1528,8 @@ $$
 const root = document.querySelector('.la');
 const cv = root.querySelector('canvas'), ctx = cv.getContext('2d');
 const range = root.querySelector('input'), pauseBtn = root.querySelector('.pause'), volBtn = root.querySelector('.vol');
-const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const C = {};
-let W = 0, H = 0, S = 60, yaw = .55, pitch = .38, th = 1.1, running = !reduce, visible = false, vol = false, raf = 0, last = 0;
+let W = 0, H = 0, S = 60, yaw = .55, pitch = .38, th = 1.1, running = false, visible = false, vol = false, raf = 0, last = 0;
 const v = [1.8, -.2, .15], x = [.5, .7, 1.5];
 
 const theme = () => { const s = getComputedStyle(root); for (const k of ['text', 'muted', 'faint', 'rule', 'rule-strong', 'accent', 'accent-ink', 'accent-soft', 'bg', 'blue', 'blue-soft']) C[k] = s.getPropertyValue(`--${k}`).trim(); };
@@ -1458,9 +1610,9 @@ function loop(now) {
   raf = running && visible ? requestAnimationFrame(loop) : 0;
 }
 function kick() { if (running && visible && !raf) { last = 0; raf = requestAnimationFrame(loop); } }
-pauseBtn.addEventListener('click', () => { running = !running; pauseBtn.textContent = running ? '暂停' : '继续'; if (!running) { cancelAnimationFrame(raf); raf = 0; } kick(); });
+pauseBtn.addEventListener('click', () => { running = !running; pauseBtn.textContent = running ? '暂停' : '转动 w'; if (!running) { cancelAnimationFrame(raf); raf = 0; } kick(); });
 volBtn.addEventListener('click', () => { vol = !vol; volBtn.setAttribute('aria-pressed', String(vol)); draw(); });
-range.addEventListener('input', () => { running = false; pauseBtn.textContent = '继续'; cancelAnimationFrame(raf); raf = 0; th = range.value / 100; draw(); });
+range.addEventListener('input', () => { running = false; pauseBtn.textContent = '转动 w'; cancelAnimationFrame(raf); raf = 0; th = range.value / 100; draw(); });
 
 let drag = null;
 cv.addEventListener('pointerdown', (e) => { drag = [e.clientX, e.clientY, yaw, pitch]; cv.setPointerCapture(e.pointerId); });
@@ -1471,7 +1623,7 @@ cv.addEventListener('pointermove', (e) => {
   draw();
 });
 cv.addEventListener('pointerup', () => { drag = null; });
-if (reduce) { pauseBtn.textContent = '继续'; }
+cv.addEventListener('pointercancel', () => { drag = null; });
 
 function size() {
   W = cv.clientWidth; H = Math.round(Math.max(280, Math.min(380, W * .6)));
@@ -1487,50 +1639,48 @@ new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (visible) kic
 </script>
 ```
 
-$\mathbf{w}$ 转到和 $\mathbf{v}$ 共线时，平行四边形压成一条线，$\mathbf{v}\times\mathbf{w}$ 缩成零；转过去之后，它从另一侧伸出来。打开 $\mathbf{x}$ 之后，“底面积乘高”和“$(\mathbf{v}\times\mathbf{w})\cdot\mathbf{x}$”两个数始终相等，这就是叉积的定义本身。
+$\mathbf{w}$ 转到和 $\mathbf{v}$ 共线，平行四边形压成一条线，$\mathbf{v}\times\mathbf{w}$ 缩成零；转过去以后，它从另一侧伸出来。加上 $\mathbf{x}$ 之后，“底面积乘高”和 $(\mathbf{v}\times\mathbf{w})\cdot\mathbf{x}$ 两个数一直相等。
 
-叉积在图形学里随处可见。三角形的法向量是两条边的叉积，光照要用它；顶点按逆时针还是顺时针排列，决定了法向朝外还是朝里，渲染时据此剔除背对相机的面。相机的“右方向”也是用视线方向和“上方向”做叉积求出来的。物理里的力矩、角动量、洛伦兹力，都是叉积。
+三角形的法向量是它两条边的叉积，算光照要用。顶点按逆时针还是顺时针排，决定了法向朝外还是朝里，渲染时靠这个剔掉背对相机的面。相机的“右”方向，是视线方向和“上”方向的叉积。物理里的力矩、角动量也是它。
 
-## 基变换：翻译，干活，再翻译回来
+## 换一组基：翻译，干活，再翻回来
 
-回到第一张图里那组基 $\mathbf{b}_1=(2,1)$、$\mathbf{b}_2=(-1,1)$。假设有人习惯用它描述一切，他说的 $(1,1)$，是我们的 $(1,2)$。
+回到讲基那张图。$\mathbf{b}_1=(2,1)$、$\mathbf{b}_2=(-1,1)$，假设有人就用这组基描述一切。他说的 $(1,1)$，是我们的 $(1,2)$。
 
-怎么把他的坐标翻译成我们的？他的 $(c_1,c_2)$ 意思是 $c_1\mathbf{b}_1+c_2\mathbf{b}_2$，用我们的坐标算出来就行。这正是一次矩阵乘法：
+把他的坐标翻成我们的：他的 $(c_1,c_2)$ 是 $c_1\mathbf{b}_1+c_2\mathbf{b}_2$，照着算出来就行。这是一次矩阵乘向量：
 
 $$
 P=\begin{bmatrix}2&-1\\1&1\end{bmatrix},\qquad
-P\begin{bmatrix}1\\1\end{bmatrix}=\begin{bmatrix}1\\2\end{bmatrix}.
+P\begin{bmatrix}1\\1\end{bmatrix}=\begin{bmatrix}1\\2\end{bmatrix}
 $$
 
-$P$ 的两列是他的基向量用我们的语言写下来的样子。$P$ 把他的话翻成我们的话，$P^{-1}$ 把我们的话翻成他的话。
+$P$ 的两列，是他的基向量用我们的坐标写出来的样子。$P$ 把他的话翻成我们的，$P^{-1}$ 反过来。
 
-现在想把“逆时针转 90°”告诉他。在我们这边，它的矩阵是 $M=\begin{bmatrix}0&-1\\1&0\end{bmatrix}$；在他那边是什么？他给出一个向量，先用 $P$ 翻译成我们的坐标，用 $M$ 转一下，再用 $P^{-1}$ 翻回去：
-
-$$
-P^{-1}MP=\frac13\begin{bmatrix}1&1\\-1&2\end{bmatrix}\begin{bmatrix}0&-1\\1&0\end{bmatrix}\begin{bmatrix}2&-1\\1&1\end{bmatrix}=\frac13\begin{bmatrix}1&-2\\5&-1\end{bmatrix}.
-$$
-
-同样从右往左读：翻译，干活，翻译回来。
-
-数看上去面目全非，描述的却是同一个旋转。验证一下：它的行列式是 $\frac19(-1+10)=1$，迹（对角线之和）是 0，和 $M$ 一模一样。行列式、迹、秩、特征值，这些是变换本身的属性，不随描述它的语言改变。$P^{-1}MP$ 和 $M$ 叫相似矩阵，就是同一个变换在不同坐标系下的两张照片。
-
-这个模式在编程里到处都是：要对本地时间做一个只支持 UTC 的计算，先转成 UTC，算完再转回本地时间；要给摄氏度用一个写死华氏度的公式，先换算过去，算完再换回来。$P^{-1}MP$ 就是 `decode ∘ f ∘ encode`。
-
-基变换的意义在于：同一个变换，在某些基下看会特别简单。哪组基最简单？下一节回答。
-
-## 特征向量：变换里不转向的方向
-
-看一个变换时，盯住一支向量和它所在的那条过原点的直线。大多数向量变换完都离开了这条直线，被转到了别的方向上。但总有一些特殊的向量，变换之后还在原来那条线上，只是被拉长、缩短，或者掉了个头：
+现在要把“逆时针转 90°”这个变换告诉他。在我们这边它是 $M=\begin{bmatrix}0&-1\\1&0\end{bmatrix}$。他报一个向量过来，先用 $P$ 翻成我们的坐标，用 $M$ 转，再用 $P^{-1}$ 翻回去：
 
 $$
-A\mathbf{v}=\lambda\mathbf{v}.
+P^{-1}MP=\frac13\begin{bmatrix}1&1\\-1&2\end{bmatrix}\begin{bmatrix}0&-1\\1&0\end{bmatrix}\begin{bmatrix}2&-1\\1&1\end{bmatrix}=\frac13\begin{bmatrix}1&-2\\5&-1\end{bmatrix}
 $$
 
-这样的 $\mathbf{v}$ 叫特征向量，$\lambda$ 叫特征值，就是它被拉伸的倍数。$\lambda$ 为负表示掉头，为 0 表示被压没了，也就是落在零空间里。
+还是从右往左读：翻译，干活，翻回来。
 
-点播放，看哪些箭头一直待在自己的直线上：
+四个数全变了，说的却是同一个旋转。行列式是 $\frac19(-1+10)=1$，对角线上两个数的和（叫迹）是 0，都和 $M$ 一样。行列式、迹、秩是变换自己的东西，换一组基来描述，它们不变。$P^{-1}MP$ 和 $M$ 叫相似矩阵。
 
-```render html title="特征向量：变换前后方向不变的那些向量"
+同一个变换，在有的基下写出来乱糟糟，在有的基下很干净。哪组基最干净？
+
+## 特征向量：没被转走的方向
+
+看一个变换的时候，盯住一支向量，和它躺着的那条过原点的直线。多数向量变换完就离开了自己那条线，被转到别处去了。有些不会：变换之后还在原来那条线上，只是长了、短了，或者掉了个头。
+
+$$
+A\mathbf{v}=\lambda\mathbf{v}
+$$
+
+这样的 $\mathbf{v}$ 叫**特征向量**，$\lambda$ 叫**特征值**，是它伸缩的倍数。$\lambda$ 是负的就是掉头；是 0，这个方向被压没了，$\mathbf{v}$ 在零空间里。
+
+一圈箭头，播放时看哪几支始终没离开自己那条线：
+
+```render html
 <style>
   .la { --blue: #356f9b; --blue-soft: rgb(53 111 155 / .14); font-size: 13px; line-height: 1.5; font-variant-ligatures: none; }
   :root[data-theme="dark"] .la { --blue: #95bfdc; --blue-soft: rgb(149 191 220 / .16); }
@@ -1549,10 +1699,10 @@ $$
   .knob:focus-visible { outline: 2px solid var(--accent); outline-offset: 0; }
   .read { margin: 6px 0 0; font: 13px var(--font-mono); }
   .read small { color: var(--muted); font: 12px var(--font-sans); }
-  .note { margin: 2px 0 0; min-height: 3em; color: var(--muted); }
+  .note { margin: 2px 0 0; min-height: 1.5em; color: var(--muted); }
   .l1 { color: var(--accent-ink); } .l2 { color: var(--blue); }
 </style>
-<section class="la" aria-label="特征向量演示">
+<section class="la" aria-label="特征向量：变换前后还留在自己那条直线上的箭头">
   <div class="bar">
     <div class="seg" role="group" aria-label="例子">
       <button type="button" data-p="0" aria-pressed="true">两个方向</button>
@@ -1658,10 +1808,10 @@ function draw() {
   read.innerHTML = `<small>λ² − ${num(2 * E.m)}λ + ${num(E.p)} = 0　→　</small>` +
     (E.disc < -1e-9 ? `λ = ${num(E.m)} ± ${num(Math.sqrt(-E.disc))}i` : E.list.map((e, k) => `<span class="l${k + 1}">λ${E.list.length > 1 ? '₁₂'[k] : ''} = ${num(e.l)}</span>`).join('　'));
   note.textContent = E.disc < -1e-9
-    ? '没有实数特征值：每一支箭头都被转走了，没有哪条直线留在原地。'
-    : all ? '每一支箭头都只是被拉长：这是一个纯粹的缩放，所有方向都是特征方向。'
-      : E.list.length === 1 ? '只有一条特征直线：其余箭头都被推歪了。特征向量凑不齐一组基。'
-        : '两条虚线上的箭头只被拉伸，其余的都被转离了自己原来的方向。';
+    ? '没有实特征方向，每支箭头都被转走了'
+    : all ? '每个方向都是特征方向'
+      : E.list.length === 1 ? '只有一条特征直线'
+        : '两条特征直线';
   cv.setAttribute('aria-label', note.textContent);
 }
 
@@ -1717,85 +1867,79 @@ new IntersectionObserver(([e], o) => { if (e.isIntersecting) { o.disconnect(); p
 </script>
 ```
 
-第一个例子 $A=\begin{bmatrix}3&1\\0&2\end{bmatrix}$ 有两条特征直线。$x$ 轴上的向量被拉长 3 倍：$A(1,0)=(3,0)$。过 $(-1,1)$ 的那条线上的向量被拉长 2 倍：$A(-1,1)=(-2,2)$。其余的箭头，全都被转离了原来的方向。
+第一个例子是 $A=\begin{bmatrix}3&1\\0&2\end{bmatrix}$，有两条特征直线。$x$ 轴上的向量拉长到 3 倍：$A(1,0)=(3,0)$。过 $(-1,1)$ 的那条线上，拉长到 2 倍：$A(-1,1)=(-2,2)$。其余的箭头都被转离了原来的方向。
 
-### 怎么求
+### 怎么找
 
-$A\mathbf{v}=\lambda\mathbf{v}$ 可以改写成 $(A-\lambda I)\mathbf{v}=\mathbf{0}$。要有非零的 $\mathbf{v}$ 满足它，$A-\lambda I$ 就必须把某个方向压成零，也就是把空间压扁：
-
-$$
-\det(A-\lambda I)=0 .
-$$
-
-前面几节的东西在这里全接上了：**特征向量就是 $A-\lambda I$ 的零空间，特征值就是让 $A-\lambda I$ 行列式为零的那些 $\lambda$。**
-
-二阶矩阵展开是 $\lambda^2-(a+d)\lambda+(ad-bc)=0$。$a+d$ 是迹，$ad-bc$ 是行列式。所以两个特征值之和等于迹，之积等于行列式。设 $m$ 是迹的一半、$p$ 是行列式，直接有
+把 $A\mathbf{v}=\lambda\mathbf{v}$ 移个项：$(A-\lambda I)\mathbf{v}=\mathbf{0}$。要有不是零的 $\mathbf{v}$ 满足它，$A-\lambda I$ 这个变换就得把某个方向压成零，也就是把空间压扁：
 
 $$
-\lambda=m\pm\sqrt{m^2-p}.
+\det(A-\lambda I)=0
 $$
 
-$A=\begin{bmatrix}3&1\\0&2\end{bmatrix}$：$m=2.5$，$p=6$，$\lambda=2.5\pm\sqrt{0.25}$，即 3 和 2。
+前面几节在这里接上了：**特征值是让 $A-\lambda I$ 行列式为零的那些 $\lambda$，特征向量是这时候 $A-\lambda I$ 的零空间。**
 
-特征值之积等于行列式，也能从画面里看出来：沿两个特征方向各拉伸 $\lambda_1$、$\lambda_2$ 倍，面积自然放大 $\lambda_1\lambda_2$ 倍。
+二阶的展开是 $\lambda^2-(a+d)\lambda+(ad-bc)=0$。$a+d$ 是迹，$ad-bc$ 是行列式，所以两个特征值加起来等于迹，乘起来等于行列式。乘积等于行列式这一条，画面上也看得出：沿两个特征方向各拉 $\lambda_1$、$\lambda_2$ 倍，面积放大 $\lambda_1\lambda_2$ 倍。
 
-另外几个例子各有看头：
+上面那个 $A$：迹是 5，行列式是 6，$\lambda^2-5\lambda+6=0$，解出 3 和 2。
 
-- **旋转**没有实特征向量，每支箭头都被转走了。算出来 $\lambda^2+1=0$，$\lambda=\pm i$。复数特征值就是旋转的信号：特征值 $re^{\pm i\theta}$ 意味着在一组合适的基下看，这个变换是转 $\theta$ 再放大 $r$ 倍。复平面上乘以 $i$ 正好是逆时针转 90°，和这个矩阵干的是同一件事。
-- **剪切**只有一条特征直线，$\lambda=1$ 是重根。特征向量凑不齐一组基，这种矩阵不能对角化，是所有“不能对角化”的矩阵的原型。
-- **纯缩放** $2I$ 让每个向量都变成两倍长，所有方向都是特征方向。
+另外三个例子：
 
-## 对角化：换到特征基里看
+- “对称”是 $\begin{bmatrix}2&1\\1&2\end{bmatrix}$，两条特征直线互相垂直。这不是碰巧，后面讲。
+- “剪切”只有一条特征直线，$\lambda=1$ 是重根。特征向量凑不出一组基。
+- “旋转”没有实的特征向量，每支箭头都被转走了。方程是 $\lambda^2+1=0$，$\lambda=\pm i$。解出复数的特征值，就是这个变换里带着旋转。
 
-如果特征向量凑得齐一组基，就用它们当基。在这组基下，变换只是沿着每根坐标轴各自拉伸，没有任何旋转和剪切，矩阵是对角的：
+## 对角化：站到特征方向上看
+
+特征向量凑得出一组基，就拿它们当基。在这组基下，变换只是沿每根轴各自伸缩，没有转也没有推斜，矩阵是对角的：
 
 $$
 A=PDP^{-1},\qquad
 P=\begin{bmatrix}1&-1\\0&1\end{bmatrix},\quad
-D=\begin{bmatrix}3&0\\0&2\end{bmatrix}.
+D=\begin{bmatrix}3&0\\0&2\end{bmatrix}
 $$
 
-$P$ 的两列就是两个特征向量。从右往左读还是那句话：先翻译到特征基，各轴拉伸，再翻译回来。上一节问的“哪组基最简单”，答案就是这组。
+$P$ 的两列是两个特征向量。从右往左读还是上一节那三步：翻到特征基，各轴伸缩，翻回来。“哪组基最干净”，答案是这组。
 
-好处在于连乘。$A$ 做 100 次，中间的 $P^{-1}P$ 两两抵消：
-
-$$
-A^{100}=PD^{100}P^{-1},\qquad D^{100}=\begin{bmatrix}3^{100}&0\\0&2^{100}\end{bmatrix}.
-$$
-
-同一个变换重复 100 次，在特征基里就是每根轴各自重复拉伸 100 次。
-
-### 斐波那契数列
-
-写过矩阵快速幂的人对这个矩阵不陌生：
+好处在连着乘。同一个变换做 100 次，中间的 $P^{-1}P$ 一对对消掉：
 
 $$
-\begin{bmatrix}F_{n+1}\\F_n\end{bmatrix}=\begin{bmatrix}1&1\\1&0\end{bmatrix}\begin{bmatrix}F_n\\F_{n-1}\end{bmatrix}.
+A^{100}=PD^{100}P^{-1},\qquad D^{100}=\begin{bmatrix}3^{100}&0\\0&2^{100}\end{bmatrix}
 $$
 
-快速幂能在 $O(\log n)$ 次乘法内算出 $A^n$。特征值则能给出一个通项公式。
+在特征基里，做 100 次就是每根轴各自伸缩 100 次。
 
-$\lambda^2-\lambda-1=0$，两个根是黄金比例 $\varphi=\frac{1+\sqrt5}2\approx1.618$ 和 $\psi=\frac{1-\sqrt5}2\approx-0.618$，对应的特征向量是 $(\varphi,1)$ 和 $(\psi,1)$。起点 $(F_1,F_0)=(1,0)$ 拆成两个特征向量的组合：
+### 斐波那契
 
-$$
-\begin{bmatrix}1\\0\end{bmatrix}=\frac1{\sqrt5}\left(\begin{bmatrix}\varphi\\1\end{bmatrix}-\begin{bmatrix}\psi\\1\end{bmatrix}\right).
-$$
-
-乘 $n$ 次 $A$，两部分各自乘上 $\varphi^n$ 和 $\psi^n$，看第二个分量：
+斐波那契数列，后一项是前两项之和，写成矩阵：
 
 $$
-F_n=\frac{\varphi^n-\psi^n}{\sqrt5}.
+\begin{bmatrix}F_{n+1}\\F_n\end{bmatrix}=\begin{bmatrix}1&1\\1&0\end{bmatrix}\begin{bmatrix}F_n\\F_{n-1}\end{bmatrix}
 $$
 
-满是无理数的式子，算出来每一项都是整数。而且 $|\psi|<1$，$\psi^n$ 很快趋于 0，所以 $F_n$ 就是 $\varphi^n/\sqrt5$ 四舍五入，相邻两项之比趋于 $\varphi$。
+每往后一项，就是乘一次这个矩阵。它的特征方程是 $\lambda^2-\lambda-1=0$，两个根是黄金比例 $\varphi=\frac{1+\sqrt5}{2}\approx1.618$ 和 $\psi=\frac{1-\sqrt5}{2}\approx-0.618$，特征向量是 $(\varphi,1)$ 和 $(\psi,1)$。
 
-### 反复作用：一切都被拉向主特征向量
+把起点 $(F_1,F_0)=(1,0)$ 拆成两个特征向量的组合：
 
-斐波那契里藏着一个更普遍的现象。随便拿一个向量，拆成两个特征向量的组合，每乘一次 $A$，$\varphi$ 那部分放大 1.618 倍，$\psi$ 那部分缩小到 0.618 倍还换个符号。乘几次之后，$\psi$ 那部分就可以忽略了，向量几乎完全躺在 $\varphi$ 的特征方向上。
+$$
+\begin{bmatrix}1\\0\end{bmatrix}=\frac1{\sqrt5}\left(\begin{bmatrix}\varphi\\1\end{bmatrix}-\begin{bmatrix}\psi\\1\end{bmatrix}\right)
+$$
 
-下面是十几支方向各异的向量，每次都乘上斐波那契矩阵。箭头只画方向，长度统一：
+乘 $n$ 次矩阵，两部分各自乘上 $\varphi^n$、$\psi^n$。看第二个分量：
 
-```render html title="反复乘同一个矩阵，方向都被拉向主特征向量"
+$$
+F_n=\frac{\varphi^n-\psi^n}{\sqrt5}
+$$
+
+式子里全是无理数，算出来每一项都是整数。$|\psi|<1$，$\psi^n$ 很快就小得可以不管，所以 $F_n$ 就是 $\varphi^n/\sqrt5$ 四舍五入，相邻两项的比值趋向 $\varphi$。
+
+### 乘很多次：都贴到一条线上
+
+这里头有个更一般的现象。随便取一个向量，拆成两个特征向量的组合。每乘一次，$\varphi$ 那部分变成 1.618 倍，$\psi$ 那部分缩到 0.618 倍，还换一次符号。乘上几次，$\psi$ 那部分就不剩什么了，向量几乎整个躺在 $\varphi$ 的特征方向上。
+
+十几支朝向各不相同的向量，反复乘斐波那契矩阵。箭头只画方向，长度都画成一样：
+
+```render html
 <style>
   .la { --blue: #356f9b; font-size: 13px; line-height: 1.5; font-variant-ligatures: none; }
   :root[data-theme="dark"] .la { --blue: #95bfdc; }
@@ -1808,7 +1952,7 @@ $$
   .read { display: grid; gap: 2px; margin: 4px 0 0; font: 13px var(--font-mono); }
   .read small { color: var(--muted); font: 12px var(--font-sans); }
 </style>
-<section class="la" aria-label="幂迭代演示：反复乘斐波那契矩阵">
+<section class="la" aria-label="反复乘同一个矩阵，各个方向的箭头都贴向主特征方向">
   <div class="bar">
     <button type="button" class="key once">再乘一次 A</button>
     <button type="button" class="key auto">连续乘</button>
@@ -1880,10 +2024,10 @@ function draw() {
   arrow([r0 * Math.cos(a0 + d * k), r0 * Math.sin(a0 + d * k)], C.text, 2.8);
 
   const worst = Math.max(...vs.map(off));
-  root.querySelector('.count').textContent = `已经乘了 ${n} 次`;
+  root.querySelector('.count').textContent = `乘了 ${n} 次`;
   root.querySelector('.read').innerHTML =
-    `<span><small>黑色那支从 (1, 0) 出发，现在是 </small>(${v0[0]}, ${v0[1]})${n ? `<small>，比值 </small>${num(v0[0] / v0[1], 6)}` : ''}</span>` +
-    `<span><small>离橙色虚线最远的一支，还差 </small>${num(worst, 2)}°</span>`;
+    `<span><small>黑色 </small>(${v0[0]}, ${v0[1]})${n ? `<small>　比值 </small>${num(v0[0] / v0[1], 6)}` : ''}</span>` +
+    `<span><small>最远的一支还差 </small>${num(worst, 2)}°</span>`;
   root.querySelector('.once').disabled = n >= 30;
   cv.setAttribute('aria-label', `乘了 ${n} 次，最远的一支与主特征方向差 ${num(worst, 2)} 度`);
 }
@@ -1921,67 +2065,53 @@ new IntersectionObserver(([en], o) => { if (en.isIntersecting) { o.disconnect();
 </script>
 ```
 
-乘上五六次，所有箭头就都贴到了橙色虚线上；每多乘一次，剩下的偏差大约缩小到原来的 $|\psi/\varphi|\approx0.38$ 倍。黑色那支的坐标就是 $(F_{n+1},F_n)$，比值很快逼近 1.618。唯一的例外是恰好落在蓝线上的向量，它没有 $\varphi$ 的成分，只会越缩越短。
+乘五六次，箭头全贴到了橙色虚线上；之后每多乘一次，剩下的偏差缩到原来的 $|\psi/\varphi|\approx0.38$ 倍。黑色那支的坐标就是 $(F_{n+1},F_n)$。只有一种起点例外：正好落在蓝线上的向量，一点 $\varphi$ 的成分都没有，只会越乘越短。
 
-这个现象叫幂迭代：**同一个变换反复作用，几乎任何起点都会被拉向特征值绝对值最大的那个特征向量。** 收敛快慢取决于第二大和最大特征值之比。
+同一个变换反复做，几乎任何起点都被拉向特征值绝对值最大的那个特征方向。拿这一点来求特征向量，叫幂迭代。
 
-### PageRank：网页的重要性是一个特征向量
+### PageRank
 
-早期 Google 给网页排序的 PageRank，就是这个现象的一次大规模应用。
+早期 Google 给网页排序，用的就是幂迭代。
 
-想象一个人在网上随便点链接。每个网页把自己的“重要性”平均分给它链接到的那些网页，一个网页的重要性，等于所有指向它的网页分给它的总和。把所有网页的重要性排成一个向量 $\mathbf{r}$，链接关系排成矩阵 $M$，这句话写出来是：
-
-$$
-\mathbf{r}=M\mathbf{r}.
-$$
-
-**重要性向量，就是链接矩阵特征值为 1 的那个特征向量。** 实际的网络里有两个麻烦：有的网页没有出链，重要性无处可去；有的网页围成小圈子，进去就出不来。PageRank 的处理是：没有出链的网页，当作链接到所有网页；另外让这个人有 15% 的概率不点链接，随机跳到任意一个网页：$G=0.85\,M+\frac{0.15}{N}\mathbf{1}\mathbf{1}^\top$。这样 $G$ 的每个元素都是正数，每一列加起来都是 1。Perron–Frobenius 定理保证这样的矩阵有唯一一个每个分量都为正的特征向量；每列和为 1，又保证它对应的特征值正好是 1，而且是最大的。
-
-怎么算？就是上面那张图：随便给一个初始向量，反复乘 $G$，几十次就收敛了。几十亿个网页，矩阵大到根本存不下，但每次只需要算 $G\mathbf{r}$，而这一步只要顺着链接把数加一遍。这里“矩阵是函数”的眼光又派上了用场：很多大规模算法从来不把矩阵存成表，只需要一个能算 $\mathbf{v}\mapsto A\mathbf{v}$ 的函数。
-
-马尔可夫链的平稳分布也是同一件事：状态转移矩阵特征值为 1 的特征向量。
-
-### 微分方程：特征值决定命运
-
-连续时间里的反复作用，是微分方程 $\frac{\mathrm{d}\mathbf{x}}{\mathrm{d}t}=A\mathbf{x}$。在特征基里，它拆成互不相干的几个一维方程 $\frac{\mathrm{d}c_k}{\mathrm{d}t}=\lambda_kc_k$，解是 $c_k(t)=c_k(0)e^{\lambda_kt}$。
-
-于是系统的命运由特征值决定：实部为正的成分指数增长，为负的衰减，有虚部的会振荡。弹簧、电路、人口模型、控制系统，判断它稳不稳定，就是看特征值落在复平面的哪一边。
-
-## 对称矩阵：互相垂直的特征轴
-
-满足 $A^\top=A$ 的矩阵叫对称矩阵。它们有一个漂亮的性质，叫谱定理：**特征值都是实数，而且总能找到一组互相垂直的单位特征向量。**
+设想一个人在网上乱点链接。每个网页把自己的重要性平均分给它链出去的网页；一个网页的重要性，是所有链向它的网页分给它的总和。把全部网页的重要性排成向量 $\mathbf{r}$，链接关系写成矩阵 $M$：
 
 $$
-A=Q\Lambda Q^\top ,
+\mathbf{r}=M\mathbf{r}
 $$
 
-$Q$ 是正交矩阵，$\Lambda$ 是对角的。几何上，对称矩阵就是沿着几根互相垂直的轴各自拉伸，没有一点旋转或剪切。前面的“对称”例子 $\begin{bmatrix}2&1\\1&2\end{bmatrix}$ 就是这样：沿 $(1,1)$ 拉伸 3 倍，沿 $(1,-1)$ 保持不变，两条特征直线正好垂直。
+重要性向量是链接矩阵的一个特征向量，特征值为 1。
 
-对称矩阵在应用里随处可见：
+真实的网络有两个麻烦：有的网页没有链出去的链接，重要性没处去；有的网页互相链成小圈子，进去就出不来。PageRank 的处理是，没有出链的网页当它链向所有网页；再让这个人每一步有 15% 的概率不点链接，随机跳到任意一个网页。改完的矩阵每个数都是正的，每一列加起来是 1。Perron–Frobenius 定理保证这样的矩阵最大的特征值正好是 1，对应的特征方向只有一个，各分量全为正。
 
-- 数据的协方差矩阵是对称的，它的特征向量是数据散得最开的方向，这就是主成分分析（PCA）。
-- 多元函数的二阶导数矩阵（Hessian）是对称的。在梯度为零的点上，特征值全正，函数在这里像一只碗，是极小值；有正有负，就是马鞍面。优化算法关心的“病态”，就是最大和最小特征值差得太远，碗被压成了一道又窄又长的山谷。
-- 特征值全正时，$\mathbf{x}^\top A\mathbf{x}=1$ 画出来是一个椭圆（或椭球），主轴沿着特征向量，半轴长 $1/\sqrt{\lambda}$；有正有负就成了双曲线。
+算法就是上面那张图：随便取一个初始向量，反复乘，几十次就不怎么动了。几十亿个网页的矩阵根本存不下来，但幂迭代不用存矩阵。它只要能算“给一个 $\mathbf{r}$，$M\mathbf{r}$ 是多少”，而这只是顺着每条链接把数加一遍。矩阵是一个函数，这里只用到了它作为函数的那一面。
 
-还有一个对称矩阵来得毫不费力：对任何矩阵 $A$，$A^\top A$ 都是对称的。这是下一节的入口。
+## 对称矩阵：特征方向互相垂直
 
-## 奇异值分解：任何矩阵都只是转、拉、转
-
-特征值分解有它的局限：旋转没有实特征向量，剪切凑不齐一组基，非方阵连特征值都没有。有没有一种对任何矩阵都管用的拆法？
-
-有，叫奇异值分解（SVD）：
+沿对角线对折，两边的数相同，$A^\top=A$，这样的矩阵叫对称矩阵。它们有一条好性质，叫谱定理：特征值都是实数，而且总能挑出一组互相垂直的单位特征向量。
 
 $$
-A=U\Sigma V^\top .
+A=Q\Lambda Q^\top
 $$
 
-$V^\top$ 和 $U$ 都是旋转（或者带一次镜像），$\Sigma$ 是对角的，对角线上的 $\sigma_1\ge\sigma_2\ge\cdots\ge0$ 叫奇异值。**任何线性变换，都可以拆成：先转一下，沿坐标轴拉伸，再转一下。**
+$Q$ 的各列是这组特征向量，是个正交矩阵；$\Lambda$ 是对角的。画面上，对称矩阵干的事就是沿几根互相垂直的轴各自伸缩，没有转，也没有推斜。特征向量那张图里的 $\begin{bmatrix}2&1\\1&2\end{bmatrix}$ 就是：沿 $(1,1)$ 拉到 3 倍，沿 $(1,-1)$ 不动。
 
-几何上看最清楚：单位圆经过任何可逆变换都变成一个椭圆（压扁的变换会把它变成线段或一个点）。$\sigma_1$、$\sigma_2$ 是椭圆的两个半轴长，$V$ 的列是输入里那两个互相垂直、恰好被送到椭圆主轴上的方向，$U$ 的列是主轴本身的方向。
+数据的协方差矩阵是对称的，它的特征向量是数据散得最开的几个方向，主成分分析（PCA）找的就是它们。还有一种对称矩阵来得不费力：随便什么矩阵 $A$，$A^\top A$ 都是对称的。
 
-剪切看上去和“转、拉、转”毫无关系，拆开看看：
+## 奇异值分解：转一下，拉一下，再转一下
 
-```render html title="奇异值分解：转、拉、转"
+特征值有它管不了的：旋转没有实的特征向量，剪切凑不齐一组基，不是方的矩阵压根没有特征值。对什么矩阵都管用的拆法是奇异值分解（SVD）：
+
+$$
+A=U\Sigma V^\top
+$$
+
+$V^\top$ 和 $U$ 是旋转（也可能带一次镜像），$\Sigma$ 是对角的，对角线上的 $\sigma_1\ge\sigma_2\ge\cdots\ge0$ 叫奇异值。**任何一个线性变换，都能拆成三步：先转，沿坐标轴伸缩，再转。**
+
+单位圆经过一个没压扁的变换，变成一个椭圆。$\sigma_1$、$\sigma_2$ 是椭圆的两个半轴长；$V$ 的两列是输入里那两个互相垂直、正好被送到椭圆两根轴上的方向；$U$ 的两列是那两根轴的方向。
+
+剪切看着跟“转、拉、转”一点不沾边。拆开看：
+
+```render html
 <style>
   .la { --blue: #356f9b; --blue-soft: rgb(53 111 155 / .14); font-size: 13px; line-height: 1.5; font-variant-ligatures: none; }
   :root[data-theme="dark"] .la { --blue: #95bfdc; --blue-soft: rgb(149 191 220 / .16); }
@@ -2005,7 +2135,7 @@ $V^\top$ 和 $U$ 都是旋转（或者带一次镜像），$\Sigma$ 是对角的
   .scrub { display: flex; align-items: center; gap: 12px; margin-top: 6px; color: var(--muted); font-size: 12px; }
   .scrub input { flex: 1; min-width: 0; accent-color: var(--accent); }
 </style>
-<section class="la" aria-label="奇异值分解演示">
+<section class="la" aria-label="任何矩阵都能拆成三步：转，沿坐标轴拉伸，再转">
   <div class="bar">
     <div class="seg" role="group" aria-label="例子">
       <button type="button" data-p="0" aria-pressed="true">剪切</button>
@@ -2107,9 +2237,9 @@ function draw() {
 
   const st = T <= 0 ? -1 : T <= 1 ? 0 : T <= 2 ? 1 : 2;
   root.querySelector('.steps').innerHTML = [
-    ['① Vᵀ：转', `转 ${deg(-D.th)}，把 v₁、v₂ 转到坐标轴上`],
+    ['① Vᵀ：转', `转 ${deg(-D.th)}`],
     ['② Σ：拉', `横向 ×${num(D.s1)}，纵向 ×${num(D.s2)}`],
-    ['③ U：转', `再转 ${deg(D.ph)}，到最终位置`],
+    ['③ U：转', `转 ${deg(D.ph)}`],
   ].map(([h, s], k) => `<div class="${st === k || (st === 2 && T >= 3 && k === 2) ? 'on' : ''}"><b>${h}</b><span>${s}</span></div>`).join('');
   range.value = Math.round(T * 1000);
   cv.setAttribute('aria-label', `奇异值 ${num(D.s1)} 和 ${num(Math.abs(D.s2))}`);
@@ -2172,29 +2302,29 @@ new IntersectionObserver(([e], o) => { if (e.isIntersecting) { o.disconnect(); p
 </script>
 ```
 
-剪切也只是转了 $-58^\circ$，横向拉到 1.618 倍、纵向压到 0.618 倍，再转 $32^\circ$。两个奇异值又是黄金比例和它的倒数，这不是巧合：$A^\top A=\begin{bmatrix}1&1\\1&2\end{bmatrix}$ 的特征方程是 $\lambda^2-3\lambda+1=0$，两个根是 $\varphi^2$ 和 $1/\varphi^2$。虚线椭圆是最终的位置，拖动圆点可以换一个矩阵。
+剪切是转 $-58^\circ$，横着拉到 1.618 倍、竖着压到 0.618 倍，再转 $32^\circ$。两个奇异值又是黄金比例和它的倒数：$A^\top A=\begin{bmatrix}1&1\\1&2\end{bmatrix}$ 的特征方程是 $\lambda^2-3\lambda+1=0$，两个根是 $\varphi^2$ 和 $1/\varphi^2$。
 
-$V$ 和 $\sigma$ 从哪来？把 $A=U\Sigma V^\top$ 代进 $A^\top A$，中间的 $U^\top U=I$ 抵消掉：
-
-$$
-A^\top A=V\Sigma^2V^\top .
-$$
-
-这正是对称矩阵 $A^\top A$ 的特征值分解：$V$ 的列是它的特征向量，奇异值是它特征值的平方根。上一节说 $A^\top A$ 总是对称的，用处在这里。
-
-### 一层一层叠起来
-
-把 $U\Sigma V^\top$ 按外积展开，就是前面矩阵乘法的第四种看法：
+求 $V$ 和 $\sigma$，把 $A=U\Sigma V^\top$ 代进 $A^\top A$，中间的 $U^\top U=I$ 消掉：
 
 $$
-A=\sigma_1\mathbf{u}_1\mathbf{v}_1^\top+\sigma_2\mathbf{u}_2\mathbf{v}_2^\top+\cdots+\sigma_r\mathbf{u}_r\mathbf{v}_r^\top .
+A^\top A=V\Sigma^2V^\top
 $$
 
-每一项都是一个秩为 1 的矩阵，按重要程度排好了序。只留前 $k$ 项，得到的是所有秩不超过 $k$ 的矩阵里离 $A$ 最近的一个，距离按所有元素误差的平方和来量（Eckart–Young 定理）。
+这是对称矩阵 $A^\top A$ 的特征分解。$V$ 的列是它的特征向量，奇异值是它特征值的平方根。
 
-一张灰度图片就是一个矩阵。下面这张 $96\times128$ 的小图是用代码画的，打开页面时在你的浏览器里现算了它的奇异值分解。拖动滑块，看前 $k$ 层叠起来的样子：
+### 一层一层叠
 
-```render html title="图片的奇异值分解：前 k 层叠起来"
+$U\Sigma V^\top$ 还能展开成一串“一列乘一行”：
+
+$$
+A=\sigma_1\mathbf{u}_1\mathbf{v}_1^\top+\sigma_2\mathbf{u}_2\mathbf{v}_2^\top+\cdots+\sigma_r\mathbf{u}_r\mathbf{v}_r^\top
+$$
+
+每一项 $\mathbf{u}\mathbf{v}^\top$ 是一个秩为 1 的矩阵：先拿尺子 $\mathbf{v}$ 量出一个数，再沿 $\mathbf{u}$ 的方向放出去，所有输出都在一条线上。这些项按 $\sigma$ 从大到小排好了。只留前 $k$ 项，得到的是所有秩不超过 $k$ 的矩阵里离 $A$ 最近的那个（Eckart–Young 定理，远近按各元素误差的平方和算）。
+
+一张灰度图就是一个矩阵。下面这张 $96\times128$ 的小图是代码画的，奇异值分解在你的浏览器里现算。拖滑块，看前 $k$ 层叠起来的样子：
+
+```render html
 <style>
   .sv { font-size: 13px; line-height: 1.5; font-variant-ligatures: none; }
   .pics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
@@ -2208,7 +2338,7 @@ $$
   .read { display: grid; gap: 2px; margin: 4px 0 0; font: 13px var(--font-mono); }
   .read small { color: var(--muted); font: 12px var(--font-sans); }
 </style>
-<section class="sv" aria-label="图片的低秩近似">
+<section class="sv" aria-label="图片的奇异值分解：前面几层叠起来就接近原图">
   <div class="pics">
     <figure><canvas class="orig" width="128" height="96" role="img" aria-label="原图"></canvas><figcaption>原图</figcaption></figure>
     <figure><canvas class="appr" width="128" height="96" role="img" aria-label="前 k 层叠加"></canvas><figcaption class="cap1">前 k 层</figcaption></figure>
@@ -2318,106 +2448,104 @@ new ResizeObserver(() => { if (sig.length) drawBars(Number(input.value)); }).obs
 </script>
 ```
 
-$k=1$ 时只是一片明暗渐变：第一层总是“大致哪里亮哪里暗”。山和房子这种横平竖直的大块，前几层就出来了；字和斜边要更多层。$k=20$ 左右已经很难和原图分清，要存的数只有原来的三分之一多一点。图下面的柱子是奇异值，从大到小掉得很快，说明大部分信息集中在前面几层。
+$k=1$ 只有一片明暗。山和房子这种横平竖直的大块，前几层就出来了；字和斜边要多叠些层。到 $k=20$ 上下，和原图已经不好分辨，要存的数是原来的三分之一多一点。底下的柱子是奇异值，掉得很快，大部分内容集中在前面几层。
 
-真实照片做 SVD 压缩，效果不如 JPEG，但这个思路处处可见：
-
-- **主成分分析**：把数据排成矩阵、减去均值做 SVD，前几个右奇异向量就是数据变化最大的方向。几百维的数据，常常几个方向就能解释大部分差异。
-- **推荐系统**：用户×商品的评分矩阵大部分是空的，假设它近似低秩，就能用前几层把空格补上。Netflix 当年的推荐大赛，矩阵分解是主力。
-- **大模型微调**：[LoRA](/posts/llm-fine-tuning/) 假设微调时权重的变化量是低秩的，只训练两个瘦长的矩阵 $B$、$A$，用 $BA$ 去近似这个变化量。
+拿它压真照片比不过 JPEG，但“只留前几层”的想法到处在用。推荐系统里，用户乘商品的评分表大半是空的，假设它差不多是低秩的，就能用前几层把空格补上。微调大模型的 [LoRA](/posts/llm-fine-tuning/) 假设权重的改动量是低秩的，只训练两个瘦长的矩阵，拿它们的乘积去凑这个改动量。
 
 ## 最小二乘：够不着，就找最近的
 
-回到非方阵那一节留下的问题。三个数据点 $(0,1)$、$(1,2)$、$(2,2)$，想用一条直线 $y=c+mx$ 穿过它们。写成方程组：
+前面说，方程比未知数多的方程组通常无解。实际碰到的偏偏多是这种：数据点比要定的参数多。
+
+三个数据点 $(0,1)$、$(1,2)$、$(2,2)$，想找一条直线 $y=c+mx$ 穿过它们。每个点给一个方程：
 
 $$
-\begin{bmatrix}1&0\\1&1\\1&2\end{bmatrix}\begin{bmatrix}c\\m\end{bmatrix}=\begin{bmatrix}1\\2\\2\end{bmatrix}.
+\begin{bmatrix}1&0\\1&1\\1&2\end{bmatrix}\begin{bmatrix}c\\m\end{bmatrix}=\begin{bmatrix}1\\2\\2\end{bmatrix}
 $$
 
-三个方程两个未知数，三个点不共线，无解。换成列空间的语言：$A$ 的两列在三维空间里张成一个平面，$\mathbf{b}=(1,2,2)$ 不在这个平面上。
+三个点不在一条线上，无解。用列空间的话说：$A$ 的两列在三维空间里张成一张平面，$\mathbf{b}=(1,2,2)$ 不在这张平面上。
 
-够不着 $\mathbf{b}$，就在平面上找离它最近的点 $\mathbf{p}=A\hat{\mathbf{x}}$。最近的点是垂足：误差 $\mathbf{e}=\mathbf{b}-A\hat{\mathbf{x}}$ 必须垂直于整个平面，也就是垂直于 $A$ 的每一列：
+够不着 $\mathbf{b}$，就在平面上找离它最近的点 $\mathbf{p}=A\hat{\mathbf{x}}$。最近的点是垂足：差 $\mathbf{e}=\mathbf{b}-A\hat{\mathbf{x}}$ 垂直于整张平面，也就垂直于 $A$ 的每一列。
 
-```render svg title="左：在数据里拟合一条直线；右：同一件事在三维里是投影"
-<svg viewBox="0 0 620 230" xmlns="http://www.w3.org/2000/svg" font-family="Inter Variable, sans-serif">
-  <g stroke="var(--rule-strong)" stroke-width="1.2">
-    <path d="M40 190 H220 M40 190 V20" />
-  </g>
-  <g fill="var(--faint)" font-size="11" text-anchor="middle">
-    <text x="40" y="206">0</text><text x="100" y="206">1</text><text x="160" y="206">2</text>
-    <text x="28" y="134" text-anchor="end">1</text><text x="28" y="74" text-anchor="end">2</text>
-  </g>
-  <path d="M22 129 L196 42" stroke="var(--accent)" stroke-width="2.2" />
-  <g stroke="var(--muted)" stroke-width="1.6" stroke-dasharray="3 3">
-    <path d="M40 130 V120 M100 70 V90 M160 70 V60" />
-  </g>
-  <g fill="currentColor">
-    <circle cx="40" cy="130" r="4.5" /><circle cx="100" cy="70" r="4.5" /><circle cx="160" cy="70" r="4.5" />
-  </g>
-  <text x="196" y="30" font-size="12" fill="var(--accent-ink)" text-anchor="end">y = 7/6 + x/2</text>
-  <text x="130" y="224" font-size="12" fill="var(--muted)" text-anchor="middle">虚线是三个误差，平方和最小</text>
-
-  <path d="M300 180 L520 180 L590 110 L370 110 Z" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.2" />
-  <text x="318" y="172" font-size="12" fill="var(--accent-ink)">列空间：Ax 能到的所有地方</text>
-  <path d="M380 160 L482 137" stroke="var(--accent)" stroke-width="2.4" stroke-linecap="round" />
-  <path d="M492 135 L482.3 141.8 L480.3 133 Z" fill="var(--accent)" />
-  <path d="M380 160 L485 52" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" />
-  <path d="M492 44 L487.6 55 L481.1 48.8 Z" fill="currentColor" />
-  <path d="M492 133 V56" stroke="var(--muted)" stroke-width="1.6" stroke-dasharray="5 4" />
-  <path d="M492 123 L503 120 L503 132" fill="none" stroke="var(--muted)" stroke-width="1.2" />
-  <circle cx="380" cy="160" r="2.5" fill="currentColor" />
-  <g font-size="14" font-weight="600">
-    <text x="496" y="40" fill="currentColor">b</text>
-    <text x="430" y="132" fill="var(--accent-ink)">p = Ax̂</text>
-  </g>
-  <text x="500" y="92" font-size="13" fill="var(--muted)">e = b − Ax̂</text>
-  <text x="500" y="110" font-size="12" fill="var(--muted)">垂直于列空间</text>
-</svg>
+```render html
+<style>
+  .ls { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px 24px; }
+  .ls svg { display: block; height: auto; }
+  .ls svg:first-child { flex: 0 1 240px; }
+  .ls svg:last-child { flex: 0 1 340px; }
+</style>
+<div class="ls" role="img" aria-label="左：三个点和拟合出的直线，三段误差是 −1/6、1/3、−1/6；右：b 垂直投到列空间上，垂足是 Ax̂">
+  <svg viewBox="10 12 216 200" xmlns="http://www.w3.org/2000/svg" font-family="Inter Variable, sans-serif">
+    <path d="M40 190 H220 M40 190 V20" stroke="var(--rule-strong)" stroke-width="1.2" fill="none" />
+    <g fill="var(--faint)" font-size="11" text-anchor="middle">
+      <text x="40" y="206">0</text><text x="100" y="206">1</text><text x="160" y="206">2</text>
+      <text x="28" y="134" text-anchor="end">1</text><text x="28" y="74" text-anchor="end">2</text>
+    </g>
+    <path d="M22 129 L196 42" stroke="var(--accent)" stroke-width="2.2" />
+    <path d="M40 130 V120 M100 70 V90 M160 70 V60" stroke="var(--muted)" stroke-width="1.6" stroke-dasharray="3 3" />
+    <g fill="var(--text)">
+      <circle cx="40" cy="130" r="4.5" /><circle cx="100" cy="70" r="4.5" /><circle cx="160" cy="70" r="4.5" />
+    </g>
+    <text x="196" y="30" font-size="12" fill="var(--accent-ink)" text-anchor="end">y = 7/6 + x/2</text>
+    <g font-size="12" fill="var(--muted)">
+      <text x="50" y="143">−1/6</text><text x="93" y="84" text-anchor="end">1/3</text><text x="169" y="74">−1/6</text>
+    </g>
+  </svg>
+  <svg viewBox="294 24 302 164" xmlns="http://www.w3.org/2000/svg" font-family="Inter Variable, sans-serif">
+    <path d="M300 180 L520 180 L590 110 L370 110 Z" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.2" />
+    <text x="318" y="172" font-size="12" fill="var(--accent-ink)">列空间</text>
+    <path d="M380 160 L482 137" stroke="var(--accent)" stroke-width="2.4" stroke-linecap="round" />
+    <path d="M492 135 L482.3 141.8 L480.3 133 Z" fill="var(--accent)" />
+    <path d="M380 160 L485 52" stroke="var(--text)" stroke-width="2.4" stroke-linecap="round" />
+    <path d="M492 44 L487.6 55 L481.1 48.8 Z" fill="var(--text)" />
+    <path d="M492 133 V56" stroke="var(--muted)" stroke-width="1.6" stroke-dasharray="5 4" />
+    <path d="M492 123 L503 120 L503 132" fill="none" stroke="var(--muted)" stroke-width="1.2" />
+    <circle cx="380" cy="160" r="2.5" fill="var(--text)" />
+    <g font-size="14" font-weight="600">
+      <text x="496" y="40" fill="var(--text)">b</text>
+      <text x="430" y="132" fill="var(--accent-ink)">p = Ax̂</text>
+    </g>
+    <text x="500" y="96" font-size="13" fill="var(--muted)">e = b − Ax̂</text>
+  </svg>
+</div>
 ```
 
-“垂直于 $A$ 的每一列”写出来就是 $A^\top\mathbf{e}=\mathbf{0}$：
+“垂直于 $A$ 的每一列”，用转置写出来是 $A^\top\mathbf{e}=\mathbf{0}$：
 
 $$
 A^\top(\mathbf{b}-A\hat{\mathbf{x}})=\mathbf{0}
 \quad\Longrightarrow\quad
-A^\top A\,\hat{\mathbf{x}}=A^\top\mathbf{b}.
+A^\top A\,\hat{\mathbf{x}}=A^\top\mathbf{b}
 $$
 
-这叫法方程，“法”就是法线、垂直的意思。代入数字：
+这叫法方程，“法”是法线的法。把数代进去：
 
 $$
 \begin{bmatrix}3&3\\3&5\end{bmatrix}\begin{bmatrix}c\\m\end{bmatrix}=\begin{bmatrix}5\\6\end{bmatrix}
 \quad\Longrightarrow\quad
-c=\frac76,\; m=\frac12 .
+c=\frac76,\; m=\frac12
 $$
 
-三个误差是 $-\frac16,\frac13,-\frac16$。它们加起来是 0，这是 $\mathbf{e}$ 垂直于第一列 $(1,1,1)$；乘上各自的横坐标再加起来，$0\cdot(-\frac16)+1\cdot\frac13+2\cdot(-\frac16)=0$，这是 $\mathbf{e}$ 垂直于第二列 $(0,1,2)$。
+三个点离这条线的差是 $-\frac16$、$\frac13$、$-\frac16$。加起来是 0，这是 $\mathbf{e}$ 垂直于第一列 $(1,1,1)$；各自乘上横坐标再加，$0\cdot(-\frac16)+1\cdot\frac13+2\cdot(-\frac16)=0$，这是 $\mathbf{e}$ 垂直于第二列 $(0,1,2)$。
 
-同一件事有两幅画面：左边是二维平面里的三个点和一条线，要让误差的平方和最小；右边是三维空间里的一个点和一个平面，要找垂足。误差平方和就是 $\lVert\mathbf{e}\rVert^2$，让它最小，就是让 $\mathbf{b}$ 到平面的距离最短。“最小二乘”这个名字说的是左边，它的本质在右边。
+左右两幅图画的是同一件事。左边是平面上三个点、一条线，要三段虚线的平方和最小；这个平方和就是 $\lVert\mathbf{e}\rVert^2$。右边是三维里一个点、一张平面，要 $\mathbf{b}$ 到平面最近。“最小二乘”这个名字说的是左边那幅。
 
-## 计算机图形学：一帧画面里的矩阵
+## 一帧画面里的矩阵
 
-游戏里的每一帧，GPU 要把成千上万个三角形的顶点算到屏幕上。每个顶点都要经过一串变换：
+游戏的每一帧，显卡要把成千上万个三角形的顶点算到屏幕上：模型转个角度，摆进场景，再换成相机看到的样子。旋转和缩放都是线性变换，有矩阵。头一个麻烦是平移。
 
-- **模型矩阵** $M$：把模型自己的坐标摆到世界里，旋转、缩放、放到某个位置。
-- **视图矩阵** $V$：把世界坐标换成相机眼里的坐标，相机在原点，朝某个固定方向看。这是一次基变换。
-- **投影矩阵** $P$：把相机看到的那个视锥体压进一个标准的立方体，近大远小就是在这一步做出来的。
+### 平移不守规矩，那就升一维
 
-每个顶点要算 $P\,V\,M\,\mathbf{x}$。结合律在这里直接省下了大量计算：一个物体的所有顶点共用同一个 $PVM$，每帧先把三个矩阵乘成一个，再拿这一个去乘每个顶点。
+把物体挪个位置，原点跟着走了，平移不是线性变换，写不成矩阵。
 
-### 平移不是线性变换，那就升一维
-
-问题来了：把物体放到某个位置要平移，平移会挪动原点，不是线性变换，没法写成矩阵。
-
-图形学的办法是给每个点多加一个坐标，固定为 1：二维的点 $(x,y)$ 写成 $(x,y,1)$。于是平面上的点都住在三维空间里 $z=1$ 的那张平面上。再看这个 $3\times3$ 的矩阵：
+办法是给每个点多添一个坐标，固定填 1。二维的点 $(x,y)$ 写成 $(x,y,1)$，平面上的点全都搬到了三维空间里 $z=1$ 的那一层。再看这个 $3\times3$ 的矩阵：
 
 $$
-\begin{bmatrix}1&0&t_x\\0&1&t_y\\0&0&1\end{bmatrix}\begin{bmatrix}x\\y\\1\end{bmatrix}=\begin{bmatrix}x+t_x\\y+t_y\\1\end{bmatrix}.
+\begin{bmatrix}1&0&t_x\\0&1&t_y\\0&0&1\end{bmatrix}\begin{bmatrix}x\\y\\1\end{bmatrix}=\begin{bmatrix}x+t_x\\y+t_y\\1\end{bmatrix}
 $$
 
-在三维里，它是一次剪切，完全线性，原点纹丝不动；但在 $z=1$ 那张平面上看，所有点都平移了 $(t_x,t_y)$。拖动画面转个角度，再调 $t_x$、$t_y$：
+在三维里它是一次剪切，线性的，原点没动。在 $z=1$ 那一层上看，每个点都平移了 $(t_x,t_y)$。
 
-```render html title="齐次坐标：三维里的剪切，在 z = 1 的平面上就是平移"
+```render html
 <style>
   .la { --blue: #356f9b; font-size: 13px; line-height: 1.5; font-variant-ligatures: none; }
   :root[data-theme="dark"] .la { --blue: #95bfdc; }
@@ -2436,7 +2564,7 @@ $$
   .m .t { color: var(--accent-ink); font-weight: 600; }
   .note { margin: 0; color: var(--muted); }
 </style>
-<section class="la" aria-label="齐次坐标演示">
+<section class="la" aria-label="三维里的一次剪切，在 z = 1 的平面上看是平移">
   <div class="bar">
     <button type="button" class="key play">播放</button>
     <label>tₓ<input type="range" min="-20" max="20" value="15" data-k="0" aria-label="x 方向平移" /><output></output></label>
@@ -2503,7 +2631,7 @@ function draw() {
   text('原点', [0, 0, 0], C.text, 8, 14);
 
   root.querySelector('.m').innerHTML = ['1', '0', '0', '0', '1', '0'].map((s) => `<span>${s}</span>`).join('') + `<span class="t">${num(cur[0])}</span><span class="t">${num(cur[1])}</span><span>1</span>`;
-  root.querySelector('.note').innerHTML = `在 z = 1 上，F 平移了 (${num(cur[0])}, ${num(cur[1])})；z = 0 上一切没动，原点也没动。`;
+  root.querySelector('.note').innerHTML = `z = 1 上平移 (${num(cur[0])}, ${num(cur[1])})，z = 0 不动`;
   inputs.forEach((el, k) => { el.value = Math.round(cur[k] * 10); el.nextElementSibling.textContent = num(cur[k]); });
   cv.setAttribute('aria-label', root.querySelector('.note').textContent);
 }
@@ -2541,107 +2669,164 @@ new IntersectionObserver(([e], o) => { if (e.isIntersecting) { o.disconnect(); p
 </script>
 ```
 
-地面上的网格一动不动，竖杆底端钉死、顶端跟着走，整个三维空间被“推斜”了。只有站在 $z=1$ 那张平面上，才会觉得一切都平移了。**低维里不线性的平移，到了高一维就变成了线性的剪切。** 这叫齐次坐标，1827 年莫比乌斯在射影几何里提出，后来成了图形学的地基。
+底下 $z=0$ 的网格没动，竖杆的底端钉着，顶端跟着走，整个三维空间被推斜了。只有站在 $z=1$ 那一层上，才觉得一切都平移了。多添的这个坐标叫齐次坐标。
 
-三维图形同理，点写成 $(x,y,z,1)$，变换用 $4\times4$ 的矩阵：左上角 $3\times3$ 管旋转缩放，最右一列管平移。旋转、缩放、平移就能统一成矩阵乘法，再用结合律合并成一个矩阵。
+三维的图形照办：点写成 $(x,y,z,1)$，变换用 $4\times4$ 的矩阵，左上角 $3\times3$ 管旋转和缩放，最右一列管平移。
 
-透视投影也借了第四个坐标的光。投影矩阵会把深度放进第四个分量 $w$ 里，矩阵乘完以后，GPU 再把前三个分量都除以 $w$。离得越远 $w$ 越大，除完越小，近大远小就出来了。整条流水线里只有这一步除法不是线性的，其余全是矩阵。
+### 一个顶点，三个矩阵
 
-### 法向量要用逆转置来变
+这样一来，旋转、缩放、平移全是矩阵。一个顶点要过三个：
 
-还有一个容易踩的坑。模型被不均匀地缩放时，比如横向拉长两倍，它表面的法向量不能直接乘 $M$，否则就不再垂直于表面，光照会算错。正确的做法是乘 $(M^{-1})^\top$。
+- 模型矩阵 $M$：把模型摆进场景，转多少，放在哪。
+- 视图矩阵 $V$：换成相机眼里的坐标，相机在原点，朝一个固定的方向看。这是一次换基，连原点也换了。
+- 投影矩阵 $P$：按视野的宽窄缩放 $x$、$y$，再把这个点沿视线方向离相机多远抄进第四个坐标 $w$。
 
-这是点积那一节“向量和尺子”的区别。表面上的切向量 $\mathbf{t}$ 是真正的箭头，跟着 $M$ 走；法向量 $\mathbf{n}$ 的本职是一把尺子，它的定义是“和所有切向量的点积为 0”。变换之后要继续满足 $\mathbf{n}'\cdot(M\mathbf{t})=0$，取 $\mathbf{n}'=(M^{-1})^\top\mathbf{n}$ 正好：
+矩阵乘完，显卡把前三个坐标都除以 $w$。离得越远 $w$ 越大，除出来越小。看得见的点，除完的 $x$、$y$ 落在 $-1$ 到 $1$ 之间：$-1$ 是画面的左边缘和下边缘，$1$ 是右边缘和上边缘。除完的 $z$ 留着判断谁挡住谁，这里不管它。
+
+下面这个立方体的八个顶点，都是照这个流程在你的浏览器里现算的。橙色的点是顶点 $(1,1,1)$：
+
+```render html title="相机朝 −z 方向看；投影矩阵的写法照 OpenGL 的习惯"
+<style>
+  .la { font-size: 13px; line-height: 1.5; font-variant-ligatures: none; }
+  .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; }
+  .key { min-height: 36px; padding: 0 14px; border: 1px solid var(--rule-strong); border-radius: 6px; background: var(--bg-raised); box-shadow: 0 2px 0 var(--rule); color: var(--text); font-size: 13px; cursor: pointer; }
+  .key:hover { border-color: var(--text); }
+  .bar label { display: flex; flex: 1; min-width: 150px; align-items: center; gap: 8px; min-height: 36px; color: var(--muted); font-size: 12px; }
+  .bar input { flex: 1; min-width: 0; accent-color: var(--accent); }
+  .bar output { min-width: 2.8em; color: var(--text); font: 13px var(--font-mono); }
+  canvas { display: block; width: 100%; margin-top: 8px; }
+  .chain { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 2px 14px; margin-top: 6px; font: 13px var(--font-mono); }
+  .chain > span:nth-child(odd) { color: var(--muted); font-family: var(--font-sans); }
+  .chain .hit { color: var(--accent-ink); font-weight: 650; }
+</style>
+<section class="la" aria-label="一个顶点依次乘模型、视图、投影三个矩阵，再除以 w，得到它在屏幕上的位置">
+  <div class="bar">
+    <button type="button" class="key spin">转一圈</button>
+    <label><span>转角</span><input type="range" min="0" max="360" value="30" data-k="th" aria-label="模型绕竖轴转过的角度" /><output></output></label>
+    <label><span>相机距离</span><input type="range" min="50" max="120" value="65" data-k="d" aria-label="相机到立方体中心的距离" /><output></output></label>
+  </div>
+  <canvas role="img"></canvas>
+  <div class="chain"></div>
+</section>
+<script>
+const root = document.querySelector('.la');
+const cv = root.querySelector('canvas'), ctx = cv.getContext('2d');
+const chain = root.querySelector('.chain');
+const inTh = root.querySelector('[data-k="th"]'), inD = root.querySelector('[data-k="d"]');
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const C = {};
+let W = 0, H = 0, th = 30, d = 6.5, raf = 0;
+
+const theme = () => { const s = getComputedStyle(root); for (const k of ['text', 'muted', 'accent', 'accent-ink']) C[k] = s.getPropertyValue(`--${k}`).trim(); };
+const num = (x) => String(Math.round(x * 100) / 100 || 0).replace('-', '−');
+const vec = (p) => `(${p.map(num).join(', ')})`;
+// 4×4 矩阵按行存成 16 个数
+const mul = (a, b) => { const o = []; for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) { let s = 0; for (let k = 0; k < 4; k++) s += a[4 * r + k] * b[4 * k + c]; o.push(s); } return o; };
+const ap = (m, v) => [0, 1, 2, 3].map((r) => m[4 * r] * v[0] + m[4 * r + 1] * v[1] + m[4 * r + 2] * v[2] + m[4 * r + 3] * v[3]);
+const rotY = (a) => { const c = Math.cos(a), s = Math.sin(a); return [c, 0, s, 0, 0, 1, 0, 0, -s, 0, c, 0, 0, 0, 0, 1]; };
+const rotX = (a) => { const c = Math.cos(a), s = Math.sin(a); return [1, 0, 0, 0, 0, c, -s, 0, 0, s, c, 0, 0, 0, 0, 1]; };
+const move = (x, y, z) => [1, 0, 0, x, 0, 1, 0, y, 0, 0, 1, z, 0, 0, 0, 1];
+// 透视投影：最后一行 (0, 0, −1, 0) 把相机坐标里的 −z，也就是深度，抄进 w
+const NEAR = 1, FAR = 30, F = 2.6;
+const persp = (aspect) => [F / aspect, 0, 0, 0, 0, F, 0, 0, 0, 0, (FAR + NEAR) / (NEAR - FAR), 2 * FAR * NEAR / (NEAR - FAR), 0, 0, -1, 0];
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  if (!W) return;
+  const M = rotY(th * Math.PI / 180), V = mul(move(0, 0, -d), rotX(.4)), Pm = persp(W / H);
+  const PVM = mul(Pm, mul(V, M)); // 三个矩阵先乘成一个，八个顶点共用
+  const pts = [];
+  for (let k = 0; k < 8; k++) {
+    const c = ap(PVM, [k & 1 ? 1 : -1, k & 2 ? 1 : -1, k & 4 ? 1 : -1, 1]);
+    pts.push({ w: c[3], x: W / 2 + c[0] / c[3] * W / 2, y: H / 2 - c[1] / c[3] * H / 2 });
+  }
+  const ws = pts.map((p) => p.w), lo = Math.min(...ws), span = Math.max(...ws) - lo || 1;
+  ctx.lineCap = 'round'; ctx.strokeStyle = C.text;
+  for (let a = 0; a < 8; a++) for (const bit of [1, 2, 4]) {
+    const b = a | bit;
+    if (b === a) continue;
+    // 离相机近的棱画得粗一些、实一些
+    const near = 1 - ((pts[a].w + pts[b].w) / 2 - lo) / span;
+    ctx.globalAlpha = .3 + .7 * near; ctx.lineWidth = 1.2 + 1.6 * near;
+    ctx.beginPath(); ctx.moveTo(pts[a].x, pts[a].y); ctx.lineTo(pts[b].x, pts[b].y); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  ctx.beginPath(); ctx.arc(pts[7].x, pts[7].y, 5.5, 0, 7); ctx.fillStyle = C.accent; ctx.fill();
+
+  const p = [1, 1, 1, 1], world = ap(M, p), cam = ap(V, world), clip = ap(Pm, cam);
+  chain.innerHTML =
+    `<span>模型</span><span>${vec(p)}</span>` +
+    `<span>× M</span><span>${vec(world)}</span>` +
+    `<span>× V</span><span>${vec(cam)}</span>` +
+    `<span>× P</span><span>(${num(clip[0])}, ${num(clip[1])}, ${num(clip[2])}, <span class="hit">w = ${num(clip[3])}</span>)</span>` +
+    `<span>÷ w</span><span class="hit">(${num(clip[0] / clip[3])}, ${num(clip[1] / clip[3])})</span>`;
+  const deg = Math.round(((th % 360) + 360) % 360);
+  inTh.value = deg; inTh.nextElementSibling.textContent = `${deg}°`;
+  inD.value = Math.round(d * 10); inD.nextElementSibling.textContent = num(d);
+  cv.setAttribute('aria-label', `顶点 (1, 1, 1) 的 w 是 ${num(clip[3])}，画在屏幕的 (${num(clip[0] / clip[3])}, ${num(clip[1] / clip[3])})`);
+}
+
+function spin() {
+  cancelAnimationFrame(raf);
+  if (reduce) { th += 45; return draw(); }
+  const from = th, t0 = performance.now();
+  const step = (now) => { const p = Math.min(1, (now - t0) / 6000); th = from + 360 * p; draw(); if (p < 1) raf = requestAnimationFrame(step); };
+  raf = requestAnimationFrame(step);
+}
+root.querySelector('.spin').addEventListener('click', spin);
+inTh.addEventListener('input', () => { cancelAnimationFrame(raf); th = Number(inTh.value); draw(); });
+inD.addEventListener('input', () => { d = inD.value / 10; draw(); });
+
+function size() {
+  W = cv.clientWidth; H = Math.round(Math.max(220, Math.min(320, W * .5)));
+  const r = devicePixelRatio;
+  cv.width = W * r; cv.height = H * r; cv.style.height = `${H}px`;
+  ctx.setTransform(r, 0, 0, r, 0, 0);
+}
+theme();
+window.addEventListener('themechange', () => { theme(); draw(); });
+new ResizeObserver(() => { size(); draw(); }).observe(cv);
+</script>
+```
+
+把相机拉近，立方体变大，朝着相机的那个角也鼓得更厉害：近处的顶点 $w$ 小，除出来大。近大远小是那一下除法做出来的，整条流程里只有它不是线性的。
+
+矩阵乘法能结合，在这里是实打实省下来的计算。一个物体的所有顶点共用同一个 $PVM$，每帧先把三个矩阵乘成一个，再拿这一个去乘每个顶点。
+
+### 法向量不能跟着乘 M
+
+模型横向拉长两倍，表面的法向量要是也乘 $M$，就不再垂直于表面了，光照会算错。该乘的是 $(M^{-1})^\top$。
+
+原因在点积那一节：箭头和尺子是两种东西。表面上的切向量 $\mathbf{t}$ 是箭头，跟着 $M$ 走。法向量 $\mathbf{n}$ 干的是尺子的活，它的定义是“量任何一个切向量，读数都是 0”。变换之后还得满足 $\mathbf{n}'\cdot(M\mathbf{t})=0$，取 $\mathbf{n}'=(M^{-1})^\top\mathbf{n}$ 正好：
 
 $$
-\mathbf{n}'^\top M\mathbf{t}=\mathbf{n}^\top M^{-1}M\mathbf{t}=\mathbf{n}^\top\mathbf{t}=0 .
+\mathbf{n}'^\top M\mathbf{t}=\mathbf{n}^\top M^{-1}M\mathbf{t}=\mathbf{n}^\top\mathbf{t}=0
 $$
 
-旋转时 $(M^{-1})^\top=M$，均匀缩放时两者只差一个倍数，方向一样，所以平时不容易发现；遇到不均匀缩放或剪切，就非用逆转置不可。
-
-### 旋转不能直接插值
-
-前面的动画里，旋转都是按角度一点点转过去的，没有直接在矩阵之间插值。如果直接在单位矩阵和“转 90°”之间取中点：
-
-$$
-\frac12\left(\begin{bmatrix}1&0\\0&1\end{bmatrix}+\begin{bmatrix}0&-1\\1&0\end{bmatrix}\right)=\begin{bmatrix}0.5&-0.5\\0.5&0.5\end{bmatrix},
-$$
-
-它的行列式是 0.5，转到一半，物体缩小了一圈。旋转矩阵的平均不再是旋转矩阵。动画和游戏里插值旋转要用四元数的球面插值（slerp），沿着“旋转”这个集合本身走，不抄近路。
+旋转的时候 $(M^{-1})^\top$ 就是 $M$ 自己，均匀缩放时两者只差一个倍数，方向一样，所以平时看不出毛病。碰上不均匀的缩放或者剪切，才非换不可。
 
 ## 函数也是向量
 
-开头说向量有第三种说法：能相加、能数乘的东西都算。现在可以兑现了。
+开头说过，能相加、能伸缩的东西，都能套这一整套。函数能相加，也能乘一个数。
 
-函数可以相加，$(f+g)(x)=f(x)+g(x)$；可以数乘，$(cf)(x)=c\,f(x)$。所以函数也是向量。写成代码，就是逐点相加的高阶函数：
-
-```ts
-const addF = (f: (x: number) => number, g: (x: number) => number) => (x: number) => f(x) + g(x);
-const scaleF = (c: number, f: (x: number) => number) => (x: number) => c * f(x);
-```
-
-次数不超过 3 的多项式，用 $1,x,x^2,x^3$ 当基，$5+3x-x^3$ 的坐标就是 $(5,3,0,-1)$。求导是线性的，所以它也是一个矩阵。还是老办法，问基向量去了哪：$1\to0$，$x\to1$，$x^2\to2x$，$x^3\to3x^2$，竖着写进各列：
+拿次数不超过 3 的多项式来说。用 $1$、$x$、$x^2$、$x^3$ 当基，$5+3x-x^3$ 的坐标是 $(5,3,0,-1)$。求导是线性的，所以它有矩阵。老办法，问每个基向量去了哪：$1\to0$，$x\to1$，$x^2\to2x$，$x^3\to3x^2$，一列一列写下来：
 
 $$
 D=\begin{bmatrix}0&1&0&0\\0&0&2&0\\0&0&0&3\\0&0&0&0\end{bmatrix},
 \qquad
-D\begin{bmatrix}5\\3\\0\\-1\end{bmatrix}=\begin{bmatrix}3\\0\\-3\\0\end{bmatrix}.
+D\begin{bmatrix}5\\3\\0\\-1\end{bmatrix}=\begin{bmatrix}3\\0\\-3\\0\end{bmatrix}
 $$
 
-结果是 $3-3x^2$，正是 $5+3x-x^3$ 的导数。前面的概念在这里全都有了着落：$D$ 的零空间是常数函数，秩是 3，第一列全是 0，常数被压成了 0，所以它不可逆：求导会丢掉常数项。最后一行全是 0，则说明导数里永远不会出现 $x^3$。$D^4=0$：任何三次多项式求四次导都没了。
+算出来是 $3-3x^2$，正是 $5+3x-x^3$ 的导数。
 
-求导的特征向量是什么？要找 $f'=\lambda f$ 的函数，答案是 $e^{\lambda x}$。这就是为什么指数函数在微分方程里无处不在：它们是求导这个变换的特征向量，求导对它们只是乘一个数。二阶导数的特征函数里有 $\sin\omega x$ 和 $\cos\omega x$，特征值是 $-\omega^2$，这是一切振动的来源。
+前面的东西在 $D$ 身上都找得到。第一列全是 0：常数被压成了 0，零空间是常数函数。秩是 3，四维的输入丢了一维。所以 $D$ 没有逆，求导把常数项丢了，积分回去只能补一个 $C$。$D^4=0$：三次多项式求四次导，什么都不剩。
 
-傅里叶分析把这个想法推到底：
+求导也有特征向量。满足 $f'=\lambda f$ 的函数是 $e^{\lambda x}$（它不是多项式，得把范围放宽到一般的函数）。解微分方程总在跟指数函数打交道，是因为求导对它只是乘一个数。求两次导，$\sin\omega x$ 和 $\cos\omega x$ 也是特征向量，特征值是 $-\omega^2$。
 
-- 在 $[-\pi,\pi]$ 上，常数 1 和所有的 $\sin kx$、$\cos kx$ 组成一组互相垂直的基，“点积”换成了积分 $\int_{-\pi}^{\pi}f(x)g(x)\,\mathrm{d}x$。
-- 一个函数的傅里叶系数，就是它和每个基函数做点积，也就是投影到每根坐标轴上。
-- 傅里叶变换是一次基变换：从“每个时刻的值”换成“每个频率的强度”。
-- 复指数 $e^{i\omega t}$ 是所有“不随时间改变规则”的线性系统的特征函数（实的正弦波是两个复指数的组合），所以在频率这组基下，滤波器变成了对角矩阵，卷积变成了逐项相乘。这和对角化是同一件事。
-
-JPEG 压缩也是这个套路：把图片切成 $8\times8$ 的小块，每块换到一组余弦图案的基下（离散余弦变换），人眼不敏感的高频系数存得很粗，甚至直接扔掉。换基，再扔掉不重要的坐标，和前面的 SVD 压缩是一个思路。
-
-量子力学干脆把整套理论建在线性代数上：系统的状态是向量，可观测量是对称（厄米）矩阵，测量能得到的结果就是它的特征值。
-
-## 神经网络：为什么非得夹一层非线性
-
-神经网络的一层是 $\mathbf{y}=\sigma(W\mathbf{x}+\mathbf{b})$。$W\mathbf{x}$ 是线性变换，$+\mathbf{b}$ 是平移，用齐次坐标看两者是一回事，合起来叫仿射变换。$\sigma$ 是非线性的激活函数，比如 $\operatorname{ReLU}(x)=\max(0,x)$。
-
-为什么非要 $\sigma$？拿掉它，三层网络就是
-
-$$
-W_3(W_2(W_1\mathbf{x}))=(W_3W_2W_1)\,\mathbf{x}.
-$$
-
-矩阵乘法那一节说过：线性变换接连做还是线性变换。一百层线性层乘起来只是一个矩阵，和一层没有区别，网络再深也白搭。
-
-几何上，线性层只会均匀地拉伸、旋转、剪切空间，网格始终是平行等距的；ReLU 把每个坐标的负半边压平到 0 上，相当于把空间的一部分拍扁在坐标面上，这一步不再保持网格平行等距。深度网络交替地拉伸和压平，一层一层把纠缠在一起的数据揉开，最后用一个线性的超平面就能把不同的类别分开。
-
-## 同一件事，几种说法
-
-回头看，线性代数里的每个概念，都至少有三副面孔：
-
-| 概念 | 几何上 | 函数上 | 方程组里 |
-| --- | --- | --- | --- |
-| 矩阵 | 对空间的一次变换 | 线性函数存成的表 | 系数 |
-| 矩阵乘法 | 接连做两次变换 | 函数复合 | 代入消元 |
-| 矩阵的形状 | 从几维到几维 | 类型签名 | 方程数 × 未知数个数 |
-| 行列式 | 面积、体积放大的倍数 | 是否一一对应 | 不为 0 才有唯一解 |
-| 逆矩阵 | 把变换倒着放 | 反函数 | $\mathbf{x}=A^{-1}\mathbf{b}$ |
-| 列空间 | 变换后能到达的地方 | 值域 | $\mathbf{b}$ 在里面才有解 |
-| 零空间 | 被压到原点的方向 | 被丢掉的信息 | 齐次方程的解 |
-| 秩 | 变换后还剩几维 | 输出的自由度 | 真正独立的方程个数 |
-| 转置 | 把尺子拉回去 | 向量和测量互换 | 行列互换 |
-| 基变换 | 换一套坐标网格 | `decode ∘ f ∘ encode` | 换元 |
-| 特征向量 | 变换里不转向的方向 | 只被乘一个数的输入 | $(A-\lambda I)\mathbf{v}=\mathbf{0}$ |
-| 奇异值分解 | 转、拉、转 | 按重要性分层 | 最小二乘、低秩近似 |
-
-再回到开头那条“行乘列”的规则。它不是谁拍脑袋规定的：1858 年，凯莱在 *A Memoir on the Theory of Matrices* 里定义矩阵乘法时，出发点就是把两次线性代换接连做下去。先有函数复合，后有乘法规则；教科书把顺序倒了过来，画面就丢了。
-
-把画面找回来，线性代数就只剩一句话：**研究那些保持加法和数乘的函数。** 它们简单到只用几个基向量的落点就能完全描述，又足够丰富，从屏幕上的每一个像素、搜索结果的排序，到神经网络的每一层，都是它们在干活。
+傅里叶变换是在函数里换一组基：从“每个时刻的值”换成“每个频率占多少”。新的基由正弦和余弦组成，正好是求导两次的特征向量，所以很多在原来的基下很乱的运算，换过去就成了各管各的伸缩。这和对角化是同一个做法。
 
 ## 延伸阅读
 
-- 3Blue1Brown 的系列视频 *Essence of Linear Algebra*（中文常译作《线性代数的本质》）。这篇文章的几何视角深受它的影响，动画也更精致。
-- Gilbert Strang，*Introduction to Linear Algebra*，以及 MIT 18.06 的公开课。四个基本子空间、最小二乘、SVD 讲得极清楚。
-- Sheldon Axler，*Linear Algebra Done Right*。从线性映射而不是矩阵出发，行列式放到最后才讲，和这篇的思路一致，更严格。
+- 3Blue1Brown 的系列视频 *Essence of Linear Algebra*（中文常译作《线性代数的本质》）。这篇把矩阵当变换来讲的路子是跟它学的，它的动画也比这里的好。
+- Gilbert Strang，*Introduction to Linear Algebra*，和 MIT 18.06 的公开课。列空间、零空间、最小二乘、SVD 都讲得很细。
+- Sheldon Axler，*Linear Algebra Done Right*。从线性映射讲起，行列式放到最后，更严格。

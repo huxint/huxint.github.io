@@ -2,7 +2,8 @@
 title: "CPU 是怎么执行一行代码的"
 description: "`*a + *b` 编译完只剩 5 个字节。从一枚开关搭起，看 CPU 怎么跑完这 5 个字节，又为什么常常在等内存。"
 pubDate: 2026-10-31
-tags: ["计算机组成原理", "计算机基础", "面试"]
+updatedDate: 2026-11-11
+tags: ["计算机组成原理", "计算机基础"]
 ---
 
 写一个只做加法的函数：
@@ -24,7 +25,9 @@ $ gcc -O2 -c add.c && objdump -d add.o
    4:	c3                   	ret
 ```
 
-三条指令：把 `*b` 读进寄存器 `eax`，把 `*a` 加上去，返回。先读哪个结果都一样，编译器挑了 `*b`。
+三条指令。寄存器是 CPU 里的几个小格子，一格放一个数，指令要算的数和算出的结果都放在里面。按 Linux 上的约定，函数的头两个参数放在 `rdi` 和 `rsi` 里，返回值放在 `eax` 里，所以进来的时候 `rdi` 是 `a`，`rsi` 是 `b`。`(%rsi)` 带着括号，意思是把 `rsi` 里的数当成地址，取那个地址上的东西，也就是 `*b`。
+
+连起来读：把 `*b` 读进 `eax`，把 `*a` 加上去，返回。先读哪个结果都一样，编译器挑了 `*b`。
 
 中间那一列才是 CPU 拿到的东西，一共 5 个字节：`8b 06 03 07 c3`。变量名、类型、加号，全都没了。
 
@@ -57,21 +60,23 @@ $1 = 37
 $2 = 64
 ```
 
-`eax` 先变成 37，再变成 64。这篇就把这两步拆到底：这 5 个字节怎么变成电信号，电信号怎么把 27 和 37 加成 64，64 又存在哪。
+`x/5xb $rip` 把接下来要执行的 5 个字节打了出来，和反汇编里那一列一样；`stepi` 每次只走一条指令。`eax` 先变成 37，再变成 64。
 
-和[《互联网是怎么连起来的》](/posts/computer-networks/)一样，这篇从最底下往上搭，只不过这回搭的是一台机器：开关，门，加法器，寄存器、时钟和内存，最后拼成一个能跑这 5 个字节的 CPU。搭完再看它为什么快，又常常卡在哪。
+这篇就把这两步拆到底：这 5 个字节怎么变成电信号，电信号怎么把 27 和 37 加成 64，64 又存在哪。
+
+和[《互联网是怎么连起来的》](/posts/computer-networks/)一样，从最底下往上搭，这回搭的是一台机器：开关，门，加法器，寄存器，时钟，内存，最后拼成一个能跑这 5 个字节的 CPU。搭完再看它为什么快，又常常卡在哪。
 
 ## 一枚开关
 
 CPU 里的每一位，都是一根导线上的电压：高是 1，低是 0。
 
-只分两档，是因为电压总在抖。噪声、温度、旁边导线的干扰，都会让它偏一点。两档隔得远，偏一点也认得出来；要是分十档表示 0 到 9，每档只剩一小截，抖一下就读错。二进制是电路挑的，不是数学挑的。
+只分两档，是因为电压总在抖。噪声、温度、旁边导线的干扰，都会让它偏一点。两档隔得远，偏一点也认得出来；要是分十档表示 0 到 9，每档只剩一小截，抖一下就读错。
 
-用电压控制另一根导线通不通的开关，叫晶体管。苹果的 A17 Pro 芯片上有 190 亿个。
+晶体管是一枚用电压控制的开关。它有三个脚，中间那个叫栅极，栅极上的电压决定另外两个脚之间通不通。苹果的 A17 Pro 芯片上有 190 亿个。
 
 1937 年，香农在硕士论文里指出：开关串起来就是“与”，两个都通才通；并起来就是“或”，有一个通就通。逻辑从此可以交给电路去算。
 
-现在的芯片用 CMOS，晶体管分两种：N 型在栅极是 1 时导通，P 型在栅极是 0 时导通。一个门里，P 型那一半接电源，N 型那一半接地，输出接在中间。
+现在的芯片用 CMOS，晶体管分两种：N 型在栅极是 1 时导通，P 型在栅极是 0 时导通。一个门里，P 型那一半接电源，N 型那一半接地，输出接在中间：哪一半通了，输出就被拉到哪一边。
 
 点 A、B 切换输入，橙色的线是 1，蓝色的是 0：
 
@@ -276,9 +281,11 @@ new ResizeObserver(([entry]) => {
 
 上下两半不会同时通，电源到地之间没有直通的路。门不翻转的时候几乎不耗电，电都花在翻转的那一下。
 
-与非门还有个特别的地方：只用它就能搭出所有别的门。两个输入接在一起，是非门；与非后面接个非门，是与门；有了与和非，或也搭得出来。[Nand2Tetris](https://www.nand2tetris.org/) 这门课就是从一个与非门开始，一路搭到能玩俄罗斯方块的电脑。
+这样搭出来的门天生带一个“非”：输入是 1，通的是接地那一半，输出反而是 0。所以最省晶体管的是与非和或非，4 个就够。
 
-门的输出可以直接接到下一个门的输入上。后面所有的东西，都是这样一个门接一个门搭出来的。
+只用与非门，就能搭出别的所有门。两个输入接在一起，是非门；与非后面接个非门，是与门；有了与和非，或也搭得出来。[Nand2Tetris](https://www.nand2tetris.org/) 这门课就是从一个与非门开始，一路搭到能玩俄罗斯方块的电脑。
+
+一个门的输出可以直接接到下一个门的输入上。后面所有的东西，都是这样一个门接一个门搭出来的。
 
 ## 加法：异或和与
 
@@ -293,9 +300,9 @@ new ResizeObserver(([entry]) => {
 
 和那一列，两个输入不一样才是 1，是异或；进位那一列，两个都是 1 才是 1，是与。一个异或门加一个与门，就能加一位。
 
-从第二位开始，还得把下面一位送上来的进位一起加。三个数相加的电路叫全加器，两个异或、两个与、一个或，5 个门。8 个全加器排成一排，每一位的进位接到上一位，就是 8 位加法器。
+从第二位开始，还得把下面一位送上来的进位一起加，三个数相加的电路叫全加器。和是三个数连着异或两次：1 的个数是奇数，和就是 1。进位在两种情况下产生：A、B 都是 1；或者 A、B 里只有一个 1，下面又送上来一个进位。两个异或、两个与，再用一个或把两种情况并起来，5 个门。
 
-默认算 27 + 37。点上面的格子改数，点中间的方块看它里面的门：
+8 个全加器排成一排，每一位的进位接到上一位，就是 8 位加法器。默认算 27 + 37。点上面的格子改数，点中间的方块看它里面的门：
 
 ```render html
 <style>
@@ -336,20 +343,32 @@ new ResizeObserver(([entry]) => {
   .io tspan { font-size: 10px; }
   .dot { fill: var(--rule-strong); }
   .dot.on { fill: var(--accent); }
+  .top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 20px; }
+  .run { display: flex; align-items: center; gap: 14px; }
+  .cnt { color: var(--muted); font-size: 13px; white-space: nowrap; }
+  .cnt b { display: inline-block; min-width: 1.5em; color: var(--text); font: 600 14px var(--font-mono); text-align: right; }
+  .key { min-height: 38px; padding: 0 14px; border: 1px solid var(--rule-strong); border-radius: 6px; background: var(--bg-raised); box-shadow: 0 2px 0 var(--rule); color: var(--text); font-size: 13px; cursor: pointer; }
+  .key:hover { border-color: var(--text); }
 </style>
-<section class="ad" aria-label="8 位加法器：8 个全加器排成一排，进位从右往左传">
-  <div class="seg" role="group" aria-label="加还是减">
-    <button type="button" data-m="add" aria-pressed="true">加</button>
-    <button type="button" data-m="sub" aria-pressed="false">减</button>
+<section class="ad" aria-label="8 位加法器：8 个全加器排成一排，进位从右往左一位一位传">
+  <div class="top">
+    <div class="seg" role="group" aria-label="加还是减">
+      <button type="button" data-m="add" aria-pressed="true">加</button>
+      <button type="button" data-m="sub" aria-pressed="false">减</button>
+    </div>
+    <div class="run">
+      <span class="cnt">过了<b></b> 级门</span>
+      <button type="button" class="key replay">慢放进位</button>
+    </div>
   </div>
   <svg role="img"></svg>
 </section>
 <script>
-const N = 8, STEP = 55;
+const N = 8, FAST = 55, SLOW = 170;       // 每推一级门隔多少毫秒：改输入时快放，慢放时慢
 const root = document.querySelector('.ad'), svg = root.querySelector('svg');
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 let A = 27, B = 37, sub = false, sel = 0, width = 0, G = null;
-let v, target = null, raf = 0, last = 0, spare = 0;
+let v, target = null, raf = 0, last = 0, spare = 0, step = FAST, delays = 0;
 
 const bit = (x, i) => (x >> i) & 1;
 const inputs = () => ({ a: A, b: sub ? ~B & 255 : B, cin: +sub });
@@ -367,11 +386,18 @@ function tick(p, inp) {
   return n;
 }
 const same = (x, y) => ['p', 'g', 't', 's', 'c'].every((k) => x[k].every((b, i) => b === y[k][i]));
-function settle(inp) {
-  let s = tick({ p: [], g: [], t: [], s: [], c: [] }, inp);
-  for (let k = 0; k < 4 * N; k++) s = tick(s, inp);
-  return s;
+// 从 from 这个状态一级一级推到不再变：返回稳定后的状态，和一共推了几级
+function run(from, inp) {
+  let s = from, k = 0;
+  for (; k < 6 * N; k++) {
+    const n = tick(s, inp);
+    if (same(n, s)) break;
+    s = n;
+  }
+  return [s, k];
 }
+// 0 + 0 算稳以后的样子：每根线都是 0
+const ZERO = run({ p: [], g: [], t: [], s: [], c: [] }, { a: 0, b: 0, cin: 0 })[0];
 const word = (arr) => arr.slice(0, N).reduce((x, b, i) => x | (b << i), 0);
 const signed = (x) => (x > 127 ? x - 256 : x);
 const num = (x) => String(x).replace('-', '−');
@@ -396,11 +422,11 @@ function mount() {
   for (let i = 0; i < N; i++) {
     const x = g.cx(i) - c / 2;
     for (const [r, y] of [['a', g.yA], ['b', g.yB]])
-      s += `<g class="tap" data-t="${r}${i}"><rect class="hit" x="${g.cx(i) - g.colW / 2}" y="${y - 4}" width="${g.colW}" height="${c + 8}"/><rect class="cell" x="${x}" y="${y}" width="${c}" height="${c}" rx="6"/><text class="bit" x="${g.cx(i)}" y="${y + c / 2 + 1}"></text></g>`;
+      s += `<g class="tap" data-t="${r}${i}" tabindex="0" role="button" aria-label="${r.toUpperCase()} 的第 ${i} 位"><rect class="hit" x="${g.cx(i) - g.colW / 2}" y="${y - 4}" width="${g.colW}" height="${c + 8}"/><rect class="cell" x="${x}" y="${y}" width="${c}" height="${c}" rx="6"/><text class="bit" x="${g.cx(i)}" y="${y + c / 2 + 1}"></text></g>`;
     // A、B 两根线落到全加器上
     s += `<path class="w" data-w="a${i}" d="M${g.cx(i) - c * .2} ${g.yB + c + 2}V${g.yC}"/><path class="w" data-w="b${i}" d="M${g.cx(i) + c * .2} ${g.yB + c + 2}V${g.yC}"/>`;
     s += `<path class="w" data-w="s${i}" d="M${g.cx(i)} ${g.yC + g.fh}V${g.yS}"/>`;
-    s += `<rect class="fa" data-f="${i}" x="${x}" y="${g.yC}" width="${c}" height="${g.fh}" rx="5"/><text class="fa-t" x="${g.cx(i)}" y="${g.yC + g.fh / 2}">+</text>`;
+    s += `<rect class="fa" data-f="${i}" tabindex="0" role="button" aria-label="放大第 ${i} 位的全加器" x="${x}" y="${g.yC}" width="${c}" height="${g.fh}" rx="5"/><text class="fa-t" x="${g.cx(i)}" y="${g.yC + g.fh / 2}">+</text>`;
     s += `<g class="sum"><rect class="cell" data-sc="${i}" x="${x}" y="${g.yS}" width="${c}" height="${c}" rx="6"/><text class="bit" data-s="${i}" x="${g.cx(i)}" y="${g.yS + c / 2 + 1}"></text></g>`;
   }
   // 进位：每个全加器的进位从左边出来，接到左边那个的右边
@@ -476,6 +502,7 @@ function update() {
     t.textContent = v.c[k]; on(t, v.c[k]); on(svg.querySelector(`[data-w="c${k}"]`), v.c[k]);
   }
   svg.querySelector('[data-bl]').textContent = sub ? '~B' : 'B';
+  root.querySelector('.cnt b').textContent = delays;
   const S = word(v.s), fmt = (x) => num(sub ? signed(x) : x);
   if (g.wide) {
     svg.querySelector('[data-n="a"]').textContent = fmt(A);
@@ -506,34 +533,54 @@ function frame(now) {
   spare = Math.min(400, spare + now - last);
   last = now;
   let moved = false;
-  for (; spare >= STEP; spare -= STEP) {
+  for (; spare >= step; spare -= step) {
     const n = tick(v, inputs());
-    if (same(n, v)) { target = null; break; }
-    v = n; moved = true;
+    if (same(n, v)) { target = null; step = FAST; break; }
+    v = n; delays++; moved = true;
   }
   if (moved) update();
   if (target) raf = requestAnimationFrame(frame);
 }
 function changed() {
-  if (reduce) { v = settle(inputs()); return update(); }
+  delays = 0;
+  if (reduce) { const r = run(v, inputs()); v = r[0]; delays = r[1]; return update(); }
+  step = FAST;
   update();
   if (target) return;
-  target = true; last = performance.now(); spare = STEP;
+  target = true; last = performance.now(); spare = step;
+  raf = requestAnimationFrame(frame);
+}
+// 慢放：假装上一拍算的是 0 + 0，所有线都是 0，再把现在的输入接上去
+function replay() {
+  if (!G) return;
+  cancelAnimationFrame(raf);
+  target = null;
+  if (reduce) { const r = run(ZERO, inputs()); v = r[0]; delays = r[1]; return update(); }
+  v = ZERO; delays = 0; step = SLOW;
+  update();
+  target = true; last = performance.now(); spare = 0;
   raf = requestAnimationFrame(frame);
 }
 
-svg.addEventListener('click', (e) => {
-  const t = e.target.closest('[data-t]'), f = e.target.closest('[data-f]');
+function act(el) {
+  const t = el.closest('[data-t]'), f = el.closest('[data-f]');
   if (t) {
     const i = Number(t.dataset.t.slice(1));
     if (t.dataset.t[0] === 'a') A ^= 1 << i; else B ^= 1 << i;
     changed();
   } else if (f) { sel = Number(f.dataset.f); update(); }
+  return Boolean(t || f);
+}
+svg.addEventListener('click', (e) => { act(e.target); });
+svg.addEventListener('keydown', (e) => {
+  if ((e.key === 'Enter' || e.key === ' ') && act(e.target)) e.preventDefault();
 });
 root.querySelectorAll('[data-m]').forEach((b) => b.addEventListener('click', () => {
   if ((b.dataset.m === 'sub') !== sub) { sub = !sub; changed(); }
 }));
-v = settle(inputs());
+root.querySelector('.replay').addEventListener('click', replay);
+const first = run(ZERO, inputs());
+v = first[0]; delays = first[1];
 new ResizeObserver(([entry]) => {
   const w = Math.floor(entry.contentRect.width);
   if (w !== width) { width = w; mount(); }
@@ -541,7 +588,9 @@ new ResizeObserver(([entry]) => {
 </script>
 ```
 
-27 + 37 的进位从第 0 位一路传到第 6 位，每一位都得等下面那一位算完。把 A 的最低位点成 0，结果会先闪过 127 这样的数，才落到 63。这叫行波进位：8 位要等 7 级进位，64 位要等 63 级。
+点“慢放进位”，从所有线都是 0 开始重算一遍。进位从第 0 位出发，一位一位传到第 6 位，每过一位要穿过一个与门、一个或门，前后 13 级门，和才稳在 64。稳下来之前，导线上的数都是错的：把 A 的最低位点成 0，和会先闪过 65、67、71，一直到 127，才落到 63。
+
+这叫行波进位，每一位都得等下面那一位算完。8 位最坏要等进位走过 7 位，64 位就是 63 位。
 
 真正的 CPU 不这么等。超前进位加法器先把每一段“会不会产生进位”并行算出来，用更多的门换更短的等待，64 位也只要十来级门。
 
@@ -554,6 +603,8 @@ CPU 里做运算的这一块叫 ALU（算术逻辑单元）。加、减、与、
 最直接的办法是拿最高位当符号，0 正 1 负。可这样 `0000` 和 `1000` 是两个零，加法器还得先比符号，再决定是加还是减。
 
 换个想法。4 位二进制一共 16 个数，像汽车的里程表一样排成一圈：`0000` 往回拨一格是 `1111`，那就让 `1111` 当 −1，`1110` 当 −2，一直到 `1000` 当 −8。这叫补码。
+
+加法器只会往前走，走过头就绕回来。一圈 16 格，往回走 3 格和往前走 13 格停在同一格上，所以把 −3 存成 13，也就是 `1101`，加法器不用知道什么是负数，照常加就对了。
 
 $n$ 位的补码里，$-y$ 存成 $2^n - y$。$2^n - 1$ 是全 1，全 1 减 $y$ 就是把 $y$ 的每一位取反，所以
 
@@ -569,7 +620,7 @@ $$
 
 上面加法器的“减”就是这么接的：B 的每一位先过一个非门，最低位的进位塞一个 1。27 − 37 得 `1111 0110`，按补码读是 −10。
 
-同一串比特有两种读法。外圈按无符号读，内圈按补码读，默认是 `0111 + 0001`：
+同一串比特有两种读法。外圈按无符号读，内圈按补码读。两段弧都从 A 出发，外圈往前走 B 格，内圈照 B 的正负往前或往回走。默认是 `0111 + 0001`：
 
 ```render html
 <style>
@@ -591,7 +642,9 @@ $$
   .legend { grid-column: 3; margin: 0 0 -6px 6px; color: var(--muted); font-size: 11.5px; white-space: nowrap; }
   @media (max-width: 380px) { .row button { width: 34px; } .legend i { margin: 0 2px; } }
   .legend i { color: var(--faint); font-style: normal; margin: 0 4px; }
-  .flags { grid-column: 1 / -1; display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+  .flags { grid-column: 1 / -1; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 4px; }
+  .again { min-height: 38px; margin-left: auto; padding: 0 14px; border: 1px solid var(--rule-strong); border-radius: 6px; background: var(--bg-raised); box-shadow: 0 2px 0 var(--rule); color: var(--text); font-size: 13px; cursor: pointer; }
+  .again:hover { border-color: var(--text); }
   .flag { padding: 2px 10px; border: 1px solid var(--rule-strong); border-radius: 99px; color: var(--muted); font: 12.5px var(--font-mono); }
   .flag.on.cf { border-color: var(--blue); color: var(--blue); font-weight: 700; }
   .flag.on.of { border-color: var(--accent); color: var(--accent-ink); font-weight: 700; }
@@ -625,13 +678,14 @@ $$
     <div class="legend"><span class="u">无符号</span><i>·</i><span class="s">有符号</span></div>
     <div class="row" data-r="a"><span>A</span></div>
     <div class="row" data-r="b"><span>B</span></div>
-    <div class="flags"><span class="flag cf">CF 进位</span><span class="flag of">OF 溢出</span></div>
+    <div class="flags"><span class="flag cf">CF 进位</span><span class="flag of">OF 溢出</span><button type="button" class="again">再走一遍</button></div>
   </div>
 </section>
 <script>
 const root = document.querySelector('.tc'), svg = root.querySelector('svg');
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const v = { a: 0b0111, b: 0b0001 };
-let size = 0;
+let size = 0, prog = 1, raf = 0;         // prog：从 A 出发走了多少，0 到 1
 
 const sg = (x) => (x > 7 ? x - 16 : x);
 const num = (x) => String(x).replace('-', '−');
@@ -646,7 +700,7 @@ for (const r of ['a', 'b']) {
     b.type = 'button';
     b.dataset.i = i;
     b.setAttribute('aria-label', `${r.toUpperCase()} 的第 ${i} 位`);
-    b.addEventListener('click', () => { v[r] ^= 1 << i; draw(); });
+    b.addEventListener('click', () => { v[r] ^= 1 << i; walk(); });
     set.append(b);
   }
   row.append(document.createElement('output'));
@@ -673,13 +727,15 @@ function head(from, steps, r, cls) {
 
 function draw() {
   if (!size) return;
-  const a = v.a, b = v.b, r = (a + b) & 15;
-  const cf = a + b > 15, of = sg(a) + sg(b) > 7 || sg(a) + sg(b) < -8;
+  const a = v.a, b = v.b, r = (a + b) & 15, sb = sg(b), e = prog * prog * (3 - 2 * prog);
+  // 走到哪算哪：外圈越过 15 和 0 之间的缝是 CF，内圈越过 7 和 −8 之间的缝是 OF
+  const cf = a + b * e > 15.5, of = sb >= 0 ? a <= 7 && a + sb * e > 7.5 : a >= 8 && a + sb * e < 7.5;
   const small = size < 320, Rb = size / 2 - 21, Ru = Rb - (small ? 26 : 30), Rs = Ru - (small ? 31 : 35), sr = small ? 9.5 : 11;
   let s = '';
   s += `<circle class="track" cx="${size / 2}" cy="${size / 2}" r="${Ru}"/><circle class="track" cx="${size / 2}" cy="${size / 2}" r="${Rs}"/>`;
-  s += `<path class="arc u" d="${arc(a, b, Ru)}"/><path class="arc s" d="${arc(a, sg(b), Rs)}"/>`;
-  if (b) s += head(a, b, Ru, 'u') + head(a, sg(b), Rs, 's');
+  s += `<path class="arc u" d="${arc(a, b * e, Ru)}"/><path class="arc s" d="${arc(a, sb * e, Rs)}"/>`;
+  if (Math.abs(b * e) > .4) s += head(a, b * e, Ru, 'u');
+  if (Math.abs(sb * e) > .4) s += head(a, sb * e, Rs, 's');
   // 两道缝：无符号在 15 和 0 之间，有符号在 7 和 −8 之间
   const seam = (k, r0, r1, cls, on) => { const [x0, y0] = pt(k, r0), [x1, y1] = pt(k, r1); return `<line class="seam ${cls}${on ? ' on' : ''}" x1="${x0}" y1="${y0}" x2="${x1}" y2="${y1}"/>`; };
   s += seam(-.5, Ru - 13, Ru + 13, 'u', cf) + seam(7.5, Rs - 13, Rs + 13, 's', of);
@@ -687,7 +743,7 @@ function draw() {
   s += `<text class="tl ${cf ? 'u' : ''}" fill="var(--faint)" x="${cx_}" y="${cy_}" text-anchor="middle">CF</text>`;
   s += `<text class="tl ${of ? 's' : ''}" fill="var(--faint)" x="${ox_}" y="${oy_}" text-anchor="middle">OF</text>`;
   for (let k = 0; k < 16; k++) {
-    const end = k === r, start = k === a;
+    const end = prog >= 1 && k === r, start = k === a;
     const [bx, by] = pt(k, Rb), [ux, uy] = pt(k, Ru), [sx, sy] = pt(k, Rs);
     s += `<text class="bits${end ? ' end' : ''}" x="${bx}" y="${by}">${bin(k)}</text>`;
     s += `<circle class="st u${end ? ' end' : start ? ' start' : ''}" cx="${ux}" cy="${uy}" r="${sr}"/><text class="sn u${end ? ' end' : ''}" x="${ux}" y="${uy}">${k}</text>`;
@@ -709,8 +765,25 @@ function draw() {
   }
   root.querySelector('.cf').classList.toggle('on', cf);
   root.querySelector('.of').classList.toggle('on', of);
-  svg.setAttribute('aria-label', `${bin(a)} + ${bin(b)} = ${bin(r)}。无符号：${a} + ${b} = ${r}${cf ? '，绕过顶上的缝，进位溢出' : ''}；有符号：${num(sg(a))} + ${num(sg(b))} = ${num(sg(r))}${of ? '，绕过底下的缝，有符号溢出' : ''}`);
+  const cf1 = a + b > 15, of1 = sg(a) + sb > 7 || sg(a) + sb < -8;
+  svg.setAttribute('aria-label', `${bin(a)} + ${bin(b)} = ${bin(r)}。无符号：${a} + ${b} = ${r}${cf1 ? '，绕过顶上的缝，进位溢出' : ''}；有符号：${num(sg(a))} + ${num(sb)} = ${num(sg(r))}${of1 ? '，绕过底下的缝，有符号溢出' : ''}`);
 }
+
+// 从 A 出发沿着两圈各走一遍：外圈往前走 B 格，内圈按 B 的正负往前或往回
+function walk() {
+  cancelAnimationFrame(raf);
+  if (reduce || !size) { prog = 1; return draw(); }
+  const t0 = performance.now(), dur = 300 + 90 * Math.max(v.b, 1);
+  const next = (now) => {
+    prog = Math.max(0, Math.min(1, (now - t0) / dur));
+    draw();
+    if (prog < 1) raf = requestAnimationFrame(next);
+  };
+  prog = 0;
+  draw();
+  raf = requestAnimationFrame(next);
+}
+root.querySelector('.again').addEventListener('click', walk);
 
 new ResizeObserver(([entry]) => {
   const w = Math.floor(Math.min(entry.contentRect.width, 360));
@@ -722,7 +795,7 @@ draw();
 
 7 + 1 得 `1000`。外圈读成 8，没问题；内圈读成 −8，正数加正数加出了负数，这就是溢出。
 
-两圈的接缝不在一处：外圈在顶上，15 和 0 之间；内圈在底下，7 和 −8 之间。把 B 改成 `1101` 试试：外圈是往前走 13 格，越过了顶上的接缝；内圈是往回走 3 格，什么都没越过。
+两圈的接缝不在一处：外圈在顶上，15 和 0 之间；内圈在底下，7 和 −8 之间。把 B 改成 `1101`：外圈往前走 13 格，越过了顶上的接缝；内圈往回走 3 格，什么都没越过。两段弧停在同一格 `0100` 上，无符号读是 4，可 7 + 13 该是 20，丢了一个 16；有符号读是 7 − 3 = 4，没错。
 
 CPU 不知道你打算按哪种读，两种都记着：越过外圈的接缝，设 CF（进位标志）；越过内圈的接缝，设 OF（溢出标志）。编译器知道变量是什么类型，挑对应的那个看。
 
@@ -739,7 +812,7 @@ C 语言里，`unsigned` 溢出就绕回去，结果是确定的；`int` 溢出�
    8:	c3                   	ret
 ```
 
-加法换成了 `addss`，寄存器换成了 `xmm0`，背后是另一套电路。内存里还是 4 个字节，CPU 不知道它们是整数还是小数。类型只活在编译器里，编译器替你挑指令。
+加法换成了 `addss`，寄存器换成了 `xmm0`，背后是另一套电路。内存里还是 4 个字节，上面没有记号说它是整数还是小数。类型是编译器知道的事：它看到 `float`，就挑 `addss`。
 
 float 的 32 位分三段：1 位符号 $s$，8 位阶码 $e$，23 位尾数 $m$，值是
 
@@ -747,9 +820,9 @@ $$
 (-1)^s \times 1.m \times 2^{e-127}
 $$
 
-就是二进制的科学计数法。阶码减 127，好表示负的指数；小数点前面那个 1 永远是 1，干脆不存，白赚一位。
+就是二进制的科学计数法。阶码存的是指数加 127，这样负的指数也能用一个不带符号的数存下；二进制里小数点前面那一位只能是 1，干脆不存，白赚一位。
 
-点比特翻转，或者直接输一个数：
+下面是 0.1 存成 float 的样子。点比特翻转，或者直接输一个数：
 
 ```render html
 <style>
@@ -777,6 +850,7 @@ $$
   .man > span { color: var(--accent-ink); }
   .grp > span b { font: 600 12px var(--font-mono); margin-left: 6px; }
   @media (max-width: 520px) { .b { width: 20px; } .man > div { max-width: 264px; } }
+  @media (pointer: coarse) { .b { width: 28px; height: 38px; } .man > div { max-width: none; } .chips button { min-height: 38px; } }
   dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 8px 16px; margin: 0; }
   dt { color: var(--muted); }
   dt code { color: var(--text); font: 600 13px var(--font-mono); }
@@ -913,9 +987,11 @@ double 有 52 位尾数，一样装不下。Python 用的就是 double：
 0.30000000000000004
 ```
 
-数越大，相邻两个浮点数离得越远。0.1 附近，相邻的 float 差 $7.45 \times 10^{-9}$；到了 $2^{24}$，也就是 16777216，相邻的差 2，16777217 存不进去，会变成 16777216。所以浮点数别用 `==` 比，钱要用整数存到分。
+0.1 和 0.2 存进去时各舍入了一次，加完再舍入一次，结果落在了离 0.3 最近的那个 double 的隔壁。
 
-再点“eax 里的 64”：整数 64 的 4 个字节按 float 读，是 $8.97 \times 10^{-44}$。比特还是那些比特，换条指令就是另一个数。
+尾数的位数是定死的，阶码每加 1，这些位要铺开的范围就翻一倍，所以数越大，相邻两个浮点数离得越远。0.1 附近，相邻的 float 差 $7.45 \times 10^{-9}$；到了 $2^{24}$，也就是 16777216，相邻的差 2，16777217 存不进去，会变成 16777216。所以浮点数别用 `==` 比，钱要用整数存到分。
+
+再点“eax 里的 64”：整数 64 的 4 个字节按 float 读，是 $8.97 \times 10^{-44}$。
 
 ## 记住一个数：锁存器
 
@@ -1098,9 +1174,113 @@ new ResizeObserver(([entry]) => {
 
 现在 S、R 都是 0。上面那个门的两个输入 R 和 $\bar{Q}$ 都是 0，或非得 1，所以 Q = 1；Q 送到下面那个门，让 $\bar{Q}$ 保持 0。两个门互相撑着，谁都不变。按一下 R，Q 被拉成 0，松手以后，两个门换成另一种互相撑着的样子。
 
-这叫 SR 锁存器，S 是置位（set），R 是复位（reset）。
+这叫 SR 锁存器，S 是置位（set），R 是复位（reset）。S、R 一起按住，两个输出都被压成 0，同时松手以后落到哪边说不准，所以用的时候不让它俩同时是 1。
 
-再加几个门，让它只在时钟信号从 0 跳到 1 的那一下把输入 D 抄进来，其他时候输入怎么变都不理，就成了 D 触发器。32 个 D 触发器排成一排，就是寄存器 `eax`。
+锁存器能记，可它太听话：S、R 什么时候动，它就什么时候变。加法器的输出稳下来之前要乱跳一阵，前面闪过的 127 就是，这些中间值不该被记进去。得有一根线来说“现在抄”，这根线就是时钟。
+
+给锁存器添几个门，让它听时钟的；再把两个这样的锁存器前后串起来。时钟是 0 时，前一个跟着输入 D 变，后一个不动；时钟一跳到 1，前一个锁住，后一个把它锁住的值放到输出 Q 上。合起来的效果是，Q 只在时钟从 0 跳到 1 的那一下抄一次 D。这叫 D 触发器。先多翻几次 D，再拨时钟：
+
+```render html
+<style>
+  .ff { --blue: #356f9b; font-size: 13px; line-height: 1.5; font-variant-ligatures: none; }
+  :root[data-theme="dark"] .ff { --blue: #95bfdc; }
+  .keys { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .key { min-height: 40px; padding: 0 14px; border: 1px solid var(--rule-strong); border-radius: 6px; background: var(--bg-raised); box-shadow: 0 2px 0 var(--rule); color: var(--text); font-size: 13px; cursor: pointer; }
+  .key:hover { border-color: var(--text); }
+  .key b { margin-left: 8px; font: 600 14px var(--font-mono); }
+  .key[aria-pressed="true"] { border-color: var(--accent); color: var(--accent-ink); }
+  .q { margin-left: auto; color: var(--muted); white-space: nowrap; }
+  .q b { margin-left: 6px; color: var(--accent-ink); font: 600 16px var(--font-mono); }
+  .ff svg { display: block; width: 100%; height: auto; margin-top: 12px; overflow: visible; }
+  .rl { fill: var(--muted); font-size: 12px; dominant-baseline: central; }
+  .base { stroke: var(--rule); stroke-width: 1; stroke-dasharray: 2 4; }
+  .tr { fill: none; stroke-width: 2; stroke-linejoin: round; }
+  .tr.c { stroke: var(--muted); stroke-width: 1.6; }
+  .tr.d { stroke: var(--blue); }
+  .tr.q { stroke: var(--accent); stroke-width: 2.6; }
+  .edge { stroke: var(--text); stroke-width: 1.2; stroke-dasharray: 3 3; }
+  .got { fill: var(--text); font-size: 12px; text-anchor: middle; }
+  .dot.d { fill: var(--blue); }
+  .dot.q { fill: var(--accent); }
+</style>
+<section class="ff" aria-label="D 触发器：Q 只在时钟从 0 跳到 1 的那一下抄一次 D，其他时候 D 怎么变都不理">
+  <div class="keys">
+    <button type="button" class="key" data-k="d">D<b></b></button>
+    <button type="button" class="key" data-k="clk">时钟<b></b></button>
+    <button type="button" class="key reset">重来</button>
+    <span class="q">Q<b></b></span>
+  </div>
+  <svg role="img"></svg>
+</section>
+<script>
+const root = document.querySelector('.ff'), svg = root.querySelector('svg');
+// 每一列是一次动作之后的样子：[时钟, D, Q, 这一列是不是从上升沿开始]
+const START = [[0, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 0], [0, 1, 0, 0], [1, 1, 1, 1], [1, 0, 1, 0], [0, 0, 1, 0], [0, 1, 1, 0], [0, 0, 1, 0], [1, 0, 0, 1], [0, 0, 0, 0], [0, 1, 0, 0]];
+const NAMES = ['时钟', 'D', 'Q'], CLS = ['c', 'd', 'q'];
+let hist = START.slice(), width = 0;
+
+function flip(k) {
+  const last = hist[hist.length - 1];
+  let clk = last[0], d = last[1], q = last[2], edge = 0;
+  if (k === 'd') d ^= 1;
+  else {
+    clk ^= 1;
+    if (clk) { q = d; edge = 1; }        // 上升沿：把这一刻的 D 抄给 Q
+  }
+  hist.push([clk, d, q, edge]);
+  if (hist.length > 60) hist = hist.slice(-40);
+  draw();
+}
+
+function draw() {
+  if (!width) return;
+  const COLS = width < 440 ? 12 : 16, x0 = 38, cw = (width - x0 - 6) / COLS, top = 26, rowH = 44;
+  const y = (i, b) => top + i * rowH + (b ? 4 : 26);
+  const shown = hist.slice(-COLS), first = hist[0];
+  const cols = Array(COLS - shown.length).fill([first[0], first[1], first[2], 0]).concat(shown);
+  let s = '';
+  // 上升沿：一条竖虚线穿过三行，顶上写抄到了什么
+  cols.forEach((c, j) => {
+    if (!c[3]) return;
+    const x = x0 + j * cw;
+    s += `<line class="edge" x1="${x}" x2="${x}" y1="${top - 6}" y2="${y(2, 0) + 4}"/><text class="got" x="${x}" y="${top - 12}">抄 ${c[1]}</text>`;
+  });
+  for (let i = 0; i < 3; i++) {
+    s += `<text class="rl" x="0" y="${top + i * rowH + 15}">${NAMES[i]}</text><line class="base" x1="${x0}" x2="${x0 + COLS * cw}" y1="${y(i, 0)}" y2="${y(i, 0)}"/>`;
+    let d = `M${x0} ${y(i, cols[0][i])}`;
+    cols.forEach((c, j) => { d += `V${y(i, c[i])}H${x0 + (j + 1) * cw}`; });
+    s += `<path class="tr ${CLS[i]}" d="${d}"/>`;
+  }
+  // 上升沿那一刻 D 上的值，和 Q 抄到的值
+  cols.forEach((c, j) => {
+    if (!c[3]) return;
+    const x = x0 + j * cw;
+    s += `<circle class="dot d" cx="${x}" cy="${y(1, c[1])}" r="4"/><circle class="dot q" cx="${x}" cy="${y(2, c[2])}" r="4"/>`;
+  });
+  svg.setAttribute('viewBox', `0 0 ${width} ${top + 3 * rowH + 4}`);
+  svg.innerHTML = s;
+  const now = hist[hist.length - 1];
+  root.querySelectorAll('[data-k]').forEach((b) => {
+    const val = now[b.dataset.k === 'd' ? 1 : 0];
+    b.querySelector('b').textContent = val;
+    b.setAttribute('aria-pressed', String(!!val));
+  });
+  root.querySelector('.q b').textContent = now[2];
+  svg.setAttribute('aria-label', `时钟 = ${now[0]}，D = ${now[1]}，Q = ${now[2]}。Q 只在时钟从 0 跳到 1 时抄一次 D`);
+}
+
+root.querySelectorAll('[data-k]').forEach((b) => b.addEventListener('click', () => flip(b.dataset.k)));
+root.querySelector('.reset').addEventListener('click', () => { hist = START.slice(); draw(); });
+new ResizeObserver(([entry]) => {
+  const w = Math.floor(entry.contentRect.width);
+  if (w !== width) { width = w; draw(); }
+}).observe(svg);
+</script>
+```
+
+竖的虚线是时钟的上升沿，Q 只在这几处变，变成的是那一刻的 D。两次上升沿之间 D 翻了几回，Q 都没看见；时钟从 1 落回 0，也什么都不发生。现在 D 是 1，Q 还是 0，要等下一次上升沿。
+
+32 个 D 触发器排成一排，接同一根时钟线，就是寄存器 `eax`。
 
 ## 时钟：拍子不能太快
 
@@ -1287,15 +1467,15 @@ new ResizeObserver(([entry]) => {
 </script>
 ```
 
-结果先是 62，也就是 27 异或 37；然后进位一位一位往上走，把 1 清成 0：60、56、48、32、0，最后才是 64。时钟定在 4.5 GHz，寄存器抄到的是 0。
+结果先是 62，也就是 27 异或 37；然后进位一位一位往上走，把 1 清成 0：60、56、48、32、0，最后才是 64。时钟定在 4.5 GHz，一拍 222 皮秒，和要到 260 皮秒才稳，寄存器抄到的是 0。
 
-超频超过头，程序就会算错，就是这么回事：不是电路算不出来，是还没算完就被抄走了。一拍至少要比最长的那条路径长，这条路径叫关键路径。而且得按最坏的输入算：换成 127 + 1，进位要从最低位传到最高位。
+超频超过头程序会算错，原因就在这：电路还没算完，结果就被抄走了。一拍得比最慢的那条路径长，这条路径叫关键路径，而且要按最坏的输入算。换成 127 + 1，进位要从最低位一路传到最高位，300 皮秒才稳，主频得降到 3.3 GHz 才抄得对。
 
-那为什么不一直加快时钟？功耗大致和电压的平方乘频率成正比，频率要高，电压就得抬，发热涨得比频率快得多。2004 年奔腾 4 就到了 3.8 GHz，二十年后最快的桌面 CPU 也才 6 GHz 出头。频率涨不动，力气就花在每一拍多做点事上，后面的流水线、分支预测都是这么来的。
+想让时钟更快，要么让门翻转得更快，要么让一拍里要穿过的门更少。前一条路得抬电压，而功耗大致和电压的平方乘频率成正比，发热涨得比频率快得多：2004 年奔腾 4 就到了 3.8 GHz，二十年后最快的桌面 CPU 也才 6 GHz 出头。后一条路是把一件事拆成几拍来做，后面的流水线就是这么来的。
 
 ## 内存：数住在哪
 
-`add` 拿到的 `rdi`、`rsi` 不是 27 和 37，是两个地址。在 gdb 里看 `rsp` 往上的 16 个字节：
+`add` 拿到的 `rdi`、`rsi` 不是 27 和 37，是两个地址。内存是一长排字节，每个字节有一个编号，这个编号就是地址。寄存器 `rsp` 里存的是栈顶的地址，在 gdb 里看它往上的 16 个字节：
 
 ```text
 (gdb) x/16xb $rsp
@@ -1307,21 +1487,21 @@ new ResizeObserver(([entry]) => {
 
 前 8 个字节倒过来是 `0x555555555080`，是 `main` 里 `call` 的下一条指令，`add` 返回以后要回到这里。`x` 和 `y` 为什么挨着放在栈上，[《C++ 的变量都住在哪》](/posts/cpp-memory/)里讲过。
 
-内存条里是 DRAM：每一位是一个晶体管加一个小电容，电容里有电荷是 1，没有是 0。地址送进去，译码器把它变成一根被选中的线，$k$ 位地址能选 $2^k$ 根。电容会漏电，每隔几十毫秒就得全部读一遍再写回去，叫刷新。
+这么多字节，不能像寄存器那样用触发器存：一个触发器要十几二十个晶体管，16 GB 是一千三百多亿位。内存条里用的是 DRAM，每一位只有一个晶体管加一个小电容，电容里有电荷是 1，没有是 0。地址送进去，译码器把它变成一根被选中的线，$k$ 位地址能选 $2^k$ 根。电容会漏电，每隔几十毫秒就得全部读一遍再写回去，叫刷新。
 
-一个晶体管加一个电容，便宜，能做大，代价是慢。这笔账等 CPU 搭好再算。
+这样做便宜，能做大，代价是慢。这笔账等 CPU 搭好再算。
 
 ## 取指，译码，执行
 
-零件齐了：ALU 算，寄存器记，内存存数也存指令，时钟打拍子。还差一个告诉它们这一拍该干什么的东西。
+零件齐了：ALU 算，寄存器记，内存存数也存指令，时钟打拍子。还差一个东西来安排它们这一拍各干什么。
 
 CPU 里有个寄存器 `rip`，存着下一条指令的地址。剩下的就是一个循环：
 
-1. 取指：按 `rip` 从内存读出指令的字节。
+1. 取指：按 `rip` 从内存读出指令的字节，`rip` 往后挪到下一条。
 2. 译码：看这几个字节是什么指令，用哪些寄存器。
-3. 执行：让 ALU 算，读写内存，把 `rip` 挪到下一条。
+3. 执行：让 ALU 算，读写寄存器和内存。
 
-`8b` 的意思是“从寄存器或内存读 4 个字节，放进一个寄存器”。具体是哪两个，写在下一个字节里，这个字节叫 ModRM。`06` 拆开是 `00 000 110`：
+第一条指令是 `8b 06`。头一个字节 `8b` 是操作码，意思是“从寄存器或内存读 4 个字节，放进一个寄存器”。具体是哪两个，写在下一个字节里，这个字节叫 ModRM。`06` 拆开是 `00 000 110`：
 
 | 字段 | 位 | 意思 |
 | --- | --- | --- |
@@ -1331,9 +1511,9 @@ CPU 里有个寄存器 `rip`，存着下一条指令的地址。剩下的就是�
 
 第二条是 `03 07`。`03` 是加法，`07` 是 `00 000 111`，`111` 是 `rdi`。`06` 和 `07` 只差最后一位，差的就是 `rsi` 和 `rdi`。
 
-译码器是一张焊死的表：字节进去，控制信号出来。哪个寄存器接到 ALU 上，ALU 做加法还是减法，结果写回哪里，都由这些信号决定。
+译码器是一张焊死的表：字节进去，控制信号出来。控制信号就是一把导线，哪个寄存器接到 ALU 上，ALU 做加法还是减法，结果写回哪里，都看这些线上是 0 还是 1。
 
-下面这台小 CPU 跑的就是这 5 个字节，地址和数都是 gdb 里看到的。点“单步”往下走：
+下面这台小 CPU 跑的就是这 5 个字节，地址和数都是 gdb 里看到的。现在停在第一条指令刚译码完的地方，点“单步”往下走：
 
 ```render html title="地址、字节和寄存器的值来自 gdb（GCC 16.2，-O2）"
 <style>
@@ -1584,7 +1764,7 @@ draw(STEPS[idx]);
 
 最后一条 `ret` 从栈顶读出 8 个字节放进 `rip`，`rsp` 加 8，下一次取指就回到了 `main`。
 
-指令和数据放在同一块内存里，CPU 照着 `rip` 一条条取来执行，这个设计写在 1945 年冯·诺依曼的 EDVAC 报告里。八十年过去，CPU 还在转这个循环。
+指令和数据放在同一块内存里，CPU 照着 `rip` 一条条取来执行，这个设计写在 1945 年冯·诺依曼的 EDVAC 报告里，到现在也没变。
 
 x86 的指令长短不一，短的 1 个字节，长的 15 个字节，前面还能加各种前缀，译码器很复杂。现代的 x86 CPU 会先把指令拆成更简单的微操作（µop），比如 `add (%rdi),%eax` 拆成一个读内存、一个加法。
 
@@ -1743,7 +1923,7 @@ new ResizeObserver(([entry]) => {
 </script>
 ```
 
-曲线不是慢慢涨上去的，是一级一级的台阶，每一级的边都落在一个缓存的大小附近：
+曲线是一级一级的台阶，每一级的边都落在一个缓存的大小附近：
 
 | 数据放在 | 大小 | 读一次 |
 | --- | --- | --- |
@@ -1754,19 +1934,21 @@ new ResizeObserver(([entry]) => {
 
 测的时候开着省电模式，主频只有 1.7 GHz 左右，L1 的 3 纳秒正好是 5 拍。
 
-CPU 和内存之间夹着这三级缓存，都是 SRAM：每一位用 6 个晶体管搭成一个锁存器，不用刷新，快，但占地方，也贵。L1 离运算单元最近，最小最快；越往外越大，越慢。
+缓存是 CPU 里的几小块快内存，存着最近读过的数据的副本。读一个地址，先在缓存里找：找到了叫命中，直接用；没找到叫缺失，这才去内存读，读回来的留一份在缓存里，挤掉一份旧的。
+
+这台 CPU 有三级缓存，都是 SRAM：每一位用 6 个晶体管搭成一个锁存器，不用刷新，快，但占地方，也贵。L1 离运算单元最近，最小最快；越往外越大，越慢。数据块小到 L1 装得下，每次读都命中 L1；大过 L1，就有一部分要去 L2 找，曲线上了一级台阶。
 
 L1 和内存差 60 倍。把一拍放大成一秒，读 L1 是 5 秒，读一次内存是五分钟出头。
 
-缓存管用，是因为程序读内存很有规律：刚读过的，很快还会再读，这是时间局部性；读了这里，很快会读旁边，这是空间局部性。所以缓存每次不只搬一个数，而是连着搬 64 个字节，叫一个缓存行。
+这么小的缓存能管用，是因为程序读内存很有规律：刚读过的，很快还会再读，这是时间局部性；读了这里，很快会读旁边，这是空间局部性。所以缺失的时候不只搬一个数，而是把它周围的 64 个字节一起搬进来，这 64 个字节叫一个缓存行。
 
 ## 缓存行：一次搬 64 字节
 
 `x` 在 `0x7fffffffdb40`，`y` 在 `0x7fffffffdb44`。`0x7fffffffdb40` 是 64 的倍数，两个数落在同一个缓存行里，搬一次就都有了。
 
-同样的数据，换个顺序读，缺失次数能差好几倍。下面把缓存缩小成 4 行，每行 4 个数，按行、按列各读一遍 8 × 8 的数组：
+同样的数据，换个顺序读，缺失次数能差好几倍。下面把缓存缩小到只装得下 4 个缓存行，一个缓存行 4 个数。数组是 8 × 8 的，在内存里一行接一行地放，一行 8 个数正好占两个缓存行，图里每行中间留了一道缝。按行、按列各读一遍：
 
-```render html title="缓存缩小成 4 行、每行 4 个数；底下的耗时是真跑的"
+```render html title="缓存缩小成 4 个缓存行、每个 4 个数；底下的耗时是真跑的"
 <style>
   .cl { font-size: 13px; line-height: 1.5; font-variant-ligatures: none; }
   .keys { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -1784,11 +1966,13 @@ L1 和内存差 60 倍。把一拍放大成一秒，读 L1 是 5 秒，读一次
   .m i:nth-child(8n+5) { grid-column-start: 6; }
   .m i.hit { background: var(--accent-soft); border-color: var(--accent-soft); }
   .m i.miss { background: var(--accent); border-color: var(--accent); }
+  .m i.in { border-color: var(--text); }
   .m i.cur { outline: 2px solid var(--text); outline-offset: 1px; z-index: 1; }
   .legend { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 12px; color: var(--muted); font-size: 12.5px; }
   .legend i { display: inline-block; width: 12px; height: 12px; margin-right: 6px; border-radius: 3px; vertical-align: -1px; }
   .legend .miss { background: var(--accent); }
   .legend .hit { background: var(--accent-soft); border: 1px solid var(--rule-strong); }
+  .legend .in { border: 1px solid var(--text); }
   .bench { display: grid; grid-template-columns: max-content minmax(0, 1fr) max-content; gap: 6px 10px; align-items: center; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--rule); }
   .bench > b { grid-column: 1 / -1; min-width: 0; color: var(--muted); font-size: 12.5px; font-weight: 400; overflow-wrap: anywhere; }
   .bench span { color: var(--muted); font-size: 12.5px; }
@@ -1800,12 +1984,13 @@ L1 和内存差 60 倍。把一拍放大成一秒，读 L1 是 5 秒，读一次
 <section class="cl" aria-label="同一个 8×8 的数组，按行读和按列读，缓存缺失的次数差 4 倍">
   <div class="keys">
     <button type="button" class="key play">从头走一遍</button>
+    <button type="button" class="key step">走一步</button>
   </div>
   <div class="pair">
     <div data-w="row"><div class="h"><b>按行</b><span>缺失 <em></em> 次</span></div><div class="m"></div></div>
     <div data-w="col"><div class="h"><b>按列</b><span>缺失 <em></em> 次</span></div><div class="m"></div></div>
   </div>
-  <div class="legend"><span><i class="miss"></i>缺失，从内存搬一整行（4 个数）</span><span><i class="hit"></i>命中</span></div>
+  <div class="legend"><span><i class="miss"></i>缺失，搬一个缓存行（4 个数）</span><span><i class="hit"></i>命中</span><span><i class="in"></i>此刻在缓存里</span></div>
   <div class="bench">
     <b>2048 × 2048 个 int，加一遍</b>
     <span>按行</span><div><div class="bar row"></div></div><output class="row"></output>
@@ -1828,7 +2013,7 @@ function walk(order) {
     const line = Math.floor(i / LINE), k = cache.indexOf(line);
     if (k >= 0) cache.splice(k, 1); else if (cache.length === WAYS) cache.shift();
     cache.push(line);
-    marks.push([i, k >= 0]);
+    marks.push([i, k >= 0, cache.slice()]);
   }
   return marks;
 }
@@ -1849,6 +2034,8 @@ function draw() {
       if (!hit) miss++;
       if (j === t - 1 && t < N * N) cells[i].classList.add('cur');
     });
+    // 走到一半时，描出此刻缓存里装着的那 4 行
+    if (t > 0 && t < N * N) for (const line of WALKS[w][t - 1][2]) for (let k = 0; k < LINE; k++) cells[line * LINE + k].classList.add('in');
     root.querySelector(`[data-w="${w}"] em`).textContent = miss;
   }
   const max = Math.max(bench.row, bench.col);
@@ -1869,6 +2056,11 @@ function play() {
     draw();
     if (t >= N * N) clearInterval(timer);
   }, DT);
+}
+function stepOnce() {
+  clearInterval(timer);
+  t = t >= N * N ? 1 : t + 1;
+  draw();
 }
 
 // 真跑一遍：同样的数据，只换循环的顺序
@@ -1902,24 +2094,27 @@ async function measure() {
 }
 
 root.querySelector('.play').addEventListener('click', play);
+root.querySelector('.step').addEventListener('click', stepOnce);
 root.querySelector('.run').addEventListener('click', measure);
 draw();
 </script>
 ```
 
-按行读，每 4 个数缺失 1 次，一共 16 次。按列读次次缺失，64 次：一列 8 个数要用 8 个缓存行，缓存只装得下 4 行，读到下一列时，需要的那行早被踢出去了。真跑 2048 × 2048 的数组，按行加一遍 2.4 毫秒，按列 8.3 毫秒。
+按行读，每个缓存行只缺失一次，后面 3 个数都命中，一共 16 次。按列读次次缺失，64 次：一列 8 个数分在 8 个缓存行里，缓存只装得下 4 个。点“走一步”看按列那一边，描了边的是此刻留在缓存里的缓存行：读到第 5 行，第 1 行的那个就被踢了，等读下一列回到第 1 行，又得重新搬。
 
-C 的二维数组按行存，所以双重循环要让外层走行、内层走列。数组怎么摆、按什么顺序读，往往比省两条指令要紧得多。
+真跑 2048 × 2048 的数组，按行加一遍 2.4 毫秒，按列 8.3 毫秒。C 的二维数组按行存，所以双重循环要让外层走行、内层走列。数组怎么摆、按什么顺序读，往往比省两条指令要紧得多。
 
-缓存怎么决定一个地址放进哪一行？直接映射是一个地址只能放进固定的一行，冲突了就踢；全相联是哪行都能放，可查的时候每行都得比一遍；常用的是组相联，地址决定放进哪一组，组里有几行可以挑。写的时候，写直达是每次都同时写内存，写回是先只改缓存，等这一行被踢出去才写回内存。现在的 CPU 基本都是组相联加写回。
+缓存怎么知道一个地址在不在里面？每个缓存行旁边记着它是从内存的哪个位置搬来的。查的时候挨个比太慢，所以先用地址中间的几位直接选出一组，只和这一组里的几个缓存行比，L1 里通常是 8 个或 12 个，这叫组相联。一组满了，再踢掉其中一个。上面那张图为了简单，只有一组。
+
+写也是先写进缓存，等这个缓存行被踢出去，才写回内存。
 
 ## 地址是假的：虚拟内存
 
 `0x7fffffffdb40` 换算一下，差不多是 128 TB 的位置。我这台电脑只有 16 GB 内存，这个地址是它的 8 千多倍。
 
-程序看到的都是虚拟地址。操作系统把内存按 4 KB 一页分好，给每个进程一张表，记着每个虚拟页对应哪个物理页。4 KB 是 $2^{12}$，地址的低 12 位是页内偏移，原样照抄；高位拿去查表。
+程序看到的都是虚拟地址。操作系统把内存按 4 KB 一页分好，给每个进程一张表，记着每个虚拟页对应哪个物理页；每次读写内存，CPU 都先照这张表把虚拟地址换成物理地址。4 KB 是 $2^{12}$，地址的低 12 位是页内偏移，原样照抄；高位拿去查表。
 
-64 位的地址空间太大，一张表装不下，x86-64 分四级查，每级用 9 位当下标：
+x86-64 通常只用地址的低 48 位，去掉 12 位偏移还剩 36 位，也就是 $2^{36}$ 个页。一页一项、一项 8 字节，一张平铺的表要 512 GB。好在绝大部分虚拟页根本没人用，所以表分成四级，像一棵树，没用到的那几枝不用建。每级用 9 位当下标：
 
 ```render html
 <style>
@@ -1957,6 +2152,16 @@ C 的二维数组按行存，所以双重循环要让外层走行、内层走列
     .walk { grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 28px; }
     .s:nth-child(4)::before { display: none; }
   }
+  .ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 8px; }
+  .key { min-height: 38px; padding: 0 14px; border: 1px solid var(--rule-strong); border-radius: 6px; background: var(--bg-raised); box-shadow: 0 2px 0 var(--rule); color: var(--text); font-size: 13px; cursor: pointer; }
+  .key:hover { border-color: var(--text); }
+  .cnt { color: var(--muted); }
+  .cnt b { margin: 0 3px; color: var(--text); font: 600 14px var(--font-mono); }
+  .f, .s { transition: opacity .2s; }
+  .pw.run .f, .pw.run .s { opacity: .32; }
+  .pw.run .f.done, .pw.run .s.done, .pw.run .f.on, .pw.run .s.on { opacity: 1; }
+  .pw.run .f.on, .pw.run .s.on { outline: 2px solid var(--text); outline-offset: 1px; }
+  @media (prefers-reduced-motion: reduce) { .f, .s { transition: none; } }
 </style>
 <section class="pw" aria-label="虚拟地址 0x7fffffffdb40 拆成四个 9 位的下标和一个 12 位的页内偏移，查四级页表">
   <div class="va">虚拟地址<code>0x7fffffffdb40</code></div>
@@ -1975,8 +2180,42 @@ C 的二维数组按行存，所以双重循环要让外层走行、内层走列
     <div class="s lv"><span>第 4 级表</span><b>[509]</b></div>
     <div class="s end"><span>物理页</span><b>+ 0xb40</b></div>
   </div>
+  <div class="ctl">
+    <button type="button" class="key go">一级一级查</button>
+    <span class="cnt">读内存<b></b>次</span>
+  </div>
 </section>
+<script>
+const root = document.querySelector('.pw');
+const fields = [...root.querySelectorAll('.f')], steps = [...root.querySelectorAll('.s')];
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const count = root.querySelector('.cnt b');
+let k = -1, timer = 0;                  // −1：整条路都亮着；0 到 5：查到下面第几格
+
+function draw() {
+  root.classList.toggle('run', k >= 0);
+  steps.forEach((s, i) => { s.classList.toggle('on', i === k); s.classList.toggle('done', k >= 0 && i < k); });
+  // 第 k 格用的是上面第 k − 1 段：前四段是四级表的下标，最后一段是页内偏移
+  fields.forEach((f, i) => { f.classList.toggle('on', i === k - 1); f.classList.toggle('done', k >= 0 && i < k - 1); });
+  count.textContent = k < 0 ? 4 : Math.min(4, k);
+}
+function next() {
+  k = k >= 5 ? -1 : k + 1;
+  if (k < 0) clearInterval(timer);
+  draw();
+}
+root.querySelector('.go').addEventListener('click', () => {
+  clearInterval(timer);
+  if (reduce) return next();            // 不放动画：点一下走一格
+  k = 0;
+  draw();
+  timer = setInterval(next, 900);
+});
+draw();
+</script>
 ```
+
+CR3 寄存器里记着第 1 级表放在哪。拿地址最高的那 9 位当下标，在第 1 级表里读出一项，这一项说的是第 2 级表在哪；再拿下一段 9 位去第 2 级表里读，一路读到第 4 级，拿到的才是物理页的位置，加上页内偏移，就是数据真正住的地方。
 
 每张表 512 项，每项 8 字节，正好 4 KB，一页。翻译一个地址，要先读四次内存。
 
@@ -1992,9 +2231,15 @@ $$
 \text{时间} = \text{指令条数} \times \text{CPI} \times \text{每拍多长}
 $$
 
-CPI 是平均每条指令要几拍。每拍多长卡在频率上，指令条数由程序和编译器决定，能动的就剩 CPI。
+CPI 是平均每条指令要几拍。指令条数由程序和编译器决定，剩下两个数连在一起。前面说过，想让每拍短，就得把一件事拆成几拍做。把一条指令拆成五步，每步一拍，各有各的电路：
 
-把一条指令拆成五步：取指、译码、执行、访存、写回，每步一拍，各有各的电路。一条做完再做下一条，五套电路大部分时候闲着。洗衣服也不会等第一筐烘干了才洗第二筐：第一条在译码时，第二条就可以取指了。
+- 取指：按地址读出指令；
+- 译码：认出是什么指令，把要用的寄存器读出来；
+- 执行：ALU 算；
+- 访存：要读写内存的指令，在这一步读写；
+- 写回：把结果写进寄存器。
+
+拍子短了，可一条指令要走 5 拍，CPI 是 5。而且一条做完再做下一条，五套电路大部分时候闲着。洗衣服也不会等第一筐烘干了才洗第二筐：第一条在译码时，第二条就可以取指了。相邻两步之间隔着一排寄存器，每到一个时钟沿，每条指令的半成品往前挪一格。
 
 讲流水线，教科书一般用 RISC 指令集：指令一样长，只有专门的 load、store 指令读写内存，切成五段很整齐。`add` 编译成 RISC-V 是这样：
 
@@ -2005,9 +2250,9 @@ addw  a0, a1, a0
 ret
 ```
 
-x86 那种长短不一的指令，CPU 内部也是先拆成类似的微操作，再送进流水线。
+`a0`、`a1` 是寄存器，头两个参数放在里面，返回值也放在 `a0`。`lw` 是按寄存器里的地址读 4 个字节。x86 的 `add (%rdi),%eax` 一条指令里又读内存又做加法，在这里得分成两条。x86 那种长短不一的指令，CPU 内部也是先拆成类似的微操作，再送进流水线。
 
-下面是 `main` 调用 `add` 前后真正执行的 12 条 RISC-V 指令，拖动滑块一拍一拍看：
+下面是 `main` 调用 `add` 前后真正执行的 12 条 RISC-V 指令。每行一条指令，每列一拍，竖着看一列，就是这一拍五个工位上各是谁。点“播放”，或者拖滑块一拍一拍看：
 
 ```render html title="教科书上的五级流水线，带转发；指令是 clang 编译的 RISC-V 版"
 <style>
@@ -2017,7 +2262,10 @@ x86 那种长短不一的指令，CPU 内部也是先拆成类似的微操作，
   .seg { display: flex; flex-wrap: wrap; gap: 0 18px; }
   .seg button { min-height: 40px; padding: 4px 0; border: 0; border-bottom: 2px solid var(--rule); background: none; color: var(--muted); font-size: 14px; cursor: pointer; }
   .seg button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
-  .ctl { display: flex; align-items: center; gap: 10px; flex: 1 1 200px; max-width: 300px; color: var(--muted); }
+  .run { display: flex; align-items: center; gap: 10px; flex: 1 1 260px; max-width: 380px; }
+  .key { flex: none; min-width: 4.4em; min-height: 38px; padding: 0 14px; border: 1px solid var(--rule-strong); border-radius: 6px; background: var(--bg-raised); box-shadow: 0 2px 0 var(--rule); color: var(--text); font-size: 13px; cursor: pointer; }
+  .key:hover { border-color: var(--text); }
+  .ctl { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; color: var(--muted); }
   .ctl output { min-width: 4.4em; color: var(--text); font: 600 14px var(--font-mono); white-space: nowrap; }
   .ctl input { flex: 1; min-height: 36px; margin: 0; accent-color: var(--accent); }
   .snap { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-top: 14px; }
@@ -2055,7 +2303,10 @@ x86 那种长短不一的指令，CPU 内部也是先拆成类似的微操作，
       <button type="button" data-m="nojump" aria-pressed="false">不猜跳转</button>
       <button type="button" data-m="seq" aria-pressed="false">一条做完再下一条</button>
     </div>
-    <label class="ctl"><span>第</span><output></output><input type="range" min="1" value="9" aria-label="第几拍"></label>
+    <div class="run">
+      <button type="button" class="key play">播放</button>
+      <label class="ctl"><span>第</span><output></output><input type="range" min="1" value="9" aria-label="第几拍"></label>
+    </div>
   </div>
   <div class="snap"></div>
   <svg role="img"></svg>
@@ -2153,7 +2404,31 @@ function draw() {
   svg.setAttribute('aria-label', `${mode === 'seq' ? '一条做完再下一条' : mode === 'nojump' ? '流水线，跳转要等算出目标' : '流水线'}：12 条指令共 ${g.total} 拍；第 ${now} 拍时，${STAGES.map((n, k) => `${n}：${at[k]?.name ?? '空'}`).join('，')}`);
 }
 
+const playKey = root.querySelector('.play');
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let timer = 0;
+function stop() {
+  clearInterval(timer);
+  timer = 0;
+  playKey.textContent = '播放';
+}
+// 一拍一拍往前走，走到最后一拍停下
+function advance() {
+  const last = Number(slider.max), now = Number(slider.value);
+  slider.value = now >= last ? 1 : now + 1;
+  draw();
+  if (Number(slider.value) >= last) stop();
+}
+playKey.addEventListener('click', () => {
+  if (timer) return stop();
+  if (reduce) return advance();          // 不放动画：点一下走一拍
+  if (Number(slider.value) >= Number(slider.max)) { slider.value = 1; draw(); }
+  playKey.textContent = '暂停';
+  timer = setInterval(advance, Math.max(120, Math.min(420, 7000 / Number(slider.max))));
+});
+
 function setMode(m) {
+  stop();
   mode = m;
   plan = schedule(m);
   slider.max = plan.at(-1).w;
@@ -2161,7 +2436,7 @@ function setMode(m) {
   draw();
 }
 root.querySelectorAll('[data-m]').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.m)));
-slider.addEventListener('input', draw);
+slider.addEventListener('input', () => { stop(); draw(); });
 plan = schedule(mode);
 slider.max = plan.at(-1).w;
 new ResizeObserver(([entry]) => {
@@ -2171,11 +2446,11 @@ new ResizeObserver(([entry]) => {
 </script>
 ```
 
-一条做完再下一条，要 60 拍；流水线只要 17 拍。每条指令自己还是走 5 拍，快在同时有好几条在路上。
+一条做完再下一条，要 60 拍；流水线只要 17 拍，CPI 从 5 掉到 1.4。每条指令自己还是走 5 拍，快在同时有好几条在路上。
 
-图里那条箭头：`lw a1` 刚从内存读出 37，紧跟着的 `addw` 就要用。等它写回寄存器太慢，电路把访存的结果直接转发给执行；即便这样还是晚了一拍，`addw` 得原地等一拍，这一拍叫气泡。
+几条指令挤在路上，就会互相碍事。头一种：后一条要用的数，前一条还没算出来。图里那条箭头就是：`lw a1` 要到访存那一拍才从内存读出 37，紧跟着的 `addw` 这时候本该已经在执行了。等它写回寄存器再读太慢，电路把访存的结果直接转发给执行；即便这样还是晚了一拍，`addw` 得原地等一拍，这一拍叫气泡。
 
-切到“不猜跳转”：`call` 到译码才知道跳去哪，`ret` 到执行才知道回哪，后面的指令只能干等，一共 20 拍。
+另一种是跳转：下一条该从哪取，得等这一条算出来才知道。切到“不猜跳转”：`call` 到译码才知道跳去哪，`ret` 到执行才知道回哪，后面的指令只能干等，一共 20 拍。
 
 真正的 CPU 不等，先猜一个地址接着取。`call` 的目标写在指令里，好猜；`ret` 回哪要看栈上的返回地址，CPU 专门存了一小摞最近 `call` 的返回地址，叫返回地址栈，`ret` 一来就从顶上拿一个。
 
@@ -2192,7 +2467,9 @@ for (int i = 0; i < n; i++)
 
 `a[i]` 是 0 到 255 的随机数时，这个 `if` 一半进一半不进。
 
-最简单的预测器是一个两位计数器：0、1 猜不进，2、3 猜进；真进了加一，没进减一，到头就停。连着猜错两次才改主意。下面是 40 个数，橙色的会进 `if`：
+CPU 猜的办法是记账：这个 `if` 前几次进没进。最简单的预测器是一个两位计数器，0、1 猜不进，2、3 猜进；真进了加一，没进减一，到头就停。停在 0 或 3 的时候，要连着错两次才改主意，偶尔一次例外带不偏它。
+
+下面是 40 个数，橙色的会进 `if`。中间那条折线是计数器，落在有底色的上半截就猜进：
 
 ```render html title="上面是两位计数器的模拟；下面的耗时是真跑的"
 <style>
@@ -2203,6 +2480,7 @@ for (int i = 0; i < n; i++)
   .seg button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
   .score { color: var(--muted); font-size: 13px; }
   .score b { color: var(--accent-ink); font: 600 15px var(--font-mono); margin: 0 3px; }
+  .score i { font: 13px var(--font-mono); font-style: normal; }
   .bp svg { display: block; width: 100%; height: auto; margin-top: 10px; overflow: visible; }
   .bar { fill: var(--rule-strong); }
   .bar.t { fill: var(--accent); opacity: .75; }
@@ -2211,6 +2489,14 @@ for (int i = 0; i < n; i++)
   .rl { fill: var(--muted); font-size: 12px; dominant-baseline: central; }
   .ok { fill: var(--rule-strong); }
   .bad { fill: var(--accent-ink); }
+  .later { opacity: .22; }
+  .band { fill: var(--accent-soft); }
+  .mid { stroke: var(--rule-strong); stroke-width: 1; stroke-dasharray: 2 3; }
+  .cnt { fill: none; stroke: var(--text); stroke-width: 1.8; stroke-linejoin: round; }
+  .lv { fill: var(--faint); font: 10.5px var(--font-mono); text-anchor: end; dominant-baseline: central; }
+  .now { fill: none; stroke: var(--text); stroke-width: 1.4; }
+  .btn { min-height: 38px; padding: 0 14px; border: 1px solid var(--rule-strong); border-radius: 6px; background: var(--bg-raised); box-shadow: 0 2px 0 var(--rule); color: var(--text); font-size: 13px; cursor: pointer; }
+  .btn:hover { border-color: var(--text); }
   .bench { display: grid; grid-template-columns: max-content minmax(0, 1fr) max-content; gap: 6px 10px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--rule); }
   .bench > b { grid-column: 1 / -1; min-width: 0; color: var(--muted); font-size: 12.5px; font-weight: 400; overflow-wrap: anywhere; }
   .bench span { color: var(--muted); font-size: 12.5px; }
@@ -2227,7 +2513,8 @@ for (int i = 0; i < n; i++)
       <button type="button" data-m="rand" aria-pressed="true">乱序</button>
       <button type="button" data-m="sorted" aria-pressed="false">排好序</button>
     </div>
-    <span class="score">猜错<b></b>次 / 40</span>
+    <button type="button" class="btn play">走一遍</button>
+    <span class="score">猜错<b></b>次 / <i></i></span>
   </div>
   <svg role="img"></svg>
   <div class="bench">
@@ -2242,41 +2529,55 @@ const N = 40;
 // 我的笔记本（Chromium）上同一段循环的耗时，毫秒
 const MINE = { rand: 49, sorted: 7 };
 const root = document.querySelector('.bp'), svg = root.querySelector('svg');
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 let mode = 'rand', width = 0, bench = { ...MINE };
+let t = N, timer = 0;                    // t：已经走过几个数；N 是全部走完
 
 let seed = 7;
 const rand = () => ((seed = (Math.imul(seed, 1103515245) + 12345) >>> 0) >>> 8) & 255;
 const RAND = Array.from({ length: N }, rand), SORTED = [...RAND].sort((a, b) => a - b);
 
-// 两位饱和计数器：0、1 猜不跳，2、3 猜跳；猜对往同方向走一格，猜错往反方向走一格
+// 两位饱和计数器：0、1 猜不跳，2、3 猜跳；真跳了加一，没跳减一，到头就停
+// c 记的是猜这一个数之前计数器停在几
 function predict(data) {
   let c = 1;
   return data.map((v) => {
-    const taken = v >= 128, guess = c >= 2;
+    const taken = v >= 128, before = c;
     c = taken ? Math.min(3, c + 1) : Math.max(0, c - 1);
-    return { v, taken, ok: guess === taken };
+    return { v, taken, c: before, ok: (before >= 2) === taken };
   });
 }
 
 function draw() {
   if (!width) return;
   const rows = predict(mode === 'rand' ? RAND : SORTED), labW = width < 480 ? 34 : 46;
-  const cw = (width - labW) / N, barH = 90, top = 16, yM = top + barH + 18, H = yM + 10;
+  const cw = (width - labW) / N, barH = 90, top = 16, yC = top + barH + 12, cH = 30, yM = yC + cH + 16, H = yM + 10;
+  const cy = (c) => yC + cH - (c / 3) * cH;
   let s = '';
-  s += `<text class="rl" x="0" y="${top + barH / 2}">a[i]</text><text class="rl" x="0" y="${yM}">猜错</text>`;
+  s += `<text class="rl" x="0" y="${top + barH / 2}">a[i]</text><text class="rl" x="0" y="${yC + cH / 2}">计数</text><text class="rl" x="0" y="${yM}">猜错</text>`;
+  // 计数器那一行：上半截（2、3）猜进，下半截（0、1）猜不进
+  s += `<rect class="band" x="${labW}" y="${yC - 3}" width="${width - labW}" height="${cH / 2 + 3}"/><line class="mid" x1="${labW}" x2="${width}" y1="${yC + cH / 2}" y2="${yC + cH / 2}"/>`;
+  s += `<text class="lv" x="${labW - 4}" y="${cy(3)}">3</text><text class="lv" x="${labW - 4}" y="${cy(0)}">0</text>`;
+  let path = '';
   rows.forEach((r, i) => {
-    const x = labW + i * cw, h = Math.max(2, (r.v / 255) * barH);
-    s += `<rect class="bar${r.taken ? ' t' : ''}" x="${x + cw * .15}" y="${top + barH - h}" width="${cw * .7}" height="${h}" rx="1"/>`;
+    const x = labW + i * cw, h = Math.max(2, (r.v / 255) * barH), later = i >= t ? ' later' : '';
+    s += `<rect class="bar${r.taken ? ' t' : ''}${later}" x="${x + cw * .15}" y="${top + barH - h}" width="${cw * .7}" height="${h}" rx="1"/>`;
+    if (i >= t) return;
+    path += `${i ? 'V' : `M${x} `}${cy(r.c)}H${x + cw}`;
     s += r.ok ? `<circle class="ok" cx="${x + cw / 2}" cy="${yM}" r="${Math.min(3, cw * .2)}"/>` : `<circle class="bad" cx="${x + cw / 2}" cy="${yM}" r="${Math.min(5.5, cw * .36)}"/>`;
   });
+  if (path) s += `<path class="cnt" d="${path}"/>`;
+  // 走到一半时，框出正在猜的这一个
+  if (t > 0 && t < N) s += `<rect class="now" x="${labW + (t - 1) * cw}" y="${top - 4}" width="${cw}" height="${yM + 12 - top}" rx="2"/>`;
   const ty = top + barH - (128 / 255) * barH;
   s += `<line class="thr" x1="${labW}" x2="${width}" y1="${ty}" y2="${ty}"/><text class="thr-t" x="${width}" y="${ty - 5}" text-anchor="end">128</text>`;
   svg.setAttribute('viewBox', `0 0 ${width} ${H + 6}`);
   svg.innerHTML = s;
-  const miss = rows.filter((r) => !r.ok).length;
+  const miss = rows.filter((r, i) => i < t && !r.ok).length, all = rows.filter((r) => !r.ok).length;
   root.querySelector('.score b').textContent = miss;
+  root.querySelector('.score i').textContent = t;
   root.querySelectorAll('[data-m]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.m === mode)));
-  svg.setAttribute('aria-label', `${mode === 'rand' ? '乱序' : '排好序'}的 40 个数，a[i] >= 128 时进 if；两位计数器猜错 ${miss} 次`);
+  svg.setAttribute('aria-label', `${mode === 'rand' ? '乱序' : '排好序'}的 40 个数，a[i] >= 128 时进 if；两位计数器猜错 ${all} 次`);
   const max = Math.max(bench.rand, bench.sorted);
   for (const k of ['rand', 'sorted']) {
     root.querySelector(`.b.${k}`).style.width = `${(bench[k] / max) * 100}%`;
@@ -2315,7 +2616,20 @@ async function measure() {
   draw();
 }
 
-root.querySelectorAll('[data-m]').forEach((b) => b.addEventListener('click', () => { mode = b.dataset.m; draw(); }));
+// 从第一个数开始，一个一个猜过去
+function play() {
+  clearInterval(timer);
+  if (reduce) { t = N; return draw(); }
+  t = 0;
+  draw();
+  timer = setInterval(() => {
+    t++;
+    draw();
+    if (t >= N) clearInterval(timer);
+  }, 150);
+}
+root.querySelectorAll('[data-m]').forEach((b) => b.addEventListener('click', () => { clearInterval(timer); t = N; mode = b.dataset.m; draw(); }));
+root.querySelector('.play').addEventListener('click', play);
 root.querySelector('.key').addEventListener('click', measure);
 new ResizeObserver(([entry]) => {
   const w = Math.floor(entry.contentRect.width);
@@ -2324,7 +2638,7 @@ new ResizeObserver(([entry]) => {
 </script>
 ```
 
-乱序时，40 次猜错 19 次，和抛硬币差不多。排好序以后，前面一直不进，后面一直进，只在分界处错 2 次。
+乱序时，40 次猜错 19 次，和抛硬币差不多：计数器跟着上一两个数走，可下一个数和它们没关系。排好序以后，前面一直不进，后面一直进，计数器贴着底走完前半段，只在分界处错 2 次，然后贴着顶走到头。
 
 猜错的代价，是把流水线里照着猜测取进来的指令全扔掉，从对的地址重新取。真跑 100 万个数、10 遍，乱序 49 毫秒，排好序 7 毫秒，算下来每猜错一次多花 8 纳秒左右，十几拍。
 
@@ -2345,125 +2659,6 @@ new ResizeObserver(([entry]) => {
 `ret` 回哪，返回地址栈早就猜好了，CPU 已经在执行 `main` 里的下一条。整个 `add` 只花几纳秒，大部分时间在等 L1。
 
 要是 `x` 不在缓存里，光等它就要一两百纳秒，够这台 CPU 做上千次加法。
-
-## 面试常问
-
-<details>
-<summary>为什么计算机用二进制？</summary>
-
-电路只分高低两档电压最可靠：两档隔得远，噪声让电压偏一点也不会读错，档分得越多越容易错。与、或、非又正好能用开关的串联、并联做出来。
-
-</details>
-
-<details>
-<summary>原码、反码、补码有什么区别？为什么用补码？</summary>
-
-原码是最高位当符号，其余位是绝对值；反码是负数把对应的正数按位取反；补码是反码再加一。原码和反码都有 +0、−0 两个零，加减还要看符号。补码只有一个零，减法直接变成加法（$A - B = A + {\sim}B + 1$），有符号数和无符号数用同一个加法器。
-
-</details>
-
-<details>
-<summary>怎么判断加法溢出了？</summary>
-
-最高位有进位出来，CPU 设 CF，说明按无符号数算溢出了；两个同号的数加出异号的结果，设 OF，说明按有符号数算溢出了。C 里无符号数溢出按 $2^n$ 取模，有符号数溢出是未定义行为。
-
-</details>
-
-<details>
-<summary>为什么 0.1 + 0.2 不等于 0.3？</summary>
-
-0.1 和 0.2 在二进制里都是无限循环小数，存进 double 时各自舍入，加起来落在了 0.3 旁边的另一个 double 上，打印出来是 0.30000000000000004。比较浮点数要留误差范围，钱用整数存。float 只能精确表示到 $2^{24}$ 为止的所有整数，double 是到 $2^{53}$。
-
-</details>
-
-<details>
-<summary>大端和小端是什么？怎么判断当前机器是哪种？</summary>
-
-多字节的数，低位字节放在低地址是小端，高位字节放在低地址是大端。x86 和大多数 ARM 系统是小端，网络字节序是大端。判断方法是存一个 `int` 型的 1，看第一个字节是不是 1：
-
-```c
-int x = 1;
-int little = *(char *)&x == 1;
-```
-
-</details>
-
-<details>
-<summary>冯·诺依曼结构和哈佛结构有什么区别？</summary>
-
-冯·诺依曼结构里，指令和数据放在同一块内存，走同一条通路；哈佛结构把它们分开存、分开取，能同时取指令和读数据。现在的 CPU 两样都有：内存是一块，L1 缓存分成指令缓存和数据缓存。
-
-</details>
-
-<details>
-<summary>一条指令是怎么执行的？</summary>
-
-按程序计数器（x86 上是 `rip`）取指，译码出操作和操作数，执行运算或读写内存，写回结果，同时让程序计数器指向下一条。经典的五级流水线把它切成取指、译码、执行、访存、写回五段。
-
-</details>
-
-<details>
-<summary>CISC 和 RISC 有什么区别？</summary>
-
-CISC（比如 x86）指令多，长短不一，一条指令可以先读内存再运算；RISC（比如 ARM、RISC-V）指令定长、格式整齐，只有 load、store 能访问内存。现在两者的界限很模糊：x86 CPU 内部也会先把指令译成类似 RISC 的微操作。
-
-</details>
-
-<details>
-<summary>为什么需要缓存？什么是局部性？</summary>
-
-CPU 一拍不到 1 纳秒，读一次内存要 100 纳秒左右。缓存用又快又小的 SRAM 存最近用过的数据，它管用是因为局部性：刚访问过的很快还会访问，这是时间局部性；访问了一个地址，很快会访问它附近，这是空间局部性。
-
-</details>
-
-<details>
-<summary>什么是缓存行？为什么按行遍历二维数组更快？</summary>
-
-缓存和内存之间每次搬一整块，通常 64 字节，叫缓存行。C 的二维数组按行连续存放，按行遍历时搬进来的 64 字节全用得上；按列遍历每次跨一整行，几乎每次都要重新搬，还会把没用完的行挤出去。
-
-</details>
-
-<details>
-<summary>缓存的映射方式有哪几种？写回和写直达有什么区别？</summary>
-
-直接映射：每个地址只能放进固定的一行，简单，但容易冲突。全相联：哪行都能放，冲突最少，查找时要和每一行比。组相联：地址决定组，组内随便放，是两者的折中，现在的 CPU 都用它。写直达每次写都同时写内存；写回只改缓存并把这一行标成脏的，被换出去时才写回内存，写内存的次数少得多。
-
-</details>
-
-<details>
-<summary>什么是虚拟内存？TLB 是干什么的？</summary>
-
-程序用的是虚拟地址，CPU 查页表把它翻译成物理地址，一页通常 4 KB。每个进程有独立的地址空间，互相隔离；每一页能单独设读、写、执行权限；内存不够时还能把页换到磁盘上。x86-64 的页表有四级，翻译一次要读四次内存，TLB 缓存最近的翻译结果。访问没有映射或者权限不对的地址会触发缺页异常，操作系统处理不了就发 SIGSEGV，也就是段错误。
-
-</details>
-
-<details>
-<summary>流水线有哪些冒险？怎么解决？</summary>
-
-结构冒险：两条指令同时要用同一个部件，比如都要访存，靠多备几份部件解决，比如指令缓存和数据缓存分开。数据冒险：后一条要用前一条还没写回的结果，靠转发解决，load 后面紧跟着用还得停一拍。控制冒险：分支还没算出结果就得取下一条，靠分支预测，猜错了清空流水线重来。
-
-</details>
-
-<details>
-<summary>为什么处理排好序的数组更快？</summary>
-
-循环里的 `if` 遇上乱序数据毫无规律，分支预测器差不多一半猜错，每次猜错都要清空流水线；排好序以后，分支长时间朝一个方向走，几乎全猜对。如果编译器把 `if` 编译成 `cmov` 这样的条件传送指令，没有分支可猜，两种就一样快。
-
-</details>
-
-<details>
-<summary>为什么 CPU 主频这些年不怎么涨了？</summary>
-
-动态功耗大致和 $V^2 f$ 成正比，频率越高要的电压越高，发热涨得比频率快得多，散热先扛不住。所以 2005 年前后，厂商转向多核，以及让每一拍做更多的事：更宽的流水线、乱序执行、更大的缓存。
-
-</details>
-
-<details>
-<summary>怎么估算一段程序的 CPU 时间？</summary>
-
-$\text{CPU 时间} = \text{指令条数} \times \text{CPI} \times \text{时钟周期}$。指令条数取决于算法、编译器和指令集；CPI 是平均每条指令几拍，受流水线、缓存缺失、分支预测影响；时钟周期是主频的倒数。
-
-</details>
 
 ## 参考资料
 
