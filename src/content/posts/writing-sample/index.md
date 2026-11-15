@@ -373,7 +373,7 @@ SVG 可以使用 `currentColor` 和文章的 CSS 变量，随主题一起变化�
       context.textAlign = 'center';
       context.fillText(String(i), x + barWidth / 2, 174);
     }
-    output.textContent = `${n}² = ${n * n}`;
+    output.textContent = `$${n}^2 = ${n * n}$`;
   }
 
   input.addEventListener('input', draw);

@@ -53,21 +53,20 @@ $n\le 1000$，枚举所有数对完全来得及。关键不是枚举，而是别
   .divisor-choices { display: grid; grid-template-columns: 48px repeat(4, minmax(0, 1fr)); gap: 4px; width: min(100%, 420px); margin-inline: auto; }
   .divisor-choices small { display: flex; align-items: baseline; justify-content: center; min-height: 34px; padding-top: 10px; color: var(--three); font: 13px var(--font-mono); }
   .divisor-choices .divisor-row { color: var(--two); }
-  .divisor-choices sup { font-size: 12px; position: relative; top: -.35em; }
   .divisor-choices button { min-height: 44px; padding: 0; border: 0; border-bottom: 1px solid var(--rule); border-radius: 0; background: none; font: 16px var(--font-mono); cursor: pointer; }
   .divisor-choices button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent-ink); border-color: var(--accent); }
   .divisor-choice { display: block; margin-top: 22px; text-align: center; font-size: 15px; }
 </style>
 <section class="divisor-lab" aria-label="从质因子指数的选择枚举 216 的因子">
-  <p class="divisor-product">12 × 18 = <span class="two">2³</span> × <span class="three">3³</span></p>
+  <p class="divisor-product">$12 \times 18 = \htmlClass{two}{2^3} \times \htmlClass{three}{3^3}$</p>
   <div class="divisor-choices"></div><output class="divisor-choice" aria-live="polite"></output>
 </section>
 <script>
   const grid=document.querySelector('.divisor-choices');
   let row=2, column=1;
   function draw() {
-    grid.innerHTML='<span></span>'+[0,1,2,3].map(j=>`<small>3<sup>${j}</sup></small>`).join('')+[0,1,2,3].map(i=>`<small class="divisor-row">2<sup>${i}</sup></small>`+[0,1,2,3].map(j=>`<button type="button" data-cell="${i}:${j}" aria-pressed="${i===row&&j===column}" aria-label="2 的 ${i} 次方乘 3 的 ${j} 次方">${2**i*3**j}</button>`).join('')).join('');
-    document.querySelector('output').innerHTML=`2<sup>${row}</sup> × 3<sup>${column}</sup> = ${2**row*3**column}　·　4 × 4 = 16 个因子`;
+    grid.innerHTML='<span></span>'+[0,1,2,3].map(j=>`<small>$3^{${j}}$</small>`).join('')+[0,1,2,3].map(i=>`<small class="divisor-row">$2^{${i}}$</small>`+[0,1,2,3].map(j=>`<button type="button" data-cell="${i}:${j}" aria-pressed="${i===row&&j===column}" aria-label="2 的 ${i} 次方乘 3 的 ${j} 次方">${2**i*3**j}</button>`).join('')).join('');
+    document.querySelector('output').innerHTML=`$2^{${row}} \\times 3^{${column}} = ${2**row*3**column}$　·　$4 \\times 4 = 16$ 个因子`;
     grid.querySelectorAll('button').forEach(button=>button.addEventListener('click',()=>{[row,column]=button.dataset.cell.split(':').map(Number);draw();grid.querySelector(`[data-cell="${row}:${column}"]`).focus({preventScroll:true});}));
   }
   draw();

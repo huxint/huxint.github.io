@@ -359,7 +359,7 @@ $W_0$ 冻住，只训 $A$、$B$，要训的数从 $dk$ 个降到 $r(d+k)$ 个。
   .stats { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 18px; margin: 8px 0 0; color: var(--muted); }
   .stats b { margin-left: 5px; color: var(--text); font: 500 17px var(--font-mono); }
   .ctl { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 12px; align-items: center; margin-top: 6px; color: var(--muted); }
-  .ctl i { color: var(--text); font: italic 15px KaTeX_Math, var(--font-serif); }
+  .ctl .katex { color: var(--text); font-size: 15px; }
   .ctl output { color: var(--text); font: 13px var(--font-mono); text-align: right; }
   .ctl input { grid-column: 1 / -1; width: 100%; min-height: 36px; margin: 0; accent-color: var(--accent); }
 </style>
@@ -373,7 +373,7 @@ $W_0$ 冻住，只训 $A$、$B$，要训的数从 $dk$ 个降到 $r(d+k)$ 个。
   </div>
   <svg role="img" shape-rendering="crispEdges"></svg>
   <p class="stats"></p>
-  <label class="ctl"><span>秩 <i>r</i></span><output></output><input type="range" min="1" max="12" value="3" aria-label="秩 r"/></label>
+  <label class="ctl"><span>秩 $r$</span><output></output><input type="range" min="1" max="12" value="3" aria-label="秩 r"/></label>
 </section>
 <script>
 const N = 24, RMAX = 12;
@@ -555,7 +555,7 @@ $B$ 的梯度里有 $A$，$A$ 的梯度里有 $B$，两个都是 0 就永远动�
   .zh { fill: var(--muted); font-size: 12.5px; dominant-baseline: central; text-anchor: middle; }
   .op { fill: var(--muted); font: 20px KaTeX_Main, var(--font-serif); text-anchor: middle; dominant-baseline: central; }
   .grads { display: grid; grid-template-columns: auto minmax(0, 1fr) 3em; gap: 4px 10px; align-items: center; margin-top: 8px; color: var(--muted); }
-  .grads i { font: italic 15px KaTeX_Math, var(--font-serif); color: var(--text); }
+  .grads .katex { color: var(--text); font-size: 15px; }
   .meter { height: 10px; background: var(--rule); }
   .meter b { display: block; width: 0; height: 100%; background: var(--accent); }
   .grads output { color: var(--text); font: 13px var(--font-mono); text-align: right; }
@@ -573,8 +573,8 @@ $B$ 的梯度里有 $A$，$A$ 的梯度里有 $B$，两个都是 0 就永远动�
   </div>
   <svg role="img" shape-rendering="crispEdges"></svg>
   <div class="grads">
-    <span><i>B</i> 的梯度</span><span class="meter"><b></b></span><output></output>
-    <span><i>A</i> 的梯度</span><span class="meter"><b></b></span><output></output>
+    <span>$B$ 的梯度</span><span class="meter"><b></b></span><output></output>
+    <span>$A$ 的梯度</span><span class="meter"><b></b></span><output></output>
   </div>
   <label class="ctl"><span>训练步数</span><output></output><input type="range" min="0" max="60" value="0" aria-label="训练步数"/></label>
 </section>
@@ -760,9 +760,6 @@ with model.disable_adapter():    # 临时拔掉，跑原模型
   .seg { display: flex; flex-wrap: wrap; gap: 0 18px; }
   .seg button { min-height: 40px; padding: 4px 0; border: 0; border-bottom: 2px solid var(--rule); background: none; color: var(--muted); font-size: 14px; cursor: pointer; }
   .seg button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
-  .tex { font-family: KaTeX_Main, var(--font-serif); font-weight: 400; }
-  .tex i { font-family: KaTeX_Math, var(--font-serif); }
-  .tex sub { font-size: .7em; }
   .rows { display: grid; grid-template-columns: auto 18px minmax(76px, 8.5em) 18px 40px 14px 1.2em; gap: 10px 6px; align-items: center; justify-content: center; margin-top: 16px; }
   .task { display: inline-flex; align-items: center; gap: 7px; color: var(--text); white-space: nowrap; }
   .task::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
@@ -772,21 +769,22 @@ with model.disable_adapter():    # 临时拔掉，跑原模型
   .shared { grid-column: 3; grid-row: 1 / span 5; align-self: stretch; display: grid; place-content: center; border: 1px solid var(--rule-strong); background-color: var(--rule);
     background-image: linear-gradient(color-mix(in srgb, var(--rule-strong) 70%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--rule-strong) 70%, transparent) 1px, transparent 1px);
     background-size: 100% 20%, 25% 100%; background-position: 0 -1px, -1px 0; }
-  .shared span { padding: 0 6px; background: var(--rule); color: var(--text); font-size: 19px; line-height: 1.3; text-align: center; }
+  .shared > span { padding: 0 6px; background: var(--rule); color: var(--text); font-size: 19px; line-height: 1.3; text-align: center; }
   .shared .ba { color: var(--t1); }
+  .shared .katex { font-size: 1em; }
   .plus { color: var(--muted); font: 16px KaTeX_Main, var(--font-serif); text-align: center; }
   .tie { display: block; width: 40px; height: 16px; overflow: visible; }
   .tie path { fill: color-mix(in srgb, var(--c) 16%, transparent); stroke: var(--c); stroke-width: 1.3; }
   .out { color: var(--text); font-size: 15px; text-align: center; }
   .out.bad { color: var(--accent-ink); }
   .mux[data-mode="merged"] .shared { border-color: var(--t1); background-color: color-mix(in srgb, var(--t1) 14%, var(--bg)); }
-  .mux[data-mode="merged"] .shared span { background: color-mix(in srgb, var(--t1) 14%, var(--bg)); }
+  .mux[data-mode="merged"] .shared > span { background: color-mix(in srgb, var(--t1) 14%, var(--bg)); }
   .mux[data-mode="merged"] .lane { visibility: hidden; }
 </style>
 <section class="mux" data-mode="lanes" aria-label="同一个 batch 里五个请求要四种模型：LoRA 挂在旁路上，五个都答得对；把翻译那组并进底座，就只有要翻译的两个还对">
   <div class="seg" role="group" aria-label="LoRA 怎么挂">
     <button type="button" data-mode="lanes" aria-pressed="true">旁路挂着</button>
-    <button type="button" data-mode="merged" aria-pressed="false">把翻译并进 <span class="tex"><i>W</i><sub>0</sub></span></button>
+    <button type="button" data-mode="merged" aria-pressed="false">把翻译并进 $W_0$</button>
   </div>
   <div class="rows"></div>
 </section>
@@ -808,8 +806,8 @@ function show(mode) {
   const merged = mode === 'merged';
   root.dataset.mode = mode;
   root.querySelector('.shared').innerHTML = merged
-    ? '<span class="tex"><i>W</i><sub>0</sub><br>+ <i class="ba">BA</i></span>'
-    : '<span class="tex"><i>W</i><sub>0</sub></span>';
+    ? '<span>$W_0$<br>$+\\;\\htmlClass{ba}{BA}$</span>'
+    : '<span>$W_0$</span>';
   const ok = REQUESTS.map(([, t]) => !merged || t === MERGED);
   root.querySelectorAll('.out').forEach((out, i) => {
     out.textContent = ok[i] ? '✓' : '✗';
@@ -1205,14 +1203,14 @@ show();
   <svg role="img"></svg>
 </section>
 <script>
-const METHODS = { full: '全量', lora: 'LoRA', adapter: 'Adapter', prefix: 'Prefix', prompt: 'Prompt', ia3: '(IA)³' };
+const METHODS = { full: '全量', lora: 'LoRA', adapter: 'Adapter', prefix: 'Prefix', prompt: 'Prompt', ia3: '(IA)$^3$' };
 const WHERE = {
   full: '全量微调：每个权重矩阵都训',
   lora: 'LoRA：每个权重矩阵旁边并联一条 BA 旁路',
   adapter: 'Adapter：两个子层的出口各串一个带非线性的瓶颈小网络',
   prefix: 'Prefix Tuning：每层注意力的 K、V 前面拼几列可训练的向量',
   prompt: 'Prompt Tuning：只在输入前面拼几个可训练的向量',
-  ia3: '(IA)³：逐元素缩放 K、V 和 MLP 的中间激活',
+  ia3: '(IA)$^3$：逐元素缩放 K、V 和 MLP 的中间激活',
 };
 // 两个子层从左到右的节点：种类、宽度、矩阵名或文字。下标是一个字母的用斜体，单词用正体
 const ROWS = [
@@ -1321,7 +1319,7 @@ new ResizeObserver(([entry]) => {
 
 Adapter 是串在主路上的瓶颈小网络：先压到很低的维度，过一个非线性，再放大回来。推理时每个 token 都得多穿过它；中间夹着非线性，也没法并回权重。LoRA 同样是先压后放，但它和 $W_0$ 并联，中间没有非线性，所以前面那个合并的等式才成立。
 
-Prompt Tuning 只在输入前拼几个可训练的向量；Prefix Tuning 在每层注意力的 K、V 前面都拼几列。参数极少，但占上下文，训练也不太稳，模型不够大时追不上全量微调。(IA)³ 只学几个向量，逐元素缩放 K、V 和 MLP 的中间激活，同样能并回权重。
+Prompt Tuning 只在输入前拼几个可训练的向量；Prefix Tuning 在每层注意力的 K、V 前面都拼几列。参数极少，但占上下文，训练也不太稳，模型不够大时追不上全量微调。(IA)$^3$ 只学几个向量，逐元素缩放 K、V 和 MLP 的中间激活，同样能并回权重。
 
 LoRA 自己也有一串变体，多数只改一处：
 
@@ -1454,7 +1452,7 @@ $$
 - Thinking Machines Lab. [LoRA Without Regret](https://thinkingmachines.ai/blog/lora/), 2025。
 - Hayou et al. [The Impact of Initialization on LoRA Finetuning Dynamics](https://arxiv.org/abs/2406.08447), 2024。
 - Chen et al. [Punica](https://arxiv.org/abs/2310.18547), 2023；Sheng et al. [S-LoRA](https://arxiv.org/abs/2311.03285), 2023。
-- Houlsby et al. [Parameter-Efficient Transfer Learning for NLP](https://arxiv.org/abs/1902.00751), 2019；Li & Liang. [Prefix-Tuning](https://arxiv.org/abs/2101.00190), 2021；Lester et al. [Prompt Tuning](https://arxiv.org/abs/2104.08691), 2021；Liu et al. [(IA)³](https://arxiv.org/abs/2205.05638), 2022。
+- Houlsby et al. [Parameter-Efficient Transfer Learning for NLP](https://arxiv.org/abs/1902.00751), 2019；Li & Liang. [Prefix-Tuning](https://arxiv.org/abs/2101.00190), 2021；Lester et al. [Prompt Tuning](https://arxiv.org/abs/2104.08691), 2021；Liu et al. [(IA)$^3$](https://arxiv.org/abs/2205.05638), 2022。
 - Kalajdzievski. [rsLoRA](https://arxiv.org/abs/2312.03732), 2023；Hayou et al. [LoRA+](https://arxiv.org/abs/2402.12354), 2024；Liu et al. [DoRA](https://arxiv.org/abs/2402.09353), 2024；Meng et al. [PiSSA](https://arxiv.org/abs/2404.02948), 2024；Zhang et al. [AdaLoRA](https://arxiv.org/abs/2303.10512), 2023；Li et al. [LoftQ](https://arxiv.org/abs/2310.08659), 2023；Kopiczko et al. [VeRA](https://arxiv.org/abs/2310.11454), 2023；Zhao et al. [GaLore](https://arxiv.org/abs/2403.03507), 2024。
 - Zhou et al. [LIMA: Less Is More for Alignment](https://arxiv.org/abs/2305.11206), 2023；Gekhman et al. [Does Fine-Tuning LLMs on New Knowledge Encourage Hallucinations?](https://arxiv.org/abs/2405.05904), 2024。
 - Ouyang et al. [InstructGPT](https://arxiv.org/abs/2203.02155), 2022；Rafailov et al. [Direct Preference Optimization](https://arxiv.org/abs/2305.18290), 2023；Shao et al. [DeepSeekMath](https://arxiv.org/abs/2402.03300), 2024；DeepSeek-AI. [DeepSeek-R1](https://arxiv.org/abs/2501.12948), 2025。

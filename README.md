@@ -28,11 +28,11 @@ tags: ['算法']
 
 `==高亮==`、`++下划线++` 和 `~~删除线~~` 可以和公式、链接混用。提示用 `> [!NOTE]`、`TIP`、`IMPORTANT`、`WARNING` 或 `CAUTION`；围栏代码块支持 `diff` 和 `mermaid`。提示类型后面可以接标题（`> [!THEOREM] 费马小定理`），再加 `-` 或 `+` 就能折叠；另有 `DEFINITION`、`THEOREM`、`LEMMA`、`PROOF`、`EXAMPLE`。连续的 `> [!TAB] 名字` 合成一组标签页。完整示例在本地的 `/posts/writing-sample/`。
 
-HTML 里的公式和正文一样渲染：直接写在 Markdown 里的 HTML 块在构建时排版，`render html` 里的 `$…$`、`$$…$$`、`\(…\)`、`\[…\]`（包括脚本后来写进去的）在块内用同一份 KaTeX 排版。不想当公式的地方放进 `<code>` 或加 `data-no-math`。选中带公式的文字再复制，得到的是 LaTeX 源码。
+HTML 里的公式和正文一样渲染：直接写在 Markdown 里的 HTML 块在构建时排版，`render html` 里的 `$…$`、`$$…$$`、`\(…\)`、`\[…\]`（包括脚本后来写进去的）在块内用同一份 KaTeX 排版。不想当公式的地方放进 `<code>` 或加 `data-no-math`。选中带公式的文字再复制，得到的是 LaTeX 源码。图注（`title="…"`）里也可以写公式。`render html` 里的 `\htmlClass{类名}{…}` 给公式的一部分套上块内的类，让某一项和图上对应的元素同色。
 
 文章里的二到四级标题在悬停时露出指向自己的 `#` 链接；文章末尾链接到前后两篇。
 
-技术文章的图示直接内嵌在 Markdown：`render svg` 写矢量图，`render html` 写局部演示（样式和脚本也放在块内），`mermaid` 写关系图。不另存图片或演示的 HTML、JS、CSS 附件。生活照片和视频仍放在对应记录目录。
+技术文章的图示直接内嵌在 Markdown：`render svg` 写矢量图，`render html` 写局部演示（样式和脚本也放在块内），`mermaid` 写关系图。`render html` 的块会裁掉越出边缘的内容：上下留了焦点环的位置，贴着左右边缘的控件，焦点环自动画在元素内侧。不另存图片或演示的 HTML、JS、CSS 附件。生活照片和视频仍放在对应记录目录。
 
 Markdown 交由页面按需渲染，内容集合不再缓存完整 HTML。修改渲染插件后，重启本地开发服务即可。
 

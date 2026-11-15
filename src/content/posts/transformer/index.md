@@ -39,7 +39,7 @@ $$
   .who button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
   .planes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 20px; }
   .plane p { margin: 0; color: var(--muted); font-size: 12px; text-align: center; }
-  .plane p i { color: var(--text); font: italic 16px KaTeX_Math, var(--font-serif); }
+  .plane p .katex { color: var(--text); font-size: 16px; }
   .plane svg { display: block; width: 100%; height: auto; overflow: visible; }
   .k-plane { touch-action: pan-y; cursor: crosshair; }
   .k-plane:focus { outline: none; }
@@ -84,8 +84,8 @@ $$
 <section class="att" aria-label="拖动 q，观察五个词的分数、权重和混合结果">
   <div class="who" role="group" aria-label="谁的 q"><span>谁在查</span></div>
   <div class="planes">
-    <div class="plane"><p>用 <i>q</i> 给每个 <i>k</i> 打分</p><svg class="k-plane" tabindex="0" role="img"></svg></div>
-    <div class="plane"><p>按权重混合 <i>v</i></p><svg class="v-plane" role="img"></svg></div>
+    <div class="plane"><p>用 $q$ 给每个 $k$ 打分</p><svg class="k-plane" tabindex="0" role="img"></svg></div>
+    <div class="plane"><p>按权重混合 $v$</p><svg class="v-plane" role="img"></svg></div>
   </div>
   <div class="bars"></div>
   <output class="sr" aria-live="polite"></output>
@@ -291,9 +291,7 @@ softmax 对差距是指数敏感的。差 20，$e^{20}$ 大约是 5 亿倍，权
   .dk { font-size: 13px; line-height: 1.5; font-variant-ligatures: none; }
   .dk-grid { display: grid; grid-template-columns: 4.4em minmax(0, 1fr); gap: 6px 14px; align-items: center; }
   .dk-grid > span { color: var(--muted); font-size: 12px; text-align: right; white-space: nowrap; }
-  .dk-grid > span i { color: var(--text); font: italic 14px KaTeX_Math, var(--font-serif); }
-  .dk-grid > span b { font: 400 14px KaTeX_Main, var(--font-serif); }
-  .dk-grid > span sub { font: 10px KaTeX_Main, var(--font-serif); }
+  .dk-grid > span .katex { color: var(--text); font-size: 14px; }
   .dk-grid > .sec { grid-column: 1 / -1; margin-top: 8px; color: var(--faint); font-size: 11px; text-align: left; }
   .dk-grid > .sec:first-child { margin-top: 0; }
   .dk svg { display: block; width: 100%; overflow: visible; }
@@ -309,21 +307,20 @@ softmax 对差距是指数敏感的。差 20，$e^{20}$ 大约是 5 亿倍，权
   .stack i:last-child { border-right: 0; }
   .dk-controls { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 12px; align-items: center; margin-top: 16px; color: var(--muted); }
   .dk-controls output { color: var(--text); font: 13px var(--font-mono); text-align: right; }
-  .dk-controls i { font: italic 15px KaTeX_Math, var(--font-serif); }
-  .dk-controls sub { font: 11px KaTeX_Main, var(--font-serif); }
+  .dk-controls .katex { font-size: 15px; }
   .dk-controls input { grid-column: 1 / -1; width: 100%; min-height: 36px; margin: 0; accent-color: var(--accent); }
 </style>
 <section class="dk" aria-label="维数越高，不缩放的 softmax 越接近只选一个">
   <div class="dk-grid">
     <p class="sec">分数</p>
     <span>不缩放</span><svg class="raw-dots"></svg>
-    <span><b>÷ √</b><i>d</i><sub>k</sub></span><svg class="scaled-dots"></svg>
+    <span>$\div \sqrt{d_k}$</span><svg class="scaled-dots"></svg>
     <span></span><svg class="axis"></svg>
     <p class="sec">softmax 之后的权重</p>
     <span>不缩放</span><div class="stack raw-stack"></div>
-    <span><b>÷ √</b><i>d</i><sub>k</sub></span><div class="stack scaled-stack"></div>
+    <span>$\div \sqrt{d_k}$</span><div class="stack scaled-stack"></div>
   </div>
-  <label class="dk-controls"><span><i>d</i><sub>k</sub></span><output></output><input type="range" min="1" max="9" step="1" value="6" aria-label="向量维数 d_k"/></label>
+  <label class="dk-controls"><span>$d_k$</span><output></output><input type="range" min="1" max="9" step="1" value="6" aria-label="向量维数 d_k"/></label>
 </section>
 <script>
 const z = [1.3, .7, -.2, .4, -1.1, 0];
@@ -395,9 +392,10 @@ $QK^\top$ 其实就是一张乘法表：行头是每个词的 $q$，列头是每
   .head.rowhead { align-items: flex-start; padding-left: 0; text-align: left; }
   .head.out { align-items: flex-end; padding-right: 0; text-align: right; }
   .corner { display: flex; justify-content: space-between; align-items: flex-end; padding: 4px 6px 4px 0; color: var(--muted); }
-  .sym { color: var(--text); font: italic 16px KaTeX_Math, var(--font-serif); }
+  .sym { color: var(--text); }
+  .sym .katex { font-size: 16px; }
   .tag { color: var(--muted); font-size: 11px; }
-  .tag .sym { font-size: 14px; }
+  .tag .sym .katex { font-size: 14px; }
   .cell { position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center; min-width: 0; min-height: 46px; padding: 0; border: 0; border-radius: 3px; background: color-mix(in srgb, var(--accent) calc(var(--w) * 70%), transparent); color: var(--text); cursor: pointer; }
   .cell b { font: 500 14px var(--font-mono); }
   .cell small { color: var(--muted); font: 10px var(--font-mono); }
@@ -453,15 +451,15 @@ const sub = (sym, word, cls = '') => `<msub><mi>${sym}</mi><mtext${cls ? ` class
 const math = body => `<math display="inline">${body}</math>`;
 
 function build() {
-  const parts = [`<div class="corner"><span class="tag"><span class="sym">q</span> ↓</span><span class="tag"><span class="sym">k</span> →</span></div>`];
+  const parts = [`<div class="corner"><span class="tag"><span class="sym">$q$</span> ↓</span><span class="tag"><span class="sym">$k$</span> →</span></div>`];
   words.forEach((w, j) => parts.push(`<div class="head colhead" data-col="${j}"><b>${w}</b><small>${vec(K[j])}</small></div>`));
-  parts.push(`<div class="head out"><span class="sym">o</span></div>`);
+  parts.push(`<div class="head out"><span class="sym">$o$</span></div>`);
   words.forEach((w, i) => {
     parts.push(`<div class="head rowhead" data-row="${i}"><b>${w}</b><small>${vec(Q[i])}</small></div>`);
     words.forEach((_, j) => parts.push(`<button type="button" class="cell" role="gridcell" data-cell="${i}:${j}" style="--w:${A[i][j].toFixed(3)}" aria-label="${w}读${words[j]}：分数 ${n(S[i][j])}，权重 ${(A[i][j] * 100).toFixed(0)}%"><b>${Math.round(A[i][j] * 100)}%</b><small>${n(S[i][j])}</small></button>`));
     parts.push(`<div class="head out" data-row="${i}"><small>${vec(O[i])}</small></div>`);
   });
-  parts.push(`<div class="head rowhead vrow"><span class="sym">v</span></div>`);
+  parts.push(`<div class="head rowhead vrow"><span class="sym">$v$</span></div>`);
   words.forEach((_, j) => parts.push(`<div class="head vrow" data-col="${j}"><small>${vec(V[j])}</small></div>`));
   grid.innerHTML = parts.join('');
 }

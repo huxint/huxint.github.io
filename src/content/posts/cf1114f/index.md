@@ -33,14 +33,14 @@ $$
   .mask-grid .off { color: var(--faint); border-bottom: 1px solid var(--rule); }
   .mask-grid .mask-union { border-top: 1px solid var(--rule-strong); margin-top: 8px; }
   .mask-answer { display: block; margin-top: 22px; font-size: 17px; line-height: 1.8; }
-  .mask-answer em { font-style: normal; color: var(--bit); }
+  .mask-answer .kept { color: var(--bit); }
   .mask-controls { display: flex; gap: 24px; margin-top: 14px; }
   .mask-controls button { min-height: 44px; border: 0; border-bottom: 2px solid transparent; border-radius: 0; padding: 4px 0; background: none; color: var(--muted); font-size: 14px; cursor: pointer; }
   .mask-controls button[aria-pressed="true"] { border-color: var(--accent); color: var(--text); }
 </style>
 <section class="mask-lab" aria-label="质因子掩码按位或，不重复修正同一质因子">
   <p class="mask-heading"></p><div class="mask-grid"></div><output class="mask-answer" aria-live="polite"></output>
-  <div class="mask-controls"><button type="button" data-b="18" aria-pressed="true">12 × 18</button><button type="button" data-b="35" aria-pressed="false">12 × 35</button></div>
+  <div class="mask-controls"><button type="button" data-b="18" aria-pressed="true">$12 \times 18$</button><button type="button" data-b="35" aria-pressed="false">$12 \times 35$</button></div>
 </section>
 <script>
   let b=18;
@@ -49,10 +49,10 @@ $$
     const first=primes.map(p=>12%p===0), second=primes.map(p=>b%p===0), union=first.map((x,i)=>x||second[i]);
     const row=(label,bits,isUnion=false)=>`<span class="mask-label ${isUnion?'mask-union':''}">${label}</span>`+bits.map(on=>`<span class="${on?'on':'off'} ${isUnion?'mask-union':''}">${on?1:0}</span>`).join('');
     grid.innerHTML='<span class="mask-prime">质数</span>'+primes.map(p=>`<span class="mask-prime">${p}</span>`).join('')+row('12',first)+row(String(b),second)+row('按位或',union,true);
-    document.querySelector('.mask-heading').textContent=`P = 12 × ${b} = ${12*b}`;
+    document.querySelector('.mask-heading').textContent=`$P = 12 \\times ${b} = ${12*b}$`;
     const factors=primes.filter((_,i)=>union[i]);
     const phi=factors.reduce((value,p)=>value/p*(p-1),12*b);
-    document.querySelector('output').innerHTML=`φ(P) = ${12*b}${factors.map(p=>` × <em>${p-1}/${p}</em>`).join('')} = ${phi}`;
+    document.querySelector('output').innerHTML=`$\\varphi(P) = ${12*b}${factors.map(p=>` \\times \\htmlClass{kept}{\\frac{${p-1}}{${p}}}`).join('')} = ${phi}$`;
   }
   document.querySelectorAll('[data-b]').forEach(button=>button.addEventListener('click',()=>{b=Number(button.dataset.b);document.querySelectorAll('[data-b]').forEach(item=>item.setAttribute('aria-pressed',String(item===button)));draw();}));
   draw();

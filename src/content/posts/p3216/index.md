@@ -57,7 +57,7 @@ $$
 </style>
 <section class="concat-lab" aria-label="点选结果项，查看矩阵对应列怎样计算状态">
   <p class="concat-instruction">123 后拼上 4。点选结果项，查看对应的矩阵列。</p>
-  <div class="concat-product"><div class="concat-vector concat-input"></div><span class="concat-operator">×</span><div class="concat-matrix"></div><span class="concat-operator concat-equals">=</span><div class="concat-vector concat-result"></div></div>
+  <div class="concat-product"><div class="concat-vector concat-input"></div><span class="concat-operator">$\times$</span><div class="concat-matrix"></div><span class="concat-operator concat-equals">$=$</span><div class="concat-vector concat-result"></div></div>
   <output class="concat-equation" aria-live="polite"></output>
 </section>
 <script>
@@ -67,11 +67,11 @@ $$
   function draw() {
     const shift = 10, previous = 3, output=[123*shift+next,next,1];
     const entries=[[shift,0,0],[1,1,0],[1,1,1]];
-    input.innerHTML=['a','i','1'].map(label=>`<small>${label}</small>`).join('')+[123,previous,1].map(value=>`<b>${value}</b>`).join('');
+    input.innerHTML=['$a$','$i$','$1$'].map(label=>`<small>${label}</small>`).join('')+[123,previous,1].map(value=>`<b>${value}</b>`).join('');
     matrix.innerHTML=entries.map(row=>row.map((value,j)=>`<span class="${j===column?'on':''}">${value}</span>`).join('')).join('');
-    result.innerHTML=['新 a','新 i','1'].map(label=>`<small>${label}</small>`).join('')+output.map((value,j)=>`<button type="button" data-column="${j}" aria-pressed="${j===column}" aria-label="查看${['新拼接值','下一个数字','常数项'][j]}的计算">${value}</button>`).join('');
-    const equations=[`123 × ${shift} + ${previous} × 1 + 1 × 1 = ${output[0]}`,`${previous} × 1 + 1 × 1 = ${next}`,'1 × 1 = 1'];
-    const notes=['先腾出位数，再加上 i + 1','把 i 也放进状态，下一次才知道该拼哪个数','保留常数 1，才能表达“加一”'];
+    result.innerHTML=['新 $a$','新 $i$','$1$'].map(label=>`<small>${label}</small>`).join('')+output.map((value,j)=>`<button type="button" data-column="${j}" aria-pressed="${j===column}" aria-label="查看${['新拼接值','下一个数字','常数项'][j]}的计算">${value}</button>`).join('');
+    const equations=[`$123 \\times ${shift} + ${previous} \\times 1 + 1 \\times 1 = ${output[0]}$`,`$${previous} \\times 1 + 1 \\times 1 = ${next}$`,'$1 \\times 1 = 1$'];
+    const notes=['先腾出位数，再加上 $i + 1$','把 $i$ 也放进状态，下一次才知道该拼哪个数','保留常数 $1$，才能表达“加一”'];
     document.querySelector('output').innerHTML=`${equations[column]}<small>${notes[column]}</small>`;
     result.querySelectorAll('button').forEach(button=>button.addEventListener('click',()=>{column=Number(button.dataset.column);draw();result.querySelector(`[data-column="${column}"]`).focus({preventScroll:true});}));
   }

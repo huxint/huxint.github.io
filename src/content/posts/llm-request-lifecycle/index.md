@@ -885,7 +885,8 @@ $$
   .key:hover { border-color: var(--text); }
   .key[aria-pressed="true"] { border-color: var(--accent); color: var(--accent-ink); background: var(--accent-soft); }
   .formula { margin: 14px 0 0; color: var(--muted); font: 13px var(--font-mono); }
-  .formula b { color: var(--accent-ink); font-weight: 500; }
+  .formula .katex { font-size: 14px; }
+  .formula .hit { color: var(--accent-ink); }
   .record { display: flex; flex-wrap: wrap; gap: 6px 8px; min-height: 30px; margin: 10px 0 0; padding: 0; list-style: none; }
   .record li { padding: 1px 8px; border-bottom: 1px solid var(--rule-strong); color: var(--text); font-size: 14px; }
   .record li.odd { border-color: var(--muted); color: var(--muted); }
@@ -1018,10 +1019,10 @@ function draw(needle) {
   fresh = false;
   const [pa, pb] = prob(focus);
   root.querySelector('.formula').innerHTML = pa * pb > 0
-    ? `${focus[0]} × ${focus[1]} = ${(pa * 100).toFixed(1)}% × ${(pb * 100).toFixed(1)}% = <b>${(pa * pb * 100).toFixed(2)}%</b>`
+    ? `${focus[0]} $\\times$ ${focus[1]} $= ${(pa * 100).toFixed(1)}\\% \\times ${(pb * 100).toFixed(1)}\\% = \\htmlClass{hit}{${(pa * pb * 100).toFixed(2)}\\%}$`
     : `${focus.join('')}：这个设置下已经抽不到了`;
   const T = Number(temp.value);
-  root.querySelector('.t-out').textContent = T === 0 ? 'T = 0 · 贪心' : 'T = ' + T.toFixed(2);
+  root.querySelector('.t-out').textContent = T === 0 ? '$T = 0$ · 贪心' : `$T = ${T.toFixed(2)}$`;
   root.querySelector('.record').replaceChildren(...record.map(r => {
     const li = document.createElement('li');
     li.textContent = r.name.join('');

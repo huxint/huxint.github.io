@@ -648,9 +648,11 @@
   height: auto;
   margin-inline: auto;
 }
+/* The frame pads itself above and below so focus rings are not cut off there. */
 .prose .render-canvas > iframe {
   display: block;
   width: 100%;
+  margin-block: -6px;
   border: 0;
   background: transparent;
 }

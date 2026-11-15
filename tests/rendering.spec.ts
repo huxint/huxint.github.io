@@ -190,6 +190,35 @@ test('HTML 里的公式和正文公式一样渲染', async ({ page }) => {
     .toBe(true);
 });
 
+test('图注里的公式会渲染，公式的一部分可以套上块内的类', async ({ page }) => {
+  const figure = page.locator('.render-block', { hasText: 'Fixture caption' });
+  await expect(figure.locator('figcaption .katex')).toHaveCount(1);
+  await expect(figure.locator('.render-canvas')).toHaveAttribute(
+    'aria-label',
+    'Fixture caption x^2',
+  );
+  await expect(
+    figure.frameLocator('iframe').locator('#classed .katex .mark'),
+  ).toHaveCSS('color', 'rgb(255, 0, 0)');
+});
+
+test('贴着块边缘的控件把焦点环画在自己里面', async ({ page }) => {
+  const frame = page
+    .locator('.render-block', { hasText: 'Fixture caption' })
+    .frameLocator('iframe');
+  const edge = frame.locator('#edge');
+  const inner = frame.locator('#inner');
+  await inner.focus();
+  await page.keyboard.press('Shift+Tab');
+  await expect(edge).toBeFocused();
+  await expect(edge).toHaveAttribute('data-ring-inside', '');
+  await expect(edge).toHaveCSS('outline-offset', '-2px');
+  await page.keyboard.press('Tab');
+  await expect(inner).toBeFocused();
+  await expect(inner).not.toHaveAttribute('data-ring-inside');
+  await expect(edge).not.toHaveAttribute('data-ring-inside');
+});
+
 test('行内标记渲染高亮与下划线', async ({ page }) => {
   await expect(page.locator('.prose mark')).toHaveText('Highlighted text');
   const underline = page

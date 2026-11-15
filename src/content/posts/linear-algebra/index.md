@@ -52,6 +52,7 @@ $$
 ```render html
 <style>
   .la { --blue: #356f9b; font-size: 13px; line-height: 1.5; font-variant-ligatures: none; }
+  .katex { font-size: 15px; }
   :root[data-theme="dark"] .la { --blue: #95bfdc; }
   .bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 18px; }
   .key { min-height: 36px; padding: 0 14px; border: 1px solid var(--rule-strong); border-radius: 6px; background: var(--bg-raised); box-shadow: 0 2px 0 var(--rule); color: var(--text); font-size: 13px; cursor: pointer; }
@@ -65,6 +66,9 @@ $$
   .read { font: 13px var(--font-mono); }
   .read + .stage + .read { margin-top: 4px; }
   .i { color: var(--accent-ink); } .j { color: var(--blue); }
+  .tags { position: absolute; inset: 0; overflow: hidden; pointer-events: none; line-height: 1; }
+  .tags .katex { font-size: 17px; }
+  .tags > span { position: absolute; left: 0; top: 0; white-space: nowrap; }
 </style>
 <section class="la" aria-label="同一支箭头在两组基下的坐标">
   <div class="bar">
@@ -105,12 +109,35 @@ function arrow(to, color, w = 2.6, from = [0, 0]) {
   ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(bx - uy * h * .45, by + ux * h * .45); ctx.lineTo(bx + uy * h * .45, by - ux * h * .45);
   ctx.closePath(); ctx.fillStyle = color; ctx.fill();
 }
-function label(text, at, color, from = [0, 0]) {
-  const [x, y] = P(at), [ox, oy] = P(from), L = Math.hypot(x - ox, y - oy) || 1;
-  ctx.fillStyle = color; ctx.font = '600 15px KaTeX_Main, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText(text, x + (x - ox) / L * 22, y + (y - oy) / L * 22);
-  ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic';
+// 箭头旁的名字是叠在画布上的公式：同一个名字只排版一次，之后只挪位置
+const tags = stage.appendChild(document.createElement('div')), names = {};
+tags.className = 'tags'; tags.setAttribute('aria-hidden', 'true');
+// 名字整个留在画布里：公式排好、量出宽高以后，贴边的往回收
+const keep = new ResizeObserver((all) => all.forEach(({ target: el, borderBoxSize: [box] }) => {
+  if (!box.inlineSize) return;
+  el.size = [box.inlineSize, box.blockSize];
+  if (el === tags) for (const tag of tags.children) settle(tag); else settle(el);
+}));
+keep.observe(tags);
+function settle(el) {
+  const [w, h] = el.size ?? [0, 0], [W, H] = tags.size ?? [Infinity, Infinity];
+  const x = Math.max(2, Math.min(W - w - 2, el.at[0] + el.shift[0] * w));
+  const y = Math.max(2, Math.min(H - h - 2, el.at[1] + el.shift[1] * h));
+  el.style.transform = `translate(${x}px, ${y}px)`;
 }
+function name(tex, x, y, color, shift = '-50%, -50%') {
+  let el = names[tex];
+  if (!el) keep.observe(el = names[tex] = tags.appendChild(Object.assign(document.createElement('span'), { textContent: `$${tex}$` })));
+  el.hidden = false; el.style.color = color;
+  el.at = [x, y]; el.shift = shift.split(',').map((part) => parseFloat(part) / 100); settle(el);
+}
+function label(tex, at, color, from = [0, 0]) {
+  const [x, y] = P(at), [ox, oy] = P(from), L = Math.hypot(x - ox, y - oy) || 1;
+  name(tex, x + (x - ox) / L * 22, y + (y - oy) / L * 22, color);
+}
+
+const sg = (x) => (x < -.004 ? `(${num(x)})` : num(x));
+const B1 = '\\htmlClass{i}{\\mathbf{b}_1}', B2 = '\\htmlClass{j}{\\mathbf{b}_2}';
 
 // v = c1·b1 + c2·b2，两列共线时没有解
 function recipe() {
@@ -135,16 +162,16 @@ function draw() {
     seg([0, 0], [mid[0] * p1, mid[1] * p1], C.accent, 2.4, [6, 5]);
     if (p2 > 0) seg(mid, [mid[0] + (v[0] - mid[0]) * p2, mid[1] + (v[1] - mid[1]) * p2], C.blue, 2.4, [6, 5]);
   }
-  arrow(v, C.text, 2.4); label('v', v, C.text);
+  arrow(v, C.text, 2.4); label('\\mathbf{v}', v, C.text);
   arrow(b1, C.accent); arrow(b2, C.blue);
-  label('b₁', b1, C['accent-ink']); label('b₂', b2, C.blue);
+  label('\\mathbf{b}_1', b1, C['accent-ink']); label('\\mathbf{b}_2', b2, C.blue);
   knobs.forEach((k) => k.place());
 
-  r0.textContent = `î、ĵ 下：v = (${num(v[0])}, ${num(v[1])})`;
-  r1.innerHTML = c
-    ? `<span class="i">b₁</span>、<span class="j">b₂</span> 下：v = (${num(c[0])}, ${num(c[1])}) = ${num(c[0])}·<span class="i">b₁</span> + ${num(c[1])}·<span class="j">b₂</span>`
-    : `<span class="i">b₁</span>、<span class="j">b₂</span> 共线，不是一组基`;
-  cv.setAttribute('aria-label', c ? `v 在标准基下是 (${num(v[0])}, ${num(v[1])})，在 b₁、b₂ 下是 (${num(c[0])}, ${num(c[1])})` : 'b₁、b₂ 共线');
+  r0.textContent = `$\\hat\\imath$、$\\hat\\jmath$ 下：$\\mathbf{v} = (${num(v[0])}, ${num(v[1])})$`;
+  r1.textContent = c
+    ? `$${B1}$、$${B2}$ 下：$\\mathbf{v} = (${num(c[0])}, ${num(c[1])}) = ${num(c[0])}\\,${B1} + ${sg(c[1])}\\,${B2}$`
+    : `$${B1}$、$${B2}$ 共线，不是一组基`;
+  cv.setAttribute('aria-label', c ? `v 在标准基下是 (${num(v[0])}, ${num(v[1])})，在 b1、b2 下是 (${num(c[0])}, ${num(c[1])})` : 'b1、b2 共线');
 }
 
 function play() {
@@ -175,8 +202,8 @@ function knob(cls, name, get, set) {
 }
 const knobs = [
   knob('', 'v', () => v, (p) => { v = p; }),
-  knob('i', 'b₁', () => b1, (p) => { b1 = p; }),
-  knob('j', 'b₂', () => b2, (p) => { b2 = p; }),
+  knob('i', 'b1', () => b1, (p) => { b1 = p; }),
+  knob('j', 'b2', () => b2, (p) => { b2 = p; }),
 ];
 root.querySelector('.play').addEventListener('click', play);
 
@@ -236,6 +263,7 @@ $$
 ```render html
 <style>
   .la { --blue: #356f9b; font-size: 13px; line-height: 1.5; font-variant-ligatures: none; }
+  .katex { font-size: 15px; }
   :root[data-theme="dark"] .la { --blue: #95bfdc; }
   .bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 18px; }
   .seg { display: flex; flex-wrap: wrap; gap: 0 16px; }
@@ -252,10 +280,10 @@ $$
   .scrub { display: flex; align-items: center; gap: 12px; margin-top: 6px; color: var(--muted); font-size: 12px; }
   .scrub input { flex: 1; min-width: 0; accent-color: var(--accent); }
   .foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; margin-top: 4px; min-height: 44px; font: 13px var(--font-mono); }
-  .m { display: inline-grid; grid-auto-flow: column; grid-template-rows: auto auto; gap: 0 12px; position: relative; margin-left: 6px; padding: 0 9px; text-align: right; vertical-align: middle; }
-  .m::before, .m::after { content: ""; position: absolute; top: 1px; bottom: 1px; width: 5px; border: 1.5px solid var(--muted); }
-  .m::before { left: 0; border-right: 0; } .m::after { right: 0; border-left: 0; }
   .i { color: var(--accent-ink); } .j { color: var(--blue); }
+  .tags { position: absolute; inset: 0; overflow: hidden; pointer-events: none; line-height: 1; }
+  .tags .katex { font-size: 17px; }
+  .tags > span { position: absolute; left: 0; top: 0; white-space: nowrap; }
 </style>
 <section class="la" aria-label="线性变换：网格跟着 î、ĵ 的落点一起动">
   <div class="bar">
@@ -270,7 +298,7 @@ $$
   </div>
   <div class="stage"><canvas role="img"></canvas></div>
   <label class="scrub"><span>进度</span><input type="range" min="0" max="1000" value="1000" aria-label="变换进度" /></label>
-  <div class="foot"><span class="mat">A =<span class="m"></span></span><span class="read"></span></div>
+  <div class="foot"><span class="mat"></span><span class="read"></span></div>
 </section>
 <script>
 const root = document.querySelector('.la');
@@ -327,11 +355,31 @@ function arrow(to, color, w = 2.6, from = [0, 0]) {
   ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(bx - uy * h * .45, by + ux * h * .45); ctx.lineTo(bx + uy * h * .45, by - ux * h * .45);
   ctx.closePath(); ctx.fillStyle = color; ctx.fill();
 }
-function label(text, at, color, from = [0, 0]) {
+// 箭头旁的名字是叠在画布上的公式：同一个名字只排版一次，之后只挪位置
+const tags = stage.appendChild(document.createElement('div')), names = {};
+tags.className = 'tags'; tags.setAttribute('aria-hidden', 'true');
+// 名字整个留在画布里：公式排好、量出宽高以后，贴边的往回收
+const keep = new ResizeObserver((all) => all.forEach(({ target: el, borderBoxSize: [box] }) => {
+  if (!box.inlineSize) return;
+  el.size = [box.inlineSize, box.blockSize];
+  if (el === tags) for (const tag of tags.children) settle(tag); else settle(el);
+}));
+keep.observe(tags);
+function settle(el) {
+  const [w, h] = el.size ?? [0, 0], [W, H] = tags.size ?? [Infinity, Infinity];
+  const x = Math.max(2, Math.min(W - w - 2, el.at[0] + el.shift[0] * w));
+  const y = Math.max(2, Math.min(H - h - 2, el.at[1] + el.shift[1] * h));
+  el.style.transform = `translate(${x}px, ${y}px)`;
+}
+function name(tex, x, y, color, shift = '-50%, -50%') {
+  let el = names[tex];
+  if (!el) keep.observe(el = names[tex] = tags.appendChild(Object.assign(document.createElement('span'), { textContent: `$${tex}$` })));
+  el.hidden = false; el.style.color = color;
+  el.at = [x, y]; el.shift = shift.split(',').map((part) => parseFloat(part) / 100); settle(el);
+}
+function label(tex, at, color, from = [0, 0]) {
   const [x, y] = P(at), [ox, oy] = P(from), L = Math.hypot(x - ox, y - oy) || 1;
-  ctx.fillStyle = color; ctx.font = '600 15px KaTeX_Main, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText(text, x + (x - ox) / L * 22, y + (y - oy) / L * 22);
-  ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic';
+  name(tex, x + (x - ox) / L * 22, y + (y - oy) / L * 22, color);
 }
 
 function draw() {
@@ -364,16 +412,17 @@ function draw() {
     const [x, y] = P(mix);
     ctx.beginPath(); ctx.arc(x, y, 5, 0, 7); ctx.setLineDash([]); ctx.strokeStyle = C.muted; ctx.lineWidth = 2; ctx.stroke();
   }
-  arrow(out, C.text, 2.4); label('v', out, C.text);
+  arrow(out, C.text, 2.4); label('\\mathbf{v}', out, C.text);
   arrow(i, C.accent); arrow(j, C.blue);
-  label('î', i, C['accent-ink']); label('ĵ', j, C.blue);
+  label('\\hat\\imath', i, C['accent-ink']); label('\\hat\\jmath', j, C.blue);
   knobs.forEach((k) => k.place());
 
   mat.hidden = bend;
-  root.querySelector('.m').innerHTML = [m[0], m[2]].map((x) => `<span class="i">${num(x)}</span>`).join('') + [m[1], m[3]].map((x) => `<span class="j">${num(x)}</span>`).join('');
-  read.innerHTML = bend
-    ? `1·<span class="i">f(î)</span> + 2·<span class="j">f(ĵ)</span> = ${pair(mix)}　f(v) = ${pair(out)}`
-    : `v → 1·<span class="i">${pair(i)}</span> + 2·<span class="j">${pair(j)}</span> = ${pair(out)}`;
+  // 两列各用自己那支箭头的颜色
+  mat.textContent = `$A = \\begin{bmatrix}\\htmlClass{i}{${num(m[0])}}&\\htmlClass{j}{${num(m[1])}}\\\\\\htmlClass{i}{${num(m[2])}}&\\htmlClass{j}{${num(m[3])}}\\end{bmatrix}$`;
+  read.textContent = bend
+    ? `$1\\cdot\\htmlClass{i}{f(\\hat\\imath)} + 2\\cdot\\htmlClass{j}{f(\\hat\\jmath)} = ${pair(mix)}$　$f(\\mathbf{v}) = ${pair(out)}$`
+    : `$\\mathbf{v} \\to 1\\cdot\\htmlClass{i}{${pair(i)}} + 2\\cdot\\htmlClass{j}{${pair(j)}} = ${pair(out)}$`;
   range.value = Math.round(t * 1000);
   cv.setAttribute('aria-label', `î 落在 ${pair(i)}，ĵ 落在 ${pair(j)}，v 落在 ${pair(out)}`);
 }
@@ -476,6 +525,7 @@ $AB$ 要从右往左读，和 $f(g(x))$ 一样，先做 $B$。
 ```render html
 <style>
   .la { --blue: #356f9b; font-size: 13px; line-height: 1.5; font-variant-ligatures: none; }
+  .katex { font-size: 15px; }
   :root[data-theme="dark"] .la { --blue: #95bfdc; }
   .bar { display: flex; align-items: center; gap: 14px; }
   .key { flex: none; min-height: 36px; padding: 0 14px; border: 1px solid var(--rule-strong); border-radius: 6px; background: var(--bg-raised); box-shadow: 0 2px 0 var(--rule); color: var(--text); font-size: 13px; cursor: pointer; }
@@ -487,11 +537,12 @@ $AB$ 要从右往左读，和 $f(g(x))$ 一样，先做 $B$。
   figure { margin: 0; min-width: 0; }
   figcaption { color: var(--muted); font-size: 13px; }
   canvas { display: block; width: 100%; }
-  .foot { display: flex; align-items: center; gap: 6px; margin-top: 2px; font: 13px var(--font-mono); }
-  .m { display: inline-grid; grid-auto-flow: column; grid-template-rows: auto auto; gap: 0 12px; position: relative; padding: 0 9px; text-align: right; }
-  .m::before, .m::after { content: ""; position: absolute; top: 1px; bottom: 1px; width: 5px; border: 1.5px solid var(--muted); }
-  .m::before { left: 0; border-right: 0; } .m::after { right: 0; border-left: 0; }
+  .foot { margin-top: 2px; min-height: 38px; font: 13px var(--font-mono); }
   .i { color: var(--accent-ink); } .j { color: var(--blue); }
+  .stage { position: relative; }
+  .tags { position: absolute; inset: 0; overflow: hidden; pointer-events: none; line-height: 1; }
+  .tags .katex { font-size: 17px; }
+  .tags > span { position: absolute; left: 0; top: 0; white-space: nowrap; }
   @media (max-width: 520px) { .duo { grid-template-columns: 1fr; } }
 </style>
 <section class="la" aria-label="同样两个变换，两种先后顺序">
@@ -500,8 +551,8 @@ $AB$ 要从右往左读，和 $f(g(x))$ 一样，先做 $B$。
     <button type="button" class="key play">播放</button>
   </div>
   <div class="duo">
-    <figure><figcaption>先剪切 S，再旋转 R</figcaption><canvas role="img"></canvas><div class="foot"></div></figure>
-    <figure><figcaption>先旋转 R，再剪切 S</figcaption><canvas role="img"></canvas><div class="foot"></div></figure>
+    <figure><figcaption>先剪切 $S$，再旋转 $R$</figcaption><div class="stage"><canvas role="img"></canvas></div><div class="foot"></div></figure>
+    <figure><figcaption>先旋转 $R$，再剪切 $S$</figcaption><div class="stage"><canvas role="img"></canvas></div><div class="foot"></div></figure>
   </div>
 </section>
 <script>
@@ -526,6 +577,28 @@ const F = [[[.3, .2], [.3, 1.8]], [[.3, 1.8], [1.3, 1.8]], [[.3, 1], [1, 1]]];
 
 const panels = [...root.querySelectorAll('figure')].map((fig, o) => {
   const cv = fig.querySelector('canvas'), ctx = cv.getContext('2d'), foot = fig.querySelector('.foot');
+  // 箭头旁的名字是叠在画布上的公式：同一个名字只排版一次，之后只挪位置
+  const tags = cv.parentNode.appendChild(document.createElement('div')), names = {};
+  tags.className = 'tags'; tags.setAttribute('aria-hidden', 'true');
+  // 名字整个留在画布里：公式排好、量出宽高以后，贴边的往回收
+  const keep = new ResizeObserver((all) => all.forEach(({ target: el, borderBoxSize: [box] }) => {
+    if (!box.inlineSize) return;
+    el.size = [box.inlineSize, box.blockSize];
+    if (el === tags) for (const tag of tags.children) settle(tag); else settle(el);
+  }));
+  keep.observe(tags);
+  function settle(el) {
+    const [w, h] = el.size ?? [0, 0], [W, H] = tags.size ?? [Infinity, Infinity];
+    const x = Math.max(2, Math.min(W - w - 2, el.at[0] + el.shift[0] * w));
+    const y = Math.max(2, Math.min(H - h - 2, el.at[1] + el.shift[1] * h));
+    el.style.transform = `translate(${x}px, ${y}px)`;
+  }
+  function name(tex, x, y, color, shift = '-50%, -50%') {
+    let el = names[tex];
+    if (!el) keep.observe(el = names[tex] = tags.appendChild(Object.assign(document.createElement('span'), { textContent: `$${tex}$` })));
+    el.hidden = false; el.style.color = color;
+    el.at = [x, y]; el.shift = shift.split(',').map((part) => parseFloat(part) / 100); settle(el);
+  }
   let W = 0, H = 0, S = 30;
   const P = ([x, y]) => [W / 2 + x * S, H * .58 - y * S];
   function seg(a, b, color, w = 1) {
@@ -533,15 +606,14 @@ const panels = [...root.querySelectorAll('figure')].map((fig, o) => {
     ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
     ctx.strokeStyle = color; ctx.lineWidth = w; ctx.stroke();
   }
-  function arrow(to, color, text, ink) {
+  function arrow(to, color, tex, ink) {
     const [x1, y1] = P([0, 0]), [x2, y2] = P(to), L = Math.hypot(x2 - x1, y2 - y1);
     if (L < 2) return;
     const ux = (x2 - x1) / L, uy = (y2 - y1) / L, h = Math.min(11, L * .5), bx = x2 - ux * h, by = y2 - uy * h;
     ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(bx, by); ctx.strokeStyle = color; ctx.lineWidth = 2.6; ctx.stroke();
     ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(bx - uy * h * .45, by + ux * h * .45); ctx.lineTo(bx + uy * h * .45, by - ux * h * .45);
     ctx.closePath(); ctx.fillStyle = color; ctx.fill();
-    ctx.fillStyle = ink; ctx.font = '600 15px KaTeX_Main, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(text, x2 + ux * 16, y2 + uy * 16);
+    name(tex, x2 + ux * 16, y2 + uy * 16, ink);
   }
   function draw() {
     ctx.clearRect(0, 0, W, H);
@@ -555,9 +627,8 @@ const panels = [...root.querySelectorAll('figure')].map((fig, o) => {
     }
     ctx.globalAlpha = 1; ctx.lineCap = 'round';
     F.forEach(([a, b]) => seg(ap(m, a), ap(m, b), C.text, 5));
-    arrow([m[0], m[2]], C.accent, 'î', C['accent-ink']); arrow([m[1], m[3]], C.blue, 'ĵ', C.blue);
-    foot.innerHTML = `<span>${orders[o].name[t > 1 ? 1 : 0]} =</span><span class="m">` +
-      [m[0], m[2]].map((x) => `<span class="i">${num(x)}</span>`).join('') + [m[1], m[3]].map((x) => `<span class="j">${num(x)}</span>`).join('') + '</span>';
+    arrow([m[0], m[2]], C.accent, '\\hat\\imath', C['accent-ink']); arrow([m[1], m[3]], C.blue, '\\hat\\jmath', C.blue);
+    foot.textContent = `$${orders[o].name[t > 1 ? 1 : 0]} = \\begin{bmatrix}\\htmlClass{i}{${num(m[0])}}&\\htmlClass{j}{${num(m[1])}}\\\\\\htmlClass{i}{${num(m[2])}}&\\htmlClass{j}{${num(m[3])}}\\end{bmatrix}$`;
     cv.setAttribute('aria-label', `î 落在 (${num(m[0])}, ${num(m[2])})，ĵ 落在 (${num(m[1])}, ${num(m[3])})`);
   }
   function size() {
@@ -620,6 +691,7 @@ $\hat\imath$ 和 $\hat\jmath$ 围着一个面积为 1 的正方形。变换之�
 ```render html
 <style>
   .la { --blue: #356f9b; font-size: 13px; line-height: 1.5; font-variant-ligatures: none; }
+  .katex { font-size: 15px; }
   :root[data-theme="dark"] .la { --blue: #95bfdc; }
   .bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 18px; }
   .seg { display: flex; flex-wrap: wrap; gap: 0 16px; }
@@ -636,8 +708,10 @@ $\hat\imath$ 和 $\hat\jmath$ 围着一个面积为 1 的正方形。变换之�
   .scrub { display: flex; align-items: center; gap: 12px; margin-top: 6px; color: var(--muted); font-size: 12px; }
   .scrub input { flex: 1; min-width: 0; accent-color: var(--accent); }
   .read { display: flex; flex-wrap: wrap; gap: 2px 22px; margin-top: 4px; min-height: 22px; font: 13px var(--font-mono); }
-  .read b { font-weight: 650; }
   .i { color: var(--accent-ink); } .j { color: var(--blue); }
+  .tags { position: absolute; inset: 0; overflow: hidden; pointer-events: none; line-height: 1; }
+  .tags .katex { font-size: 17px; }
+  .tags > span { position: absolute; left: 0; top: 0; white-space: nowrap; }
 </style>
 <section class="la" aria-label="行列式：正方形和圆的面积被放大同一个倍数，翻面时为负">
   <div class="bar">
@@ -680,7 +754,29 @@ function seg(a, b, color, w = 1) {
   ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
   ctx.strokeStyle = color; ctx.lineWidth = w; ctx.setLineDash([]); ctx.stroke();
 }
-function arrow(to, color, text, ink) {
+// 箭头旁的名字是叠在画布上的公式：同一个名字只排版一次，之后只挪位置
+const tags = stage.appendChild(document.createElement('div')), names = {};
+tags.className = 'tags'; tags.setAttribute('aria-hidden', 'true');
+// 名字整个留在画布里：公式排好、量出宽高以后，贴边的往回收
+const keep = new ResizeObserver((all) => all.forEach(({ target: el, borderBoxSize: [box] }) => {
+  if (!box.inlineSize) return;
+  el.size = [box.inlineSize, box.blockSize];
+  if (el === tags) for (const tag of tags.children) settle(tag); else settle(el);
+}));
+keep.observe(tags);
+function settle(el) {
+  const [w, h] = el.size ?? [0, 0], [W, H] = tags.size ?? [Infinity, Infinity];
+  const x = Math.max(2, Math.min(W - w - 2, el.at[0] + el.shift[0] * w));
+  const y = Math.max(2, Math.min(H - h - 2, el.at[1] + el.shift[1] * h));
+  el.style.transform = `translate(${x}px, ${y}px)`;
+}
+function name(tex, x, y, color, shift = '-50%, -50%') {
+  let el = names[tex];
+  if (!el) keep.observe(el = names[tex] = tags.appendChild(Object.assign(document.createElement('span'), { textContent: `$${tex}$` })));
+  el.hidden = false; el.style.color = color;
+  el.at = [x, y]; el.shift = shift.split(',').map((part) => parseFloat(part) / 100); settle(el);
+}
+function arrow(to, color, tex, ink) {
   const [x1, y1] = P([0, 0]), [x2, y2] = P(to), L = Math.hypot(x2 - x1, y2 - y1);
   if (L < 2) return;
   const ux = (x2 - x1) / L, uy = (y2 - y1) / L, h = Math.min(12, L * .5), bx = x2 - ux * h, by = y2 - uy * h;
@@ -688,8 +784,7 @@ function arrow(to, color, text, ink) {
   ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(bx, by); ctx.strokeStyle = color; ctx.lineWidth = 2.6; ctx.stroke();
   ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(bx - uy * h * .45, by + ux * h * .45); ctx.lineTo(bx + uy * h * .45, by - ux * h * .45);
   ctx.closePath(); ctx.fillStyle = color; ctx.fill();
-  ctx.fillStyle = ink; ctx.font = '600 15px KaTeX_Main, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText(text, x2 + ux * 22, y2 + uy * 22);
+  name(tex, x2 + ux * 22, y2 + uy * 22, ink);
   ctx.lineCap = 'butt';
 }
 function shape(pts, color) {
@@ -700,6 +795,7 @@ function shape(pts, color) {
 
 function draw() {
   ctx.clearRect(0, 0, W, H);
+  for (const el of tags.children) el.hidden = true;
   const m = M(t), d = m[0] * m[3] - m[1] * m[2], R = Math.ceil(Math.hypot(W, H) / 2 / S) + 2;
   for (let k = -R; k <= R; k++) { seg([k, -R], [k, R], C.rule); seg([-R, k], [R, k], C.rule); }
   ctx.globalAlpha = .5;
@@ -718,13 +814,13 @@ function draw() {
   ctx.fillStyle = C.text; ctx.font = `600 ${S * .62}px Inter Variable, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.fillText('R', S * .5, -S * .5);
   ctx.restore();
-  arrow([m[0], m[2]], C.accent, 'î', C['accent-ink']); arrow([m[1], m[3]], C.blue, 'ĵ', C.blue);
+  arrow([m[0], m[2]], C.accent, '\\hat\\imath', C['accent-ink']); arrow([m[1], m[3]], C.blue, '\\hat\\jmath', C.blue);
   knobs.forEach((k) => k.place());
 
   const area = Math.abs(d), state = area < .005 ? '压成了一条线' : d < 0 ? '翻面了' : '';
   read.innerHTML =
-    `<span>det = <span class="i">${sg(m[0])}</span>·<span class="j">${sg(m[3])}</span> − <span class="j">${sg(m[1])}</span>·<span class="i">${sg(m[2])}</span> = <b>${num(d)}</b></span>` +
-    `<span>方格 1 → ${num(area)}</span><span>圆 1.13 → ${num(1.131 * area)}</span><span>${state}</span>`;
+    `<span>$\\det A = \\htmlClass{i}{${sg(m[0])}}\\cdot\\htmlClass{j}{${sg(m[3])}} - \\htmlClass{j}{${sg(m[1])}}\\cdot\\htmlClass{i}{${sg(m[2])}} = \\mathbf{${num(d)}}$</span>` +
+    `<span>方格 $1 \\to ${num(area)}$</span><span>圆 $1.13 \\to ${num(1.131 * area)}$</span><span>${state}</span>`;
   range.value = Math.round(t * 1000);
   cv.setAttribute('aria-label', `行列式 ${num(d)}：面积变成 ${num(area)} 倍${d < 0 ? '，并且翻了面' : ''}`);
 }
@@ -789,16 +885,19 @@ new IntersectionObserver(([e], o) => { if (e.isIntersecting) { o.disconnect(); p
 
 二维的公式能从图上直接量出来。$\hat\imath$ 落在 $(a,c)$，$\hat\jmath$ 落在 $(b,d)$，拿外面的大矩形减掉四周的边角：
 
-```render html title="图里 a = 3，c = 1，b = 1，d = 2"
+```render html title="图里 $a = 3$，$c = 1$，$b = 1$，$d = 2$"
 <style>
   .ab { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px 32px; font-size: 14px; line-height: 1.5; font-variant-ligatures: none; }
   .ab svg { flex: none; display: block; width: 240px; max-width: 100%; height: auto; }
   .sum { display: grid; grid-template-columns: max-content max-content; gap: 6px 16px; font-family: var(--font-mono); }
-  .sum span:nth-child(odd) { color: var(--muted); font-family: var(--font-sans); }
-  .sum span.hit { color: var(--accent-ink); font-weight: 650; }
+  .sum > span:nth-child(odd) { color: var(--muted); font-family: var(--font-sans); }
+  .sum > span.hit { color: var(--accent-ink); font-weight: 650; }
+  .ab text { font: italic 13.5px KaTeX_Math, var(--font-serif); }
+  .ab text tspan { font-family: KaTeX_Main, var(--font-serif); font-style: normal; }
+  .ab text.hit { font-size: 18px; }
 </style>
 <div class="ab" role="img" aria-label="大矩形减去四个三角形和两个小矩形，剩下的平行四边形面积是 ad − bc">
-  <svg viewBox="6 30 214 172" xmlns="http://www.w3.org/2000/svg" font-family="Inter Variable, sans-serif">
+  <svg viewBox="6 30 214 172" xmlns="http://www.w3.org/2000/svg">
     <g stroke="var(--rule-strong)" stroke-width="1.2">
       <path d="M30 175 L165 175 L165 130 Z M75 85 L75 40 L210 40 Z" fill="var(--bg-sunken)" />
       <path d="M30 175 L75 85 L30 85 Z M165 130 L210 130 L210 40 Z" fill="var(--bg-sunken)" />
@@ -806,27 +905,27 @@ new IntersectionObserver(([e], o) => { if (e.isIntersecting) { o.disconnect(); p
     </g>
     <path d="M30 175 L165 130 L210 40 L75 85 Z" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2" />
     <rect x="30" y="40" width="180" height="135" fill="none" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="4 4" />
-    <g font-size="12" fill="var(--muted)" text-anchor="middle">
-      <text x="120" y="165">ac/2</text>
-      <text x="120" y="56">ac/2</text>
-      <text x="46" y="118">bd/2</text>
-      <text x="195" y="104">bd/2</text>
+    <g fill="var(--muted)" text-anchor="middle">
+      <text x="120" y="165">ac<tspan>/2</tspan></text>
+      <text x="120" y="56">ac<tspan>/2</tspan></text>
+      <text x="46" y="118">bd<tspan>/2</tspan></text>
+      <text x="195" y="104">bd<tspan>/2</tspan></text>
       <text x="187" y="157">bc</text>
       <text x="52" y="67">bc</text>
     </g>
-    <g font-size="12" fill="var(--faint)" text-anchor="middle">
+    <g fill="var(--faint)" text-anchor="middle">
       <text x="97" y="194">a</text>
       <text x="187" y="194">b</text>
       <text x="16" y="133">d</text>
       <text x="16" y="66">c</text>
     </g>
-    <text x="120" y="112" font-size="17" font-weight="600" fill="var(--accent-ink)" text-anchor="middle">ad − bc</text>
+    <text class="hit" x="120" y="113" fill="var(--accent-ink)" text-anchor="middle">ad <tspan>−</tspan> bc</text>
   </svg>
   <div class="sum">
-    <span>大矩形</span><span>(a+b)(c+d)</span>
-    <span>四个三角</span><span>− ac − bd</span>
-    <span>两个小矩形</span><span>− 2bc</span>
-    <span class="hit">剩下</span><span class="hit">ad − bc</span>
+    <span>大矩形</span><span>$(a+b)(c+d)$</span>
+    <span>四个三角</span><span>$-\,ac - bd$</span>
+    <span>两个小矩形</span><span>$-\,2bc$</span>
+    <span class="hit">剩下</span><span class="hit">$ad - bc$</span>
   </div>
 </div>
 ```
@@ -875,6 +974,7 @@ $$
 ```render html
 <style>
   .la { --blue: #356f9b; font-size: 13px; line-height: 1.5; font-variant-ligatures: none; }
+  .katex { font-size: 15px; }
   :root[data-theme="dark"] .la { --blue: #95bfdc; }
   .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
   .key { min-height: 36px; padding: 0 14px; border: 1px solid var(--rule-strong); border-radius: 6px; background: var(--bg-raised); box-shadow: 0 2px 0 var(--rule); color: var(--text); font-size: 13px; cursor: pointer; }
@@ -888,6 +988,9 @@ $$
   .knob:active { cursor: grabbing; }
   .read { display: flex; flex-wrap: wrap; gap: 2px 22px; margin-top: 6px; font: 13px var(--font-mono); }
   .i { color: var(--accent-ink); } .j { color: var(--blue); }
+  .tags { position: absolute; inset: 0; overflow: hidden; pointer-events: none; line-height: 1; }
+  .tags .katex { font-size: 17px; }
+  .tags > span { position: absolute; left: 0; top: 0; white-space: nowrap; }
 </style>
 <section class="la" aria-label="解 Ax = b：把变换倒着放，b 回到它的出发点 x">
   <div class="bar">
@@ -935,11 +1038,31 @@ function arrow(to, color, w = 2.6) {
   ctx.closePath(); ctx.fillStyle = color; ctx.fill();
   ctx.lineCap = 'butt';
 }
-function tag(text, at, color, dx, dy) {
+// 箭头旁的名字是叠在画布上的公式：同一个名字只排版一次，之后只挪位置
+const tags = stage.appendChild(document.createElement('div')), names = {};
+tags.className = 'tags'; tags.setAttribute('aria-hidden', 'true');
+// 名字整个留在画布里：公式排好、量出宽高以后，贴边的往回收
+const keep = new ResizeObserver((all) => all.forEach(({ target: el, borderBoxSize: [box] }) => {
+  if (!box.inlineSize) return;
+  el.size = [box.inlineSize, box.blockSize];
+  if (el === tags) for (const tag of tags.children) settle(tag); else settle(el);
+}));
+keep.observe(tags);
+function settle(el) {
+  const [w, h] = el.size ?? [0, 0], [W, H] = tags.size ?? [Infinity, Infinity];
+  const x = Math.max(2, Math.min(W - w - 2, el.at[0] + el.shift[0] * w));
+  const y = Math.max(2, Math.min(H - h - 2, el.at[1] + el.shift[1] * h));
+  el.style.transform = `translate(${x}px, ${y}px)`;
+}
+function name(tex, x, y, color, shift = '-50%, -50%') {
+  let el = names[tex];
+  if (!el) keep.observe(el = names[tex] = tags.appendChild(Object.assign(document.createElement('span'), { textContent: `$${tex}$` })));
+  el.hidden = false; el.style.color = color;
+  el.at = [x, y]; el.shift = shift.split(',').map((part) => parseFloat(part) / 100); settle(el);
+}
+function tag(tex, at, color, dx, dy) {
   const [x, y] = P(at);
-  ctx.fillStyle = color; ctx.font = '600 15px KaTeX_Main, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText(text, x + dx, y + dy);
-  ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic';
+  name(tex, x + dx, y + dy, color);
 }
 
 function draw() {
@@ -959,14 +1082,14 @@ function draw() {
   ctx.fillStyle = C.bg; ctx.fill(); ctx.strokeStyle = C.muted; ctx.lineWidth = 2; ctx.stroke();
   const i = [m[0], m[2]], j = [m[1], m[3]];
   arrow(i, C.accent); arrow(j, C.blue);
-  tag('î', i, C['accent-ink'], 0, 18); tag('ĵ', j, C.blue, -14, -10);
+  tag('\\hat\\imath', i, C['accent-ink'], 0, 18); tag('\\hat\\jmath', j, C.blue, -14, -10);
   arrow(ap(m, x), C.text);
-  tag('x', x, C.muted, 16, 4); tag('b', b, C.text, 20, -12);
+  tag('\\mathbf{x}', x, C.muted, 16, 4); tag('\\mathbf{b}', b, C.text, 20, -12);
   knob.place();
 
   read.innerHTML =
-    `<span>x = A⁻¹b = ${pair(x)}</span>` +
-    `<span>Ax = ${num(x[0])}·<span class="i">(2, 1)</span> + ${num(x[1])}·<span class="j">(−1, 1)</span> = ${pair(b)}</span>`;
+    `<span>$\\mathbf{x} = A^{-1}\\mathbf{b} = ${pair(x)}$</span>` +
+    `<span>$A\\mathbf{x} = ${num(x[0])}\\cdot\\htmlClass{i}{(2, 1)} + ${x[1] < -.004 ? `(${num(x[1])})` : num(x[1])}\\cdot\\htmlClass{j}{(-1, 1)} = ${pair(b)}$</span>`;
   range.value = Math.round(t * 1000);
   cv.setAttribute('aria-label', `落在 b = ${pair(b)} 上的是 x = ${pair(x)}`);
 }
@@ -1057,6 +1180,7 @@ $\det A=0$ 的变换倒不回去，因为它丢了东西。丢的是什么，拿
 ```render html
 <style>
   .la { --blue: #356f9b; --blue-soft: rgb(53 111 155 / .14); font-size: 13px; line-height: 1.5; font-variant-ligatures: none; }
+  .katex { font-size: 15px; }
   :root[data-theme="dark"] .la { --blue: #95bfdc; --blue-soft: rgb(149 191 220 / .16); }
   .bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 18px; }
   .seg { display: flex; flex-wrap: wrap; gap: 0 16px; }
@@ -1076,6 +1200,9 @@ $\det A=0$ 的变换倒不回去，因为它丢了东西。丢的是什么，拿
   .read small { color: var(--muted); font: 12px var(--font-sans); margin-right: 6px; }
   .note { margin: 4px 0 0; min-height: 1.5em; color: var(--muted); font: 13px var(--font-mono); }
   .note b { color: var(--text); font-weight: 600; }
+  .tags { position: absolute; inset: 0; overflow: hidden; pointer-events: none; line-height: 1; }
+  .tags .katex { font-size: 17px; }
+  .tags > span { position: absolute; left: 0; top: 0; white-space: nowrap; }
 </style>
 <section class="la" aria-label="秩 1 的矩阵把平面压成一条线：b 在线上有无穷多解，不在线上无解">
   <div class="bar">
@@ -1129,6 +1256,28 @@ function text(s, at, color, dx = 0, dy = 0, align = 'left') {
   ctx.fillStyle = color; ctx.font = '12px Inter Variable, sans-serif'; ctx.textAlign = align; ctx.textBaseline = 'middle';
   ctx.fillText(s, x + dx, y + dy); ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic';
 }
+// 画布上的名字是叠在上面的公式：同一个名字只排版一次，之后只挪位置
+const tags = stage.appendChild(document.createElement('div')), names = {};
+tags.className = 'tags'; tags.setAttribute('aria-hidden', 'true');
+// 名字整个留在画布里：公式排好、量出宽高以后，贴边的往回收
+const keep = new ResizeObserver((all) => all.forEach(({ target: el, borderBoxSize: [box] }) => {
+  if (!box.inlineSize) return;
+  el.size = [box.inlineSize, box.blockSize];
+  if (el === tags) for (const tag of tags.children) settle(tag); else settle(el);
+}));
+keep.observe(tags);
+function settle(el) {
+  const [w, h] = el.size ?? [0, 0], [W, H] = tags.size ?? [Infinity, Infinity];
+  const x = Math.max(2, Math.min(W - w - 2, el.at[0] + el.shift[0] * w));
+  const y = Math.max(2, Math.min(H - h - 2, el.at[1] + el.shift[1] * h));
+  el.style.transform = `translate(${x}px, ${y}px)`;
+}
+function name(tex, x, y, color, shift = '-50%, -50%') {
+  let el = names[tex];
+  if (!el) keep.observe(el = names[tex] = tags.appendChild(Object.assign(document.createElement('span'), { textContent: `$${tex}$` })));
+  el.hidden = false; el.style.color = color;
+  el.at = [x, y]; el.shift = shift.split(',').map((part) => parseFloat(part) / 100); settle(el);
+}
 function dot(at, color, r = 5) { const [x, y] = P(at); ctx.beginPath(); ctx.arc(x, y, r, 0, 2 * Math.PI); ctx.fillStyle = color; ctx.fill(); }
 
 // 秩 1 时，b 落在列空间上才有解；k 是 b = k·(2, 1) 里的 k
@@ -1137,7 +1286,9 @@ const kOf = () => (b[0] * col[0] + b[1] * col[1]) / 5;
 
 function draw() {
   ctx.clearRect(0, 0, W, H);
+  for (const el of tags.children) el.hidden = true;
   const m = M(t), R = Math.ceil(Math.hypot(W, H) / 2 / S) + 1, L = 40;
+  let said;
   for (let k = -R; k <= R; k++) { seg([k, -R], [k, R], C.rule); seg([-R, k], [R, k], C.rule); }
   ctx.globalAlpha = .4; grid(m, C.muted, C.text); ctx.globalAlpha = 1;
   const read = root.querySelector('.read'), note = root.querySelector('.note');
@@ -1161,24 +1312,27 @@ function draw() {
       if (t > 0) { ctx.globalAlpha = .6; seg(a, c, C.text, 1.6, [6, 5]); ctx.globalAlpha = 1; }
       seg(ap(m, a), ap(m, c), C.text, 3.2);
       dot(ap(m, p0), C.text);
-      note.innerHTML = `<b>无穷多解</b>　x = ${vec(p0)} + s·(2, −1)`;
+      said = `无穷多解：x = ${vec(p0)} + s·(2, −1)`;
+      note.innerHTML = `<b>无穷多解</b>　$\\mathbf{x} = ${vec(p0)} + s\\,(2, -1)$`;
     } else {
-      note.innerHTML = '<b>无解</b>　b 不在列空间上';
+      said = '无解：b 不在列空间上';
+      note.innerHTML = '<b>无解</b>　$\\mathbf{b}$ 不在列空间上';
     }
-    read.innerHTML = `<span><small>秩</small>1</span><span><small>列空间</small>过 (2, 1) 的直线</span><span><small>零空间</small>过 (2, −1) 的直线</span>`;
+    read.innerHTML = `<span><small>秩</small>1</span><span><small>列空间</small>过 $(2, 1)$ 的直线</span><span><small>零空间</small>过 $(2, -1)$ 的直线</span>`;
   } else {
     const A = mats[2], d = A[0] * A[3] - A[1] * A[2];
     const x = [(A[3] * b[0] - A[1] * b[1]) / d, (A[0] * b[1] - A[2] * b[0]) / d];
     dot(ap(m, x), C.accent, 6);
-    if (t < .98) text('x', ap(m, x), C['accent-ink'], 10, -10);
-    note.innerHTML = `<b>唯一解</b>　x = ${vec(x)}`;
+    if (t < .98) { const [px, py] = P(ap(m, x)); name('\\mathbf{x}', px + 15, py - 11, C['accent-ink']); }
+    said = `唯一解：x = ${vec(x)}`;
+    note.innerHTML = `<b>唯一解</b>　$\\mathbf{x} = ${vec(x)}$`;
     read.innerHTML = `<span><small>秩</small>2</span><span><small>列空间</small>整个平面</span><span><small>零空间</small>只有原点</span>`;
   }
   dot([0, 0], C.text, 2.5);
-  text('b', b, C.text, 14, -12);
+  const [bx, by] = P(b); name('\\mathbf{b}', bx + 19, by - 13, C.text);
   knob.place();
   range.value = Math.round(t * 1000);
-  cv.setAttribute('aria-label', note.textContent);
+  cv.setAttribute('aria-label', said);
 }
 
 function play() {
@@ -1300,6 +1454,7 @@ $$
 ```render html
 <style>
   .la { --blue: #356f9b; font-size: 13px; line-height: 1.5; font-variant-ligatures: none; }
+  .katex { font-size: 15px; }
   :root[data-theme="dark"] .la { --blue: #95bfdc; }
   .stage { position: relative; }
   .stage canvas { display: block; width: 100%; touch-action: pan-y; }
@@ -1310,8 +1465,10 @@ $$
   .scrub input { flex: 1; min-width: 0; accent-color: var(--accent); }
   .scrub output { min-width: 3em; color: var(--text); font: 13px var(--font-mono); }
   .read { display: flex; flex-wrap: wrap; gap: 2px 22px; margin-top: 4px; font: 13px var(--font-mono); }
-  .read b { font-weight: 650; }
   .i { color: var(--accent-ink); } .j { color: var(--blue); }
+  .tags { position: absolute; inset: 0; overflow: hidden; pointer-events: none; line-height: 1; }
+  .tags .katex { font-size: 17px; }
+  .tags > span { position: absolute; left: 0; top: 0; white-space: nowrap; }
 </style>
 <section class="la" aria-label="点积：沿 u 放一把尺子，î、ĵ 的读数是 u 的两个坐标，v 的读数是点积">
   <div class="stage"><canvas role="img"></canvas></div>
@@ -1351,11 +1508,32 @@ function arrow(to, color, w) {
   ctx.closePath(); ctx.fillStyle = color; ctx.fill();
   ctx.lineCap = 'butt';
 }
+// 画布上的名字是叠在上面的公式：同一个名字只排版一次，之后只挪位置
+const tags = stage.appendChild(document.createElement('div')), names = {};
+tags.className = 'tags'; tags.setAttribute('aria-hidden', 'true');
+// 名字整个留在画布里：公式排好、量出宽高以后，贴边的往回收
+const keep = new ResizeObserver((all) => all.forEach(({ target: el, borderBoxSize: [box] }) => {
+  if (!box.inlineSize) return;
+  el.size = [box.inlineSize, box.blockSize];
+  if (el === tags) for (const tag of tags.children) settle(tag); else settle(el);
+}));
+keep.observe(tags);
+function settle(el) {
+  const [w, h] = el.size ?? [0, 0], [W, H] = tags.size ?? [Infinity, Infinity];
+  const x = Math.max(2, Math.min(W - w - 2, el.at[0] + el.shift[0] * w));
+  const y = Math.max(2, Math.min(H - h - 2, el.at[1] + el.shift[1] * h));
+  el.style.transform = `translate(${x}px, ${y}px)`;
+}
+function name(tex, x, y, color, shift = '-50%, -50%') {
+  let el = names[tex];
+  if (!el) keep.observe(el = names[tex] = tags.appendChild(Object.assign(document.createElement('span'), { textContent: `$${tex}$` })));
+  el.hidden = false; el.style.color = color;
+  el.at = [x, y]; el.shift = shift.split(',').map((part) => parseFloat(part) / 100); settle(el);
+}
 // 标签放在箭头尖再往外一点
-function tag(text, at, color) {
+function tag(tex, at, color) {
   const [x, y] = P(at), [ox, oy] = P([0, 0]), L = Math.hypot(x - ox, y - oy) || 1;
-  ctx.fillStyle = color; ctx.font = '600 15px KaTeX_Main, serif';
-  ctx.fillText(text, x + (x - ox) / L * 18, y + (y - oy) / L * 18);
+  name(tex, x + (x - ox) / L * 18, y + (y - oy) / L * 18, color);
 }
 function drop(p, color) {
   const f = foot(p), [x, y] = P(f);
@@ -1379,15 +1557,15 @@ function draw() {
   drop([1, 0], C.accent); drop([0, 1], C.blue); drop(v, C.text);
   arrow(u, C.muted, 3.2);
   const [tx, ty] = P(u);
-  ctx.fillStyle = C.muted; ctx.font = '600 15px KaTeX_Main, serif'; ctx.fillText('u', tx - u[1] * 16, ty - u[0] * 16);
+  name('\\mathbf{u}', tx - u[1] * 16, ty - u[0] * 16, C.muted);
   arrow([1, 0], C.accent, 2.4); arrow([0, 1], C.blue, 2.4); arrow(v, C.text, 2.6);
-  tag('î', [1, 0], C['accent-ink']); tag('ĵ', [0, 1], C.blue); tag('v', v, C.text);
+  tag('\\hat\\imath', [1, 0], C['accent-ink']); tag('\\hat\\jmath', [0, 1], C.blue); tag('\\mathbf{v}', v, C.text);
   knob.place();
 
   const d = along(v);
   read.innerHTML =
-    `<span class="i">î → ${num(u[0])}</span><span class="j">ĵ → ${num(u[1])}</span>` +
-    `<span>v → ${num(v[0])}·<span class="i">${sg(u[0])}</span> + ${sg(v[1])}·<span class="j">${sg(u[1])}</span> = <b>${num(d)}</b></span>`;
+    `<span class="i">$\\hat\\imath \\to ${num(u[0])}$</span><span class="j">$\\hat\\jmath \\to ${num(u[1])}$</span>` +
+    `<span>$\\mathbf{v} \\to ${num(v[0])}\\cdot\\htmlClass{i}{${sg(u[0])}} + ${sg(v[1])}\\cdot\\htmlClass{j}{${sg(u[1])}} = \\mathbf{${num(d)}}$</span>`;
   cv.setAttribute('aria-label', `尺子沿 (${num(u[0])}, ${num(u[1])})：î 读数 ${num(u[0])}，ĵ 读数 ${num(u[1])}，v 读数 ${num(d)}`);
 }
 
@@ -1497,11 +1675,12 @@ $$
 \mathbf{v}\times\mathbf{w}=(v_yw_z-v_zw_y,\;v_zw_x-v_xw_z,\;v_xw_y-v_yw_x)
 $$
 
-画面可以拖着转。让 $\mathbf{w}$ 转一圈，再点“加上 x”：
+画面可以拖着转。让 $\mathbf{w}$ 转一圈，再点“加上 $\mathbf{x}$”：
 
 ```render html
 <style>
   .la { --blue: #356f9b; --blue-soft: rgb(53 111 155 / .14); font-size: 13px; line-height: 1.5; font-variant-ligatures: none; }
+  .katex { font-size: 15px; }
   :root[data-theme="dark"] .la { --blue: #95bfdc; --blue-soft: rgb(149 191 220 / .16); }
   .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
   .key { min-height: 36px; padding: 0 14px; border: 1px solid var(--rule-strong); border-radius: 6px; background: var(--bg-raised); box-shadow: 0 2px 0 var(--rule); color: var(--text); font-size: 13px; cursor: pointer; }
@@ -1509,19 +1688,22 @@ $$
   .key[aria-pressed="true"] { border-color: var(--accent); color: var(--accent-ink); }
   .bar label { display: flex; flex: 1; min-width: 180px; align-items: center; gap: 10px; color: var(--muted); font-size: 12px; }
   .bar input { flex: 1; min-width: 0; accent-color: var(--accent); }
-  canvas { display: block; width: 100%; margin-top: 8px; cursor: grab; touch-action: pan-y; }
+  .stage { position: relative; margin-top: 8px; }
+  canvas { display: block; width: 100%; cursor: grab; touch-action: pan-y; }
   canvas:active { cursor: grabbing; }
   .read { display: grid; gap: 2px; margin: 4px 0 0; font: 13px var(--font-mono); }
   .read small { color: var(--muted); font: 12px var(--font-sans); }
-  .i { color: var(--accent-ink); } .j { color: var(--blue); } .x { color: var(--muted); }
+  .tags { position: absolute; inset: 0; overflow: hidden; pointer-events: none; line-height: 1; }
+  .tags .katex { font-size: 17px; }
+  .tags > span { position: absolute; left: 0; top: 0; white-space: nowrap; }
 </style>
 <section class="la" aria-label="叉积 v×w 垂直于 v、w 围成的平行四边形，长度等于它的面积">
   <div class="bar">
-    <button type="button" class="key pause">转动 w</button>
-    <button type="button" class="key vol" aria-pressed="false">加上 x</button>
-    <label><span>w 的方向</span><input type="range" min="0" max="628" value="110" aria-label="w 绕竖轴转过的角度" /></label>
+    <button type="button" class="key pause">转动 $\mathbf{w}$</button>
+    <button type="button" class="key vol" aria-pressed="false">加上 $\mathbf{x}$</button>
+    <label><span>$\mathbf{w}$ 的方向</span><input type="range" min="0" max="628" value="110" aria-label="w 绕竖轴转过的角度" /></label>
   </div>
-  <canvas role="img"></canvas>
+  <div class="stage"><canvas role="img"></canvas></div>
   <div class="read"></div>
 </section>
 <script>
@@ -1562,9 +1744,31 @@ function arrow(to, color, w = 2.6, from = [0, 0, 0]) {
   ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(bx - uy * h * .45, by + ux * h * .45); ctx.lineTo(bx + uy * h * .45, by - ux * h * .45);
   ctx.closePath(); ctx.fillStyle = color; ctx.fill();
 }
-function label(s, at, color, dx = 8, dy = -8) {
+// 画布上的名字是叠在上面的公式：同一个名字只排版一次，之后只挪位置
+const tags = cv.parentNode.appendChild(document.createElement('div')), names = {};
+tags.className = 'tags'; tags.setAttribute('aria-hidden', 'true');
+// 名字整个留在画布里：公式排好、量出宽高以后，贴边的往回收
+const keep = new ResizeObserver((all) => all.forEach(({ target: el, borderBoxSize: [box] }) => {
+  if (!box.inlineSize) return;
+  el.size = [box.inlineSize, box.blockSize];
+  if (el === tags) for (const tag of tags.children) settle(tag); else settle(el);
+}));
+keep.observe(tags);
+function settle(el) {
+  const [w, h] = el.size ?? [0, 0], [W, H] = tags.size ?? [Infinity, Infinity];
+  const x = Math.max(2, Math.min(W - w - 2, el.at[0] + el.shift[0] * w));
+  const y = Math.max(2, Math.min(H - h - 2, el.at[1] + el.shift[1] * h));
+  el.style.transform = `translate(${x}px, ${y}px)`;
+}
+function name(tex, x, y, color, shift = '-50%, -50%') {
+  let el = names[tex];
+  if (!el) keep.observe(el = names[tex] = tags.appendChild(Object.assign(document.createElement('span'), { textContent: `$${tex}$` })));
+  el.hidden = false; el.style.color = color;
+  el.at = [x, y]; el.shift = shift.split(',').map((part) => parseFloat(part) / 100); settle(el);
+}
+function label(tex, at, color, dx = 8, dy = -4) {
   const [px, py] = P(at);
-  ctx.fillStyle = color; ctx.font = '600 15px KaTeX_Main, serif'; ctx.fillText(s, px + dx, py + dy);
+  name(tex, px + dx, py + dy, color, '0, -100%');
 }
 function face(pts, fill, alpha) {
   ctx.beginPath(); pts.map(P).forEach(([px, py], k) => (k ? ctx.lineTo(px, py) : ctx.moveTo(px, py))); ctx.closePath();
@@ -1573,9 +1777,10 @@ function face(pts, fill, alpha) {
 
 function draw() {
   ctx.clearRect(0, 0, W, H);
+  for (const el of tags.children) el.hidden = true;
   for (let k = -3; k <= 3; k++) { seg([k, -3, 0], [k, 3, 0], C.rule); seg([-3, k, 0], [3, k, 0], C.rule); }
   seg([0, 0, 0], [3.2, 0, 0], C['rule-strong'], 1.4); seg([0, 0, 0], [0, 3.2, 0], C['rule-strong'], 1.4); seg([0, 0, 0], [0, 0, 2.6], C['rule-strong'], 1.4);
-  ctx.font = '12px Inter Variable, sans-serif'; ctx.fillStyle = C.faint;
+  ctx.font = 'italic 14px KaTeX_Math, serif'; ctx.fillStyle = C.faint;
   [['x', [3.4, 0, 0]], ['y', [0, 3.4, 0]], ['z', [0, 0, 2.8]]].forEach(([s, p]) => { const [px, py] = P(p); ctx.fillText(s, px - 3, py + 4); });
 
   const w = wOf(th), p = cross(v, w), area = len(p);
@@ -1590,16 +1795,16 @@ function draw() {
     seg(add(x, v), add(add(x, v), w), C.muted, 1, [3, 3]); seg(add(x, w), add(add(x, v), w), C.muted, 1, [3, 3]);
     face([x, add(x, v), add(add(x, v), w), add(x, w)], C.muted, .08);
     seg(x, foot, C.text, 1.6, [5, 4]);
-    arrow(x, C.muted, 2.2); label('x', x, C.muted);
-    extra = `<span><small>体积 = 底面积 × 高 = </small>${num(area)} × ${num(h)} = ${num(area * h)}</span><span><small>(v×w)·x = </small>${num(V)}<small>，两者相等</small></span>`;
+    arrow(x, C.muted, 2.2); label('\\mathbf{x}', x, C.muted);
+    extra = `<span><small>体积 = 底面积 × 高 = </small>$${num(area)} \\times ${num(h)} = ${num(area * h)}$</span><span>$(\\mathbf{v}\\times\\mathbf{w})\\cdot\\mathbf{x} = ${num(V)}$<small>，两者相等</small></span>`;
   }
   arrow(v, C.accent); arrow(w, C.blue); arrow(p, C.text, 2.8);
-  label('v', v, C['accent-ink']); label('w', w, C.blue); label('v×w', p, C.text);
+  label('\\mathbf{v}', v, C['accent-ink']); label('\\mathbf{w}', w, C.blue); label('\\mathbf{v}\\times\\mathbf{w}', p, C.text);
 
   const ang = Math.acos(Math.max(-1, Math.min(1, dotp(v, w) / len(v) / len(w))));
   root.querySelector('.read').innerHTML =
-    `<span><small>v×w = </small>${vec(p)}</span>` +
-    `<span><small>长度 = </small>${num(area)}<small> = |v|·|w|·sin θ = </small>${num(len(v))} × ${num(len(w))} × ${num(Math.sin(ang))}</span>` + extra;
+    `<span>$\\mathbf{v}\\times\\mathbf{w} = ${vec(p)}$</span>` +
+    `<span><small>长度 </small>$${num(area)} = \\lVert\\mathbf{v}\\rVert\\,\\lVert\\mathbf{w}\\rVert\\sin\\theta = ${num(len(v))} \\times ${num(len(w))} \\times ${num(Math.sin(ang))}$</span>` + extra;
   cv.setAttribute('aria-label', `v×w = ${vec(p)}，长度 ${num(area)}`);
   range.value = Math.round(((th % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI) * 100);
 }
@@ -1610,9 +1815,9 @@ function loop(now) {
   raf = running && visible ? requestAnimationFrame(loop) : 0;
 }
 function kick() { if (running && visible && !raf) { last = 0; raf = requestAnimationFrame(loop); } }
-pauseBtn.addEventListener('click', () => { running = !running; pauseBtn.textContent = running ? '暂停' : '转动 w'; if (!running) { cancelAnimationFrame(raf); raf = 0; } kick(); });
+pauseBtn.addEventListener('click', () => { running = !running; pauseBtn.textContent = running ? '暂停' : '转动 $\\mathbf{w}$'; if (!running) { cancelAnimationFrame(raf); raf = 0; } kick(); });
 volBtn.addEventListener('click', () => { vol = !vol; volBtn.setAttribute('aria-pressed', String(vol)); draw(); });
-range.addEventListener('input', () => { running = false; pauseBtn.textContent = '转动 w'; cancelAnimationFrame(raf); raf = 0; th = range.value / 100; draw(); });
+range.addEventListener('input', () => { running = false; pauseBtn.textContent = '转动 $\\mathbf{w}$'; cancelAnimationFrame(raf); raf = 0; th = range.value / 100; draw(); });
 
 let drag = null;
 cv.addEventListener('pointerdown', (e) => { drag = [e.clientX, e.clientY, yaw, pitch]; cv.setPointerCapture(e.pointerId); });
@@ -1683,6 +1888,7 @@ $$
 ```render html
 <style>
   .la { --blue: #356f9b; --blue-soft: rgb(53 111 155 / .14); font-size: 13px; line-height: 1.5; font-variant-ligatures: none; }
+  .katex { font-size: 15px; }
   :root[data-theme="dark"] .la { --blue: #95bfdc; --blue-soft: rgb(149 191 220 / .16); }
   .bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 18px; }
   .seg { display: flex; flex-wrap: wrap; gap: 0 16px; }
@@ -1701,6 +1907,9 @@ $$
   .read small { color: var(--muted); font: 12px var(--font-sans); }
   .note { margin: 2px 0 0; min-height: 1.5em; color: var(--muted); }
   .l1 { color: var(--accent-ink); } .l2 { color: var(--blue); }
+  .tags { position: absolute; inset: 0; overflow: hidden; pointer-events: none; line-height: 1; }
+  .tags .katex { font-size: 17px; }
+  .tags > span { position: absolute; left: 0; top: 0; white-space: nowrap; }
 </style>
 <section class="la" aria-label="特征向量：变换前后还留在自己那条直线上的箭头">
   <div class="bar">
@@ -1775,8 +1984,35 @@ function grid(m, color, axis) {
   }
 }
 
+// 画布上的名字是叠在上面的公式：同一个名字只排版一次，之后只挪位置
+const tags = stage.appendChild(document.createElement('div')), names = {};
+tags.className = 'tags'; tags.setAttribute('aria-hidden', 'true');
+// 名字整个留在画布里：公式排好、量出宽高以后，贴边的往回收
+const keep = new ResizeObserver((all) => all.forEach(({ target: el, borderBoxSize: [box] }) => {
+  if (!box.inlineSize) return;
+  el.size = [box.inlineSize, box.blockSize];
+  if (el === tags) for (const tag of tags.children) settle(tag); else settle(el);
+}));
+keep.observe(tags);
+function settle(el) {
+  const [w, h] = el.size ?? [0, 0], [W, H] = tags.size ?? [Infinity, Infinity];
+  const x = Math.max(2, Math.min(W - w - 2, el.at[0] + el.shift[0] * w));
+  const y = Math.max(2, Math.min(H - h - 2, el.at[1] + el.shift[1] * h));
+  el.style.transform = `translate(${x}px, ${y}px)`;
+}
+function name(key, tex, x, y, color, shift = '-50%, -50%') {
+  let el = names[key];
+  if (!el) keep.observe(el = names[key] = tags.appendChild(document.createElement('span')));
+  if (el.tex !== tex) { el.tex = tex; el.textContent = `$${tex}$`; }
+  el.hidden = false; el.style.color = color;
+  el.at = [x, y]; el.shift = shift.split(',').map((part) => parseFloat(part) / 100); settle(el);
+}
+// 系数带着自己的符号：+ 3 或 - 3
+const signed = (x) => (x < -.004 ? `- ${num(-x)}` : `+ ${num(x)}`);
+
 function draw() {
   ctx.clearRect(0, 0, W, H);
+  for (const el of tags.children) el.hidden = true;
   const m = M(t), R = Math.ceil(Math.hypot(W, H) / 2 / S) + 1;
   for (let k = -R; k <= R; k++) { seg([k, -R], [k, R], C.rule); seg([-R, k], [R, k], C.rule); }
   ctx.globalAlpha = .3; grid(m, C.muted, C.muted); ctx.globalAlpha = 1;
@@ -1788,8 +2024,7 @@ function draw() {
     seg([-40 * e.v[0], -40 * e.v[1]], [40 * e.v[0], 40 * e.v[1]], cols[k], 1.4, [6, 5]);
     const reach = Math.min(W / 2 / Math.abs(e.v[0] * S || 1e-9), H / 2 / Math.abs(e.v[1] * S || 1e-9)) - .5, sgn = e.v[1] < -1e-9 || (Math.abs(e.v[1]) < 1e-9 && e.v[0] < 0) ? -1 : 1;
     const [lx, ly] = P([sgn * reach * e.v[0], sgn * reach * e.v[1]]);
-    ctx.fillStyle = inks[k]; ctx.font = '600 13px Inter Variable, sans-serif'; ctx.textAlign = 'center';
-    ctx.fillText(`λ = ${num(e.l)}`, Math.max(36, Math.min(W - 36, lx + 30)), Math.max(16, Math.min(H - 8, ly - 8))); ctx.textAlign = 'start';
+    name(k, `\\lambda = ${num(e.l)}`, Math.max(36, Math.min(W - 36, lx + 30)), Math.max(16, Math.min(H - 12, ly - 12)), inks[k]);
   });
   const samples = [];
   for (let k = 0; k < N; k++) samples.push({ u: [RING * Math.cos(2 * Math.PI * k / N + .05), RING * Math.sin(2 * Math.PI * k / N + .05)] });
@@ -1805,8 +2040,8 @@ function draw() {
   knobs.forEach((k) => k.place());
 
   const read = root.querySelector('.read'), note = root.querySelector('.note');
-  read.innerHTML = `<small>λ² − ${num(2 * E.m)}λ + ${num(E.p)} = 0　→　</small>` +
-    (E.disc < -1e-9 ? `λ = ${num(E.m)} ± ${num(Math.sqrt(-E.disc))}i` : E.list.map((e, k) => `<span class="l${k + 1}">λ${E.list.length > 1 ? '₁₂'[k] : ''} = ${num(e.l)}</span>`).join('　'));
+  read.innerHTML = `<small>$\\lambda^2 ${signed(-2 * E.m)}\\lambda ${signed(E.p)} = 0$　→　</small>` +
+    (E.disc < -1e-9 ? `$\\lambda = ${num(E.m)} \\pm ${num(Math.sqrt(-E.disc))}i$` : E.list.map((e, k) => `<span class="l${k + 1}">$\\lambda${E.list.length > 1 ? `_${k + 1}` : ''} = ${num(e.l)}$</span>`).join('　'));
   note.textContent = E.disc < -1e-9
     ? '没有实特征方向，每支箭头都被转走了'
     : all ? '每个方向都是特征方向'
@@ -1942,24 +2177,29 @@ $$
 ```render html
 <style>
   .la { --blue: #356f9b; font-size: 13px; line-height: 1.5; font-variant-ligatures: none; }
+  .katex { font-size: 15px; }
   :root[data-theme="dark"] .la { --blue: #95bfdc; }
   .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
   .key { min-height: 36px; padding: 0 14px; border: 1px solid var(--rule-strong); border-radius: 6px; background: var(--bg-raised); box-shadow: 0 2px 0 var(--rule); color: var(--text); font-size: 13px; cursor: pointer; }
   .key:hover { border-color: var(--text); }
   .key:disabled { opacity: .5; cursor: default; }
   .count { margin-left: auto; color: var(--muted); font: 13px var(--font-mono); }
-  canvas { display: block; width: 100%; margin-top: 8px; }
+  .stage { position: relative; margin-top: 8px; }
+  canvas { display: block; width: 100%; }
   .read { display: grid; gap: 2px; margin: 4px 0 0; font: 13px var(--font-mono); }
   .read small { color: var(--muted); font: 12px var(--font-sans); }
+  .tags { position: absolute; inset: 0; overflow: hidden; pointer-events: none; line-height: 1; }
+  .tags .katex { font-size: 17px; }
+  .tags > span { position: absolute; left: 0; top: 0; white-space: nowrap; }
 </style>
 <section class="la" aria-label="反复乘同一个矩阵，各个方向的箭头都贴向主特征方向">
   <div class="bar">
-    <button type="button" class="key once">再乘一次 A</button>
+    <button type="button" class="key once">再乘一次 $A$</button>
     <button type="button" class="key auto">连续乘</button>
     <button type="button" class="key reset">重来</button>
     <span class="count"></span>
   </div>
-  <canvas role="img"></canvas>
+  <div class="stage"><canvas role="img"></canvas></div>
   <div class="read" aria-live="polite"></div>
 </section>
 <script>
@@ -1992,6 +2232,28 @@ function seg(a, b, color, w = 1, dash = []) {
   ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
   ctx.strokeStyle = color; ctx.lineWidth = w; ctx.setLineDash(dash); ctx.stroke();
 }
+// 画布上的名字是叠在上面的公式：同一个名字只排版一次，之后只挪位置
+const tags = cv.parentNode.appendChild(document.createElement('div')), names = {};
+tags.className = 'tags'; tags.setAttribute('aria-hidden', 'true');
+// 名字整个留在画布里：公式排好、量出宽高以后，贴边的往回收
+const keep = new ResizeObserver((all) => all.forEach(({ target: el, borderBoxSize: [box] }) => {
+  if (!box.inlineSize) return;
+  el.size = [box.inlineSize, box.blockSize];
+  if (el === tags) for (const tag of tags.children) settle(tag); else settle(el);
+}));
+keep.observe(tags);
+function settle(el) {
+  const [w, h] = el.size ?? [0, 0], [W, H] = tags.size ?? [Infinity, Infinity];
+  const x = Math.max(2, Math.min(W - w - 2, el.at[0] + el.shift[0] * w));
+  const y = Math.max(2, Math.min(H - h - 2, el.at[1] + el.shift[1] * h));
+  el.style.transform = `translate(${x}px, ${y}px)`;
+}
+function name(tex, x, y, color, shift = '-50%, -50%') {
+  let el = names[tex];
+  if (!el) keep.observe(el = names[tex] = tags.appendChild(Object.assign(document.createElement('span'), { textContent: `$${tex}$` })));
+  el.hidden = false; el.style.color = color;
+  el.at = [x, y]; el.shift = shift.split(',').map((part) => parseFloat(part) / 100); settle(el);
+}
 function arrow(to, color, w = 2.6) {
   const [x1, y1] = P([0, 0]), [x2, y2] = P(to), L = Math.hypot(x2 - x1, y2 - y1);
   const ux = (x2 - x1) / L, uy = (y2 - y1) / L, h = 11, bx = x2 - ux * h, by = y2 - uy * h;
@@ -2008,10 +2270,9 @@ function draw() {
   seg([-R, 0], [R, 0], C['rule-strong'], 1.4); seg([0, -R], [0, R], C['rule-strong'], 1.4);
   seg(e1.map((x) => -40 * x), e1.map((x) => 40 * x), C.accent, 1.4, [6, 5]);
   seg(e2.map((x) => -40 * x), e2.map((x) => 40 * x), C.blue, 1.4, [6, 5]);
-  ctx.font = '600 13px Inter Variable, sans-serif';
   const [ax, ay] = P(e1.map((x) => 3.9 * x)), [bx, by] = P(e2.map((x) => 3.6 * x));
-  ctx.fillStyle = C['accent-ink']; ctx.fillText('λ = φ ≈ 1.618', ax + 8, ay + 4);
-  ctx.fillStyle = C.blue; ctx.textAlign = 'right'; ctx.fillText('λ = ψ ≈ −0.618', bx - 8, by + 4); ctx.textAlign = 'start';
+  name('\\lambda = \\varphi \\approx 1.618', ax + 8, ay, C['accent-ink'], '0, -50%');
+  name('\\lambda = \\psi \\approx -0.618', bx - 8, by, C.blue, '-100%, -50%');
 
   const k = ease(e);
   vs.forEach((v, idx) => {
@@ -2026,8 +2287,8 @@ function draw() {
   const worst = Math.max(...vs.map(off));
   root.querySelector('.count').textContent = `乘了 ${n} 次`;
   root.querySelector('.read').innerHTML =
-    `<span><small>黑色 </small>(${v0[0]}, ${v0[1]})${n ? `<small>　比值 </small>${num(v0[0] / v0[1], 6)}` : ''}</span>` +
-    `<span><small>最远的一支还差 </small>${num(worst, 2)}°</span>`;
+    `<span><small>黑色 </small>$(${v0[0]}, ${v0[1]})$${n ? `<small>　比值 </small>$${num(v0[0] / v0[1], 6)}$` : ''}</span>` +
+    `<span><small>最远的一支还差 </small>$${num(worst, 2)}^\\circ$</span>`;
   root.querySelector('.once').disabled = n >= 30;
   cv.setAttribute('aria-label', `乘了 ${n} 次，最远的一支与主特征方向差 ${num(worst, 2)} 度`);
 }
@@ -2114,6 +2375,7 @@ $V^\top$ 和 $U$ 是旋转（也可能带一次镜像），$\Sigma$ 是对角的
 ```render html
 <style>
   .la { --blue: #356f9b; --blue-soft: rgb(53 111 155 / .14); font-size: 13px; line-height: 1.5; font-variant-ligatures: none; }
+  .katex { font-size: 15px; }
   :root[data-theme="dark"] .la { --blue: #95bfdc; --blue-soft: rgb(149 191 220 / .16); }
   .bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 18px; }
   .seg { display: flex; flex-wrap: wrap; gap: 0 16px; }
@@ -2131,7 +2393,10 @@ $V^\top$ 和 $U$ 是旋转（也可能带一次镜像），$\Sigma$ 是对角的
   .steps div { padding: 6px 10px; border-top: 2px solid var(--rule); color: var(--faint); transition: color .2s, border-color .2s; }
   .steps div.on { border-color: var(--accent); color: var(--text); }
   .steps b { display: block; font: 600 14px var(--font-mono); }
-  .steps span { font-size: 12px; }
+  .steps div > span { font-size: 12px; }
+  .tags { position: absolute; inset: 0; overflow: hidden; pointer-events: none; line-height: 1; }
+  .tags .katex { font-size: 17px; }
+  .tags > span { position: absolute; left: 0; top: 0; white-space: nowrap; }
   .scrub { display: flex; align-items: center; gap: 12px; margin-top: 6px; color: var(--muted); font-size: 12px; }
   .scrub input { flex: 1; min-width: 0; accent-color: var(--accent); }
 </style>
@@ -2202,11 +2467,32 @@ function arrow(to, color, w = 2.6, from = [0, 0]) {
   ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(bx - uy * h * .45, by + ux * h * .45); ctx.lineTo(bx + uy * h * .45, by - ux * h * .45);
   ctx.closePath(); ctx.fillStyle = color; ctx.fill();
 }
-function label(text, at, color, from = [0, 0]) {
+// 画布上的名字是叠在上面的公式：同一个名字只排版一次，之后只挪位置
+const tags = stage.appendChild(document.createElement('div')), names = {};
+tags.className = 'tags'; tags.setAttribute('aria-hidden', 'true');
+// 名字整个留在画布里：公式排好、量出宽高以后，贴边的往回收
+const keep = new ResizeObserver((all) => all.forEach(({ target: el, borderBoxSize: [box] }) => {
+  if (!box.inlineSize) return;
+  el.size = [box.inlineSize, box.blockSize];
+  if (el === tags) for (const tag of tags.children) settle(tag); else settle(el);
+}));
+keep.observe(tags);
+function settle(el) {
+  const [w, h] = el.size ?? [0, 0], [W, H] = tags.size ?? [Infinity, Infinity];
+  const x = Math.max(2, Math.min(W - w - 2, el.at[0] + el.shift[0] * w));
+  const y = Math.max(2, Math.min(H - h - 2, el.at[1] + el.shift[1] * h));
+  el.style.transform = `translate(${x}px, ${y}px)`;
+}
+function name(tex, x, y, color, shift = '-50%, -50%') {
+  let el = names[tex];
+  if (!el) keep.observe(el = names[tex] = tags.appendChild(Object.assign(document.createElement('span'), { textContent: `$${tex}$` })));
+  el.hidden = false; el.style.color = color;
+  el.at = [x, y]; el.shift = shift.split(',').map((part) => parseFloat(part) / 100); settle(el);
+}
+function label(tex, at, color, from = [0, 0]) {
+  if (!tex) return;
   const [x, y] = P(at), [ox, oy] = P(from), L = Math.hypot(x - ox, y - oy) || 1;
-  ctx.fillStyle = color; ctx.font = '600 14px KaTeX_Main, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText(text, x + (x - ox) / L * 20, y + (y - oy) / L * 20);
-  ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic';
+  name(tex, x + (x - ox) / L * 22, y + (y - oy) / L * 22, color);
 }
 function grid(m, color, axis) {
   const R = Math.ceil(Math.hypot(W, H) / 2 / S) * 3;
@@ -2223,6 +2509,7 @@ function circle(m) {
 
 function draw() {
   ctx.clearRect(0, 0, W, H);
+  for (const el of tags.children) el.hidden = true;
   const m = M(T), R = Math.ceil(Math.hypot(W, H) / 2 / S) + 1;
   for (let k = -R; k <= R; k++) { seg([k, -R], [k, R], C.rule); seg([-R, k], [R, k], C.rule); }
   ctx.globalAlpha = .35; grid(m, C.muted, C.muted); ctx.globalAlpha = 1;
@@ -2231,15 +2518,15 @@ function draw() {
   const v1 = [Math.cos(D.th), Math.sin(D.th)], v2 = [-Math.sin(D.th), Math.cos(D.th)];
   const a1 = ap(m, v1), a2 = ap(m, v2), stage3 = T > 2;
   arrow(a1, C.accent); arrow(a2, C.blue);
-  label(T < .02 ? 'v₁' : stage3 ? 'σ₁u₁' : '', a1, C['accent-ink']);
-  label(T < .02 ? 'v₂' : stage3 ? 'σ₂u₂' : '', a2, C.blue);
+  label(T < .02 ? '\\mathbf{v}_1' : stage3 ? '\\sigma_1\\mathbf{u}_1' : '', a1, C['accent-ink']);
+  label(T < .02 ? '\\mathbf{v}_2' : stage3 ? '\\sigma_2\\mathbf{u}_2' : '', a2, C.blue);
   knobs.forEach((k) => k.place());
 
   const st = T <= 0 ? -1 : T <= 1 ? 0 : T <= 2 ? 1 : 2;
   root.querySelector('.steps').innerHTML = [
-    ['① Vᵀ：转', `转 ${deg(-D.th)}`],
-    ['② Σ：拉', `横向 ×${num(D.s1)}，纵向 ×${num(D.s2)}`],
-    ['③ U：转', `转 ${deg(D.ph)}`],
+    ['① $V^\\top$：转', `转 ${deg(-D.th)}`],
+    ['② $\\Sigma$：拉', `横向 $\\times${num(D.s1)}$，纵向 $\\times${num(D.s2)}$`],
+    ['③ $U$：转', `转 ${deg(D.ph)}`],
   ].map(([h, s], k) => `<div class="${st === k || (st === 2 && T >= 3 && k === 2) ? 'on' : ''}"><b>${h}</b><span>${s}</span></div>`).join('');
   range.value = Math.round(T * 1000);
   cv.setAttribute('aria-label', `奇异值 ${num(D.s1)} 和 ${num(Math.abs(D.s2))}`);
@@ -2327,6 +2614,7 @@ $$
 ```render html
 <style>
   .sv { font-size: 13px; line-height: 1.5; font-variant-ligatures: none; }
+  .katex { font-size: 15px; }
   .pics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
   .pics figure { margin: 0; }
   .pics canvas { display: block; width: 100%; aspect-ratio: 4 / 3; border-radius: 4px; background: var(--bg-sunken); image-rendering: auto; }
@@ -2335,17 +2623,19 @@ $$
   .ctl input { flex: 1; min-width: 0; accent-color: var(--accent); }
   .ctl output { min-width: 4.5em; font: 600 14px var(--font-mono); }
   .bars { display: block; width: 100%; height: 70px; margin-top: 6px; }
+  .axis { display: flex; justify-content: space-between; height: 14px; margin-top: -14px; color: var(--muted); font-size: 11px; line-height: 14px; }
   .read { display: grid; gap: 2px; margin: 4px 0 0; font: 13px var(--font-mono); }
   .read small { color: var(--muted); font: 12px var(--font-sans); }
 </style>
 <section class="sv" aria-label="图片的奇异值分解：前面几层叠起来就接近原图">
   <div class="pics">
     <figure><canvas class="orig" width="128" height="96" role="img" aria-label="原图"></canvas><figcaption>原图</figcaption></figure>
-    <figure><canvas class="appr" width="128" height="96" role="img" aria-label="前 k 层叠加"></canvas><figcaption class="cap1">前 k 层</figcaption></figure>
-    <figure><canvas class="layer" width="128" height="96" role="img" aria-label="第 k 层"></canvas><figcaption class="cap2">第 k 层</figcaption></figure>
+    <figure><canvas class="appr" width="128" height="96" role="img" aria-label="前 k 层叠加"></canvas><figcaption class="cap1">前 $k$ 层</figcaption></figure>
+    <figure><canvas class="layer" width="128" height="96" role="img" aria-label="第 k 层"></canvas><figcaption class="cap2">第 $k$ 层</figcaption></figure>
   </div>
-  <label class="ctl"><span>k</span><input type="range" min="1" max="60" value="1" aria-label="保留的层数" disabled /><output>计算中</output></label>
+  <label class="ctl"><span>$k$</span><input type="range" min="1" max="60" value="1" aria-label="保留的层数" disabled /><output>计算中</output></label>
   <canvas class="bars" role="img" aria-label="奇异值从大到小"></canvas>
+  <div class="axis" aria-hidden="true"><span>$\sigma_1$</span><span>$\sigma_{60}$（纵轴取对数）</span></div>
   <div class="read" aria-live="polite"></div>
 </section>
 <script>
@@ -2412,26 +2702,23 @@ function drawBars(k) {
     bctx.fillStyle = s.getPropertyValue(j < k ? '--accent' : '--rule-strong').trim();
     bctx.fillRect(j * bw + 1, H - 14 - h, Math.max(1, bw - 2), h);
   }
-  bctx.fillStyle = s.getPropertyValue('--muted').trim(); bctx.font = '11px Inter Variable, sans-serif';
-  bctx.fillText('σ₁', 0, H - 2); bctx.textAlign = 'right'; bctx.fillText('σ₆₀（纵轴取对数）', W, H - 2); bctx.textAlign = 'start';
 }
 function update() {
   const k = Number(input.value);
-  out.textContent = `k = ${k}`;
+  out.textContent = `$k = ${k}$`;
   const acc = new Float64Array(R * Cn);
   for (let j = 0; j < k; j++) { const u = Ucol[j], v = Vcol[j], s = sig[j]; for (let r = 0; r < R; r++) { const su = s * u[r]; for (let c = 0; c < Cn; c++) acc[r * Cn + c] += su * v[c]; } }
   paint(root.querySelector('.appr'), (i) => acc[i]);
   const u = Ucol[k - 1], v = Vcol[k - 1], s = sig[k - 1];
   let peak = 1e-9; for (let r = 0; r < R; r++) for (let c = 0; c < Cn; c++) peak = Math.max(peak, Math.abs(s * u[r] * v[c]));
   paint(root.querySelector('.layer'), (i) => .5 + .5 * s * u[Math.floor(i / Cn)] * v[i % Cn] / peak);
-  const sub = String(k).replace(/\d/g, (d) => '₀₁₂₃₄₅₆₇₈₉'[d]);
   root.querySelector('.cap1').textContent = `前 ${k} 层叠起来`;
-  root.querySelector('.cap2').textContent = `第 ${k} 层 σ${sub}u${sub}v${sub}ᵀ（灰色是 0）`;
+  root.querySelector('.cap2').textContent = `第 ${k} 层 $\\sigma_{${k}}\\mathbf{u}_{${k}}\\mathbf{v}_{${k}}^\\top$（灰色是 0）`;
   drawBars(k);
   const total = sig.reduce((a, s) => a + s * s, 0), rest = sig.slice(k).reduce((a, s) => a + s * s, 0);
   const store = k * (R + Cn + 1);
   root.querySelector('.read').innerHTML =
-    `<span><small>要存的数：</small>${k} × (96 + 128 + 1) = ${store}<small>，原图 12288 个，占 </small>${(store / 122.88).toFixed(1)}%</span>` +
+    `<span><small>要存的数：</small>$${k} \\times (96 + 128 + 1) = ${store}$<small>，原图 12288 个，占 </small>${(store / 122.88).toFixed(1)}%</span>` +
     `<span><small>相对误差：</small>${(Math.sqrt(rest / total) * 100).toFixed(1)}%</span>`;
 }
 
@@ -2469,12 +2756,19 @@ $$
 ```render html
 <style>
   .ls { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px 24px; }
-  .ls svg { display: block; height: auto; }
-  .ls svg:first-child { flex: 0 1 240px; }
-  .ls svg:last-child { flex: 0 1 340px; }
+  .ls > div { position: relative; }
+  .ls > div:first-child { flex: 0 1 240px; }
+  .ls > div:last-child { flex: 0 1 340px; }
+  .ls svg { display: block; width: 100%; height: auto; }
+  /* 公式压在图上，位置按图的百分比给，基线落在那个点上 */
+  .ls > div > span { position: absolute; color: var(--muted); font-size: 14px; line-height: 1; white-space: nowrap; transform: translateY(-80%); }
+  .ls > div > .end { transform: translate(-100%, -80%); }
+  .ls .fit, .ls .p { color: var(--accent-ink); }
+  .ls .b { color: var(--text); }
+  .ls .b, .ls .p { font-size: 15px; }
 </style>
 <div class="ls" role="img" aria-label="左：三个点和拟合出的直线，三段误差是 −1/6、1/3、−1/6；右：b 垂直投到列空间上，垂足是 Ax̂">
-  <svg viewBox="10 12 216 200" xmlns="http://www.w3.org/2000/svg" font-family="Inter Variable, sans-serif">
+  <div><svg viewBox="10 12 216 200" xmlns="http://www.w3.org/2000/svg" font-family="Inter Variable, sans-serif">
     <path d="M40 190 H220 M40 190 V20" stroke="var(--rule-strong)" stroke-width="1.2" fill="none" />
     <g fill="var(--faint)" font-size="11" text-anchor="middle">
       <text x="40" y="206">0</text><text x="100" y="206">1</text><text x="160" y="206">2</text>
@@ -2485,12 +2779,13 @@ $$
     <g fill="var(--text)">
       <circle cx="40" cy="130" r="4.5" /><circle cx="100" cy="70" r="4.5" /><circle cx="160" cy="70" r="4.5" />
     </g>
-    <text x="196" y="30" font-size="12" fill="var(--accent-ink)" text-anchor="end">y = 7/6 + x/2</text>
-    <g font-size="12" fill="var(--muted)">
-      <text x="50" y="143">−1/6</text><text x="93" y="84" text-anchor="end">1/3</text><text x="169" y="74">−1/6</text>
-    </g>
   </svg>
-  <svg viewBox="294 24 302 164" xmlns="http://www.w3.org/2000/svg" font-family="Inter Variable, sans-serif">
+    <span class="fit end" style="left: 86.1%; top: 10%">$y = \frac76 + \frac{x}{2}$</span>
+    <span style="left: 18.5%; top: 66.5%">$-\frac16$</span>
+    <span class="end" style="left: 38.4%; top: 37%">$\frac13$</span>
+    <span style="left: 73.6%; top: 32%">$-\frac16$</span>
+  </div>
+  <div><svg viewBox="294 24 302 164" xmlns="http://www.w3.org/2000/svg" font-family="Inter Variable, sans-serif">
     <path d="M300 180 L520 180 L590 110 L370 110 Z" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.2" />
     <text x="318" y="172" font-size="12" fill="var(--accent-ink)">列空间</text>
     <path d="M380 160 L482 137" stroke="var(--accent)" stroke-width="2.4" stroke-linecap="round" />
@@ -2500,12 +2795,11 @@ $$
     <path d="M492 133 V56" stroke="var(--muted)" stroke-width="1.6" stroke-dasharray="5 4" />
     <path d="M492 123 L503 120 L503 132" fill="none" stroke="var(--muted)" stroke-width="1.2" />
     <circle cx="380" cy="160" r="2.5" fill="var(--text)" />
-    <g font-size="14" font-weight="600">
-      <text x="496" y="40" fill="var(--text)">b</text>
-      <text x="430" y="132" fill="var(--accent-ink)">p = Ax̂</text>
-    </g>
-    <text x="500" y="96" font-size="13" fill="var(--muted)">e = b − Ax̂</text>
   </svg>
+    <span class="b" style="left: 66.9%; top: 9.8%">$\mathbf{b}$</span>
+    <span class="p" style="left: 45%; top: 65.9%">$\mathbf{p} = A\hat{\mathbf{x}}$</span>
+    <span style="left: 68.2%; top: 43.9%">$\mathbf{e} = \mathbf{b} - A\hat{\mathbf{x}}$</span>
+  </div>
 </div>
 ```
 
@@ -2548,6 +2842,7 @@ $$
 ```render html
 <style>
   .la { --blue: #356f9b; font-size: 13px; line-height: 1.5; font-variant-ligatures: none; }
+  .katex { font-size: 15px; }
   :root[data-theme="dark"] .la { --blue: #95bfdc; }
   .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; }
   .key { min-height: 36px; padding: 0 14px; border: 1px solid var(--rule-strong); border-radius: 6px; background: var(--bg-raised); box-shadow: 0 2px 0 var(--rule); color: var(--text); font-size: 13px; cursor: pointer; }
@@ -2555,23 +2850,24 @@ $$
   .bar label { display: flex; flex: 1; min-width: 150px; align-items: center; gap: 10px; color: var(--muted); font: 12px var(--font-mono); }
   .bar input { flex: 1; min-width: 0; accent-color: var(--accent); }
   .bar output { min-width: 2.6em; color: var(--text); text-align: right; }
-  canvas { display: block; width: 100%; margin-top: 8px; cursor: grab; touch-action: pan-y; }
+  .stage { position: relative; margin-top: 8px; }
+  canvas { display: block; width: 100%; cursor: grab; touch-action: pan-y; }
   canvas:active { cursor: grabbing; }
-  .foot { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; margin-top: 4px; }
-  .m { display: inline-grid; grid-auto-flow: column; grid-template-rows: repeat(3, auto); gap: 0 12px; position: relative; padding: 0 9px; font: 13px var(--font-mono); text-align: right; line-height: 1.5; }
-  .m::before, .m::after { content: ""; position: absolute; top: 1px; bottom: 1px; width: 5px; border: 1.5px solid var(--muted); }
-  .m::before { left: 0; border-right: 0; } .m::after { right: 0; border-left: 0; }
-  .m .t { color: var(--accent-ink); font-weight: 600; }
+  .foot { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; margin-top: 4px; min-height: 58px; }
+  .t { color: var(--accent-ink); }
   .note { margin: 0; color: var(--muted); }
+  .tags { position: absolute; inset: 0; overflow: hidden; pointer-events: none; line-height: 1; }
+  .tags .katex { font-size: 17px; }
+  .tags > span { position: absolute; left: 0; top: 0; white-space: nowrap; }
 </style>
 <section class="la" aria-label="三维里的一次剪切，在 z = 1 的平面上看是平移">
   <div class="bar">
     <button type="button" class="key play">播放</button>
-    <label>tₓ<input type="range" min="-20" max="20" value="15" data-k="0" aria-label="x 方向平移" /><output></output></label>
-    <label>tᵧ<input type="range" min="-20" max="20" value="10" data-k="1" aria-label="y 方向平移" /><output></output></label>
+    <label><span>$t_x$</span><input type="range" min="-20" max="20" value="15" data-k="0" aria-label="x 方向平移" /><output></output></label>
+    <label><span>$t_y$</span><input type="range" min="-20" max="20" value="10" data-k="1" aria-label="y 方向平移" /><output></output></label>
   </div>
-  <canvas role="img"></canvas>
-  <div class="foot"><span class="m"></span><p class="note"></p></div>
+  <div class="stage"><canvas role="img"></canvas></div>
+  <div class="foot"><span class="mat"></span><p class="note"></p></div>
 </section>
 <script>
 const root = document.querySelector('.la');
@@ -2601,6 +2897,28 @@ function poly(pts, fill, stroke, w = 1.2, dash = [], alpha = 1) {
   if (fill) { ctx.globalAlpha = alpha; ctx.fillStyle = fill; ctx.fill(); ctx.globalAlpha = 1; }
   if (stroke) { ctx.setLineDash(dash); ctx.strokeStyle = stroke; ctx.lineWidth = w; ctx.stroke(); ctx.setLineDash([]); }
 }
+// 画布上的名字是叠在上面的公式：同一个名字只排版一次，之后只挪位置
+const tags = cv.parentNode.appendChild(document.createElement('div')), names = {};
+tags.className = 'tags'; tags.setAttribute('aria-hidden', 'true');
+// 名字整个留在画布里：公式排好、量出宽高以后，贴边的往回收
+const keep = new ResizeObserver((all) => all.forEach(({ target: el, borderBoxSize: [box] }) => {
+  if (!box.inlineSize) return;
+  el.size = [box.inlineSize, box.blockSize];
+  if (el === tags) for (const tag of tags.children) settle(tag); else settle(el);
+}));
+keep.observe(tags);
+function settle(el) {
+  const [w, h] = el.size ?? [0, 0], [W, H] = tags.size ?? [Infinity, Infinity];
+  const x = Math.max(2, Math.min(W - w - 2, el.at[0] + el.shift[0] * w));
+  const y = Math.max(2, Math.min(H - h - 2, el.at[1] + el.shift[1] * h));
+  el.style.transform = `translate(${x}px, ${y}px)`;
+}
+function name(tex, x, y, color, shift = '-50%, -50%') {
+  let el = names[tex];
+  if (!el) keep.observe(el = names[tex] = tags.appendChild(Object.assign(document.createElement('span'), { textContent: `$${tex}$` })));
+  el.hidden = false; el.style.color = color;
+  el.at = [x, y]; el.shift = shift.split(',').map((part) => parseFloat(part) / 100); settle(el);
+}
 function text(s, at, color, dx = 6, dy = -6) {
   const [x, y] = P(at);
   ctx.fillStyle = color; ctx.font = '12px Inter Variable, sans-serif'; ctx.fillText(s, x + dx, y + dy);
@@ -2624,16 +2942,16 @@ function draw() {
   poly(sq.map(sh), C.accent, C.accent, 1, [], .07);
   for (let k = -2; k <= 2; k++) { seg(sh([k, -L, 1]), sh([k, L, 1]), C['rule-strong']); seg(sh([-L, k, 1]), sh([L, k, 1]), C['rule-strong']); }
   poly(F.map(([x, y]) => sh([x, y, 1])), C['accent-soft'], C.accent, 2);
-  text('z = 1', sh([L, -L, 1]), C['accent-ink'], 6, 14);
+  const [zx, zy] = P(sh([L, -L, 1])); name('z = 1', zx + 6, zy + 18, C['accent-ink'], '0, -100%');
   // 原点和三根轴
   seg([0, 0, 0], [0, 0, 1.6], C['rule-strong'], 1.4);
   const [ox, oy] = P([0, 0, 0]); ctx.beginPath(); ctx.arc(ox, oy, 3.5, 0, 2 * Math.PI); ctx.fillStyle = C.text; ctx.fill();
   text('原点', [0, 0, 0], C.text, 8, 14);
 
-  root.querySelector('.m').innerHTML = ['1', '0', '0', '0', '1', '0'].map((s) => `<span>${s}</span>`).join('') + `<span class="t">${num(cur[0])}</span><span class="t">${num(cur[1])}</span><span>1</span>`;
-  root.querySelector('.note').innerHTML = `z = 1 上平移 (${num(cur[0])}, ${num(cur[1])})，z = 0 不动`;
+  root.querySelector('.mat').textContent = `$\\begin{bmatrix}1&0&\\htmlClass{t}{${num(cur[0])}}\\\\0&1&\\htmlClass{t}{${num(cur[1])}}\\\\0&0&1\\end{bmatrix}$`;
+  root.querySelector('.note').textContent = `$z = 1$ 上平移 $(${num(cur[0])}, ${num(cur[1])})$，$z = 0$ 不动`;
   inputs.forEach((el, k) => { el.value = Math.round(cur[k] * 10); el.nextElementSibling.textContent = num(cur[k]); });
-  cv.setAttribute('aria-label', root.querySelector('.note').textContent);
+  cv.setAttribute('aria-label', `z = 1 上平移 (${num(cur[0])}, ${num(cur[1])})，z = 0 不动`);
 }
 
 function play() {
@@ -2685,9 +3003,10 @@ new IntersectionObserver(([e], o) => { if (e.isIntersecting) { o.disconnect(); p
 
 下面这个立方体的八个顶点，都是照这个流程在你的浏览器里现算的。橙色的点是顶点 $(1,1,1)$：
 
-```render html title="相机朝 −z 方向看；投影矩阵的写法照 OpenGL 的习惯"
+```render html title="相机朝 $-z$ 方向看；投影矩阵的写法照 OpenGL 的习惯"
 <style>
   .la { font-size: 13px; line-height: 1.5; font-variant-ligatures: none; }
+  .katex { font-size: 15px; }
   .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; }
   .key { min-height: 36px; padding: 0 14px; border: 1px solid var(--rule-strong); border-radius: 6px; background: var(--bg-raised); box-shadow: 0 2px 0 var(--rule); color: var(--text); font-size: 13px; cursor: pointer; }
   .key:hover { border-color: var(--text); }
@@ -2755,11 +3074,11 @@ function draw() {
 
   const p = [1, 1, 1, 1], world = ap(M, p), cam = ap(V, world), clip = ap(Pm, cam);
   chain.innerHTML =
-    `<span>模型</span><span>${vec(p)}</span>` +
-    `<span>× M</span><span>${vec(world)}</span>` +
-    `<span>× V</span><span>${vec(cam)}</span>` +
-    `<span>× P</span><span>(${num(clip[0])}, ${num(clip[1])}, ${num(clip[2])}, <span class="hit">w = ${num(clip[3])}</span>)</span>` +
-    `<span>÷ w</span><span class="hit">(${num(clip[0] / clip[3])}, ${num(clip[1] / clip[3])})</span>`;
+    `<span>模型</span><span>$${vec(p)}$</span>` +
+    `<span>$\\times M$</span><span>$${vec(world)}$</span>` +
+    `<span>$\\times V$</span><span>$${vec(cam)}$</span>` +
+    `<span>$\\times P$</span><span>$(${num(clip[0])}, ${num(clip[1])}, ${num(clip[2])}, \\htmlClass{hit}{w = ${num(clip[3])}})$</span>` +
+    `<span>$\\div w$</span><span class="hit">$(${num(clip[0] / clip[3])}, ${num(clip[1] / clip[3])})$</span>`;
   const deg = Math.round(((th % 360) + 360) % 360);
   inTh.value = deg; inTh.nextElementSibling.textContent = `${deg}°`;
   inD.value = Math.round(d * 10); inD.nextElementSibling.textContent = num(d);

@@ -55,7 +55,7 @@ $$
   .mr-result strong { margin-right: 12px; color: var(--accent-ink); font-weight: 600; }
 </style>
 <section class="mr-lab" aria-label="Miller–Rabin 平方链">
-  <div class="mr-cases"><button type="button" data-n="561" aria-pressed="true">561</button><button type="button" data-n="17" aria-pressed="false">17</button><button type="button" data-n="2047" aria-pressed="false">2047</button><small>基底 a = 2</small></div>
+  <div class="mr-cases"><button type="button" data-n="561" aria-pressed="true">561</button><button type="button" data-n="17" aria-pressed="false">17</button><button type="button" data-n="2047" aria-pressed="false">2047</button><small>基底 $a = 2$</small></div>
   <p class="mr-setup"></p><div class="mr-drawing"></div><output class="mr-result" aria-live="polite"></output>
 </section>
 <script>
@@ -80,8 +80,8 @@ $$
       <defs><marker id="mr-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M1 1L8 5L1 9" fill="none" stroke="var(--muted)" stroke-width="1.5"/></marker></defs>
       ${edges}${points.map((p,i) => `${i===chain.length-1?`<circle cx="${p.x}" cy="${p.y}" r="32" fill="var(--accent-soft)"/>`:''}<text x="${p.x}" y="${p.y+10}" text-anchor="middle" fill="${i===chain.length-1?'var(--accent-ink)':'var(--text)'}" font-family="var(--font-mono)" font-size="${w<420?28:34}">${chain[i]}</text><text x="${p.x}" y="${p.y+52}" text-anchor="middle" fill="var(--muted)" font-size="12">2<tspan dy="-5" font-size="12">${d*2**i}</tspan></text>`).join('')}
     </svg>`;
-    document.querySelector('.mr-setup').textContent = `${n} − 1 = ${d} × 2^${s}　·　沿箭头平方取模`;
-    document.querySelector('output').innerHTML = n===561 ? '<strong>发现合数</strong>67 ≠ ±1，平方却得到 1。' : n===17 ? '<strong>本轮通过</strong>出现 −1 ≡ 16，即可停下。' : '<strong>本轮通过，但仍是合数</strong>起点为 1；2047 = 23 × 89。';
+    document.querySelector('.mr-setup').textContent = `$${n} - 1 = ${d} \\times 2^{${s}}$　·　沿箭头平方取模`;
+    document.querySelector('output').innerHTML = n===561 ? '<strong>发现合数</strong>$67 \\ne \\pm 1$，平方却得到 $1$。' : n===17 ? '<strong>本轮通过</strong>出现 $-1 \\equiv 16$，即可停下。' : '<strong>本轮通过，但仍是合数</strong>起点为 $1$；$2047 = 23 \\times 89$。';
   }
   document.querySelectorAll('[data-n]').forEach(button => button.addEventListener('click', () => {
     n = Number(button.dataset.n);

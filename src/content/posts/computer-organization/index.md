@@ -598,13 +598,13 @@ CPU 里做运算的这一块叫 ALU（算术逻辑单元）。加、减、与、
 
 ## 负数：转一圈
 
-要是 `*b` 是 −37 呢？
+要是 `*b` 是 $-37$ 呢？
 
 最直接的办法是拿最高位当符号，0 正 1 负。可这样 `0000` 和 `1000` 是两个零，加法器还得先比符号，再决定是加还是减。
 
-换个想法。4 位二进制一共 16 个数，像汽车的里程表一样排成一圈：`0000` 往回拨一格是 `1111`，那就让 `1111` 当 −1，`1110` 当 −2，一直到 `1000` 当 −8。这叫补码。
+换个想法。4 位二进制一共 16 个数，像汽车的里程表一样排成一圈：`0000` 往回拨一格是 `1111`，那就让 `1111` 当 $-1$，`1110` 当 $-2$，一直到 `1000` 当 $-8$。这叫补码。
 
-加法器只会往前走，走过头就绕回来。一圈 16 格，往回走 3 格和往前走 13 格停在同一格上，所以把 −3 存成 13，也就是 `1101`，加法器不用知道什么是负数，照常加就对了。
+加法器只会往前走，走过头就绕回来。一圈 16 格，往回走 3 格和往前走 13 格停在同一格上，所以把 $-3$ 存成 13，也就是 `1101`，加法器不用知道什么是负数，照常加就对了。
 
 $n$ 位的补码里，$-y$ 存成 $2^n - y$。$2^n - 1$ 是全 1，全 1 减 $y$ 就是把 $y$ 的每一位取反，所以
 
@@ -618,7 +618,7 @@ $$
 A - B = A + ({\sim}B) + 1
 $$
 
-上面加法器的“减”就是这么接的：B 的每一位先过一个非门，最低位的进位塞一个 1。27 − 37 得 `1111 0110`，按补码读是 −10。
+上面加法器的“减”就是这么接的：B 的每一位先过一个非门，最低位的进位塞一个 1。$27 - 37$ 得 `1111 0110`，按补码读是 $-10$。
 
 同一串比特有两种读法。外圈按无符号读，内圈按补码读。两段弧都从 A 出发，外圈往前走 B 格，内圈照 B 的正负往前或往回走。默认是 `0111 + 0001`：
 
@@ -793,9 +793,9 @@ draw();
 </script>
 ```
 
-7 + 1 得 `1000`。外圈读成 8，没问题；内圈读成 −8，正数加正数加出了负数，这就是溢出。
+$7 + 1$ 得 `1000`。外圈读成 8，没问题；内圈读成 $-8$，正数加正数加出了负数，这就是溢出。
 
-两圈的接缝不在一处：外圈在顶上，15 和 0 之间；内圈在底下，7 和 −8 之间。把 B 改成 `1101`：外圈往前走 13 格，越过了顶上的接缝；内圈往回走 3 格，什么都没越过。两段弧停在同一格 `0100` 上，无符号读是 4，可 7 + 13 该是 20，丢了一个 16；有符号读是 7 − 3 = 4，没错。
+两圈的接缝不在一处：外圈在顶上，15 和 0 之间；内圈在底下，7 和 $-8$ 之间。把 B 改成 `1101`：外圈往前走 13 格，越过了顶上的接缝；内圈往回走 3 格，什么都没越过。两段弧停在同一格 `0100` 上，无符号读是 4，可 $7 + 13$ 该是 20，丢了一个 16；有符号读是 $7 - 3 = 4$，没错。
 
 CPU 不知道你打算按哪种读，两种都记着：越过外圈的接缝，设 CF（进位标志）；越过内圈的接缝，设 OF（溢出标志）。编译器知道变量是什么类型，挑对应的那个看。
 
@@ -857,7 +857,6 @@ $$
   dd { margin: 0; font: 600 14px var(--font-mono); overflow-wrap: anywhere; }
   dd.f { color: var(--accent-ink); }
   dd small { display: block; color: var(--muted); font: 12.5px var(--font-mono); margin-top: 2px; }
-  dd small sup { font-size: 9.5px; }
 </style>
 <section class="fl" aria-label="同样 32 个比特，被整数加法和浮点加法读成两个不同的数">
   <div class="top">
@@ -889,20 +888,19 @@ const toBits = (x) => (dv.setFloat32(0, x), dv.getUint32(0));
 const toFloat = (u) => (dv.setUint32(0, u >>> 0), dv.getFloat32(0));
 const toInt = (u) => (dv.setUint32(0, u >>> 0), dv.getInt32(0));
 const minus = (s) => s.replace(/^-/, '−');
-const sup = (n) => `<sup>${minus(String(n))}</sup>`;
 
-// 科学计数法：1.49 × 10⁻⁹
+// 科学计数法，写成公式的源码：1.49 \times 10^{-9}
 function sci(x, digits = 3) {
   if (x === 0) return '0';
   const [m, e] = Math.abs(x).toExponential(digits - 1).split('e');
-  const head = (x < 0 ? '−' : '') + m.replace(/\.?0+$/, '');
-  return Number(e) === 0 ? head : `${head} × 10${sup(Number(e))}`;
+  const head = (x < 0 ? '-' : '') + m.replace(/\.?0+$/, '');
+  return Number(e) === 0 ? head : `${head} \\times 10^{${Number(e)}}`;
 }
 
-// float 精确的十进制展开：值 = m × 2^p，p < 0 时等于 m × 5^(−p) / 10^(−p)
+// float 精确的十进制展开：值是 m 乘 2 的 p 次方，p < 0 时等于 m 乘 5 的 −p 次方，再把小数点左移 −p 位
 function exact(u) {
   const s = u >>> 31, e = (u >>> 23) & 255, f = u & 0x7fffff;
-  if (e === 255) return f ? 'NaN' : s ? '−∞' : '+∞';
+  if (e === 255) return f ? 'NaN' : s ? '$-\\infty$' : '$+\\infty$';
   const m = BigInt(e ? f | 0x800000 : f), p = (e || 1) - 150;
   if (m === 0n) return s ? '−0' : '0';
   let str;
@@ -911,21 +909,21 @@ function exact(u) {
     const d = -p, t = (m * 5n ** BigInt(d)).toString().padStart(d + 1, '0');
     str = (t.slice(0, -d) + '.' + t.slice(-d)).replace(/0+$/, '');
   }
-  return str.length > 40 ? `≈ ${sci(toFloat(u), 8)}` : (s ? "−" : "") + str;
+  return str.length > 40 ? `$\\approx ${sci(toFloat(u), 8)}$` : (s ? "−" : "") + str;
 }
 
 function formula(u) {
-  const s = u >>> 31, e = (u >>> 23) & 255, f = u & 0x7fffff, sign = s ? '−' : '+';
+  const s = u >>> 31, e = (u >>> 23) & 255, f = u & 0x7fffff, sign = s ? '-' : '+';
   if (e === 255) return f ? '阶码全 1、尾数不为 0：NaN' : '阶码全 1、尾数为 0：无穷';
-  if (e === 0) return f ? `${sign}0.${(f / 2 ** 23).toFixed(8).slice(2)} × 2${sup(-126)}（阶码全 0，前面那位是 0）` : '阶码和尾数全 0：零';
-  return `${sign}1.${(f / 2 ** 23).toFixed(8).slice(2)} × 2${sup(e - 127)}`;
+  if (e === 0) return f ? `$${sign}0.${(f / 2 ** 23).toFixed(8).slice(2)} \\times 2^{-126}$（阶码全 0，前面那位是 0）` : '阶码和尾数全 0：零';
+  return `$${sign}1.${(f / 2 ** 23).toFixed(8).slice(2)} \\times 2^{${e - 127}}$`;
 }
 
 function gap(u) {
   const e = (u >>> 23) & 255;
   if (e === 255) return '—';
   const x = Math.abs(toFloat(u)), next = toFloat((u & 0x7fffffff) + 1);
-  return `隔 ${sci(next - x)}`;
+  return `隔 $${sci(next - x)}$`;
 }
 
 const groups = { sgn: [31], exp: [30, 29, 28, 27, 26, 25, 24, 23], man: [] };
@@ -951,11 +949,11 @@ function draw() {
     b.setAttribute('aria-pressed', String(!!on));
   });
   const e = (bits >>> 23) & 255;
-  root.querySelector('.exp b').textContent = e === 0 || e === 255 ? e : `${e} − 127 = ${minus(String(e - 127))}`;
+  root.querySelector('.exp b').textContent = e === 0 || e === 255 ? e : `$${e} - 127 = ${e - 127}$`;
   root.querySelector('.i').textContent = minus(String(toInt(bits)));
   const x = toFloat(bits);
   let note = formula(bits);
-  if (typed !== null && Number.isFinite(typed) && typed !== x) note += `<br>比输入的 ${minus(String(typed))} ${x > typed ? '大' : '小'}了 ${sci(Math.abs(x - typed))}`;
+  if (typed !== null && Number.isFinite(typed) && typed !== x) note += `<br>比输入的 ${minus(String(typed))} ${x > typed ? '大' : '小'}了 $${sci(Math.abs(x - typed))}$`;
   root.querySelector('.f').innerHTML = `${exact(bits)}<small>${note}</small>`;
   root.querySelector('.u').innerHTML = gap(bits);
 }
@@ -1946,7 +1944,7 @@ L1 和内存差 60 倍。把一拍放大成一秒，读 L1 是 5 秒，读一次
 
 `x` 在 `0x7fffffffdb40`，`y` 在 `0x7fffffffdb44`。`0x7fffffffdb40` 是 64 的倍数，两个数落在同一个缓存行里，搬一次就都有了。
 
-同样的数据，换个顺序读，缺失次数能差好几倍。下面把缓存缩小到只装得下 4 个缓存行，一个缓存行 4 个数。数组是 8 × 8 的，在内存里一行接一行地放，一行 8 个数正好占两个缓存行，图里每行中间留了一道缝。按行、按列各读一遍：
+同样的数据，换个顺序读，缺失次数能差好几倍。下面把缓存缩小到只装得下 4 个缓存行，一个缓存行 4 个数。数组是 $8 \times 8$ 的，在内存里一行接一行地放，一行 8 个数正好占两个缓存行，图里每行中间留了一道缝。按行、按列各读一遍：
 
 ```render html title="缓存缩小成 4 个缓存行、每个 4 个数；底下的耗时是真跑的"
 <style>
@@ -1992,7 +1990,7 @@ L1 和内存差 60 倍。把一拍放大成一秒，读 L1 是 5 秒，读一次
   </div>
   <div class="legend"><span><i class="miss"></i>缺失，搬一个缓存行（4 个数）</span><span><i class="hit"></i>命中</span><span><i class="in"></i>此刻在缓存里</span></div>
   <div class="bench">
-    <b>2048 × 2048 个 int，加一遍</b>
+    <b>$2048 \times 2048$ 个 int，加一遍</b>
     <span>按行</span><div><div class="bar row"></div></div><output class="row"></output>
     <span>按列</span><div><div class="bar col"></div></div><output class="col"></output>
     <button type="button" class="key run">在这台设备上测</button>
@@ -2043,7 +2041,7 @@ function draw() {
     root.querySelector(`.bar.${w}`).style.width = `${(bench[w] / max) * 100}%`;
     root.querySelector(`output.${w}`).textContent = `${bench[w].toFixed(1)} ms`;
   }
-  root.querySelector('.bench b').textContent = `2048 × 2048 个 int，加一遍（${mine ? '我的笔记本' : '这台设备'}）`;
+  root.querySelector('.bench b').textContent = `$2048 \\times 2048$ 个 int，加一遍（${mine ? '我的笔记本' : '这台设备'}）`;
 }
 
 function play() {
@@ -2102,7 +2100,7 @@ draw();
 
 按行读，每个缓存行只缺失一次，后面 3 个数都命中，一共 16 次。按列读次次缺失，64 次：一列 8 个数分在 8 个缓存行里，缓存只装得下 4 个。点“走一步”看按列那一边，描了边的是此刻留在缓存里的缓存行：读到第 5 行，第 1 行的那个就被踢了，等读下一列回到第 1 行，又得重新搬。
 
-真跑 2048 × 2048 的数组，按行加一遍 2.4 毫秒，按列 8.3 毫秒。C 的二维数组按行存，所以双重循环要让外层走行、内层走列。数组怎么摆、按什么顺序读，往往比省两条指令要紧得多。
+真跑 $2048 \times 2048$ 的数组，按行加一遍 2.4 毫秒，按列 8.3 毫秒。C 的二维数组按行存，所以双重循环要让外层走行、内层走列。数组怎么摆、按什么顺序读，往往比省两条指令要紧得多。
 
 缓存怎么知道一个地址在不在里面？每个缓存行旁边记着它是从内存的哪个位置搬来的。查的时候挨个比太慢，所以先用地址中间的几位直接选出一组，只和这一组里的几个缓存行比，L1 里通常是 8 个或 12 个，这叫组相联。一组满了，再踢掉其中一个。上面那张图为了简单，只有一组。
 

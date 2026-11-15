@@ -1,3 +1,5 @@
+import { renderHtmlMath } from './remark-html-math.mjs';
+
 const renderers = {
   svg: 'SVG 图示',
   html: '交互演示',
@@ -14,7 +16,8 @@ export function renderBlock(source, meta = '') {
     .find((option) => option.startsWith('title='))
     ?.slice('title='.length)
     .replace(/^(["'])(.*)\1$/, '$2');
-  const label = caption || renderers[type];
+  // A caption may hold formulas; the label read aloud keeps only their source.
+  const label = caption?.replace(/\$/g, '') || renderers[type];
   const isSvg = type === 'svg';
   return {
     type: 'element',
@@ -64,7 +67,20 @@ export function renderBlock(source, meta = '') {
               type: 'element',
               tagName: 'figcaption',
               properties: {},
-              children: [{ type: 'text', value: caption }],
+              children: [
+                /[$\\]/.test(caption)
+                  ? {
+                      type: 'raw',
+                      value: renderHtmlMath(
+                        caption.replace(
+                          /[&<>]/g,
+                          (c) =>
+                            ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c],
+                        ),
+                      ),
+                    }
+                  : { type: 'text', value: caption },
+              ],
             },
           ]
         : []),

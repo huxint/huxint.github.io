@@ -41,10 +41,10 @@ $$
   .st-drawing svg { display: block; width: 100%; }
   .st-answer { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; margin-top: 14px; font-size: 14px; }
   .st-answer strong { font: 24px var(--font-mono); }
-  .st-answer span { color: var(--muted); }
+  .st-answer > span { color: var(--muted); }
 </style>
 <section class="st-lab" aria-label="两块预处理区间覆盖一次查询">
-  <div class="st-controls"><label>左端点 l <output class="st-l-value">1</output><input type="range" class="st-left" min="0" max="7" value="1" aria-label="左端点"></label><label>右端点 r <output class="st-r-value">6</output><input type="range" class="st-right" min="0" max="7" value="6" aria-label="右端点"></label></div>
+  <div class="st-controls"><label><span>左端点 $l$</span><output class="st-l-value">1</output><input type="range" class="st-left" min="0" max="7" value="1" aria-label="左端点"></label><label><span>右端点 $r$</span><output class="st-r-value">6</output><input type="range" class="st-right" min="0" max="7" value="6" aria-label="右端点"></label></div>
   <div class="st-drawing"></div><output class="st-answer" aria-live="polite"></output>
 </section>
 <script>
@@ -70,7 +70,7 @@ $$
     </svg>`;
     document.querySelector('.st-l-value').textContent=l;
     document.querySelector('.st-r-value').textContent=r;
-    document.querySelector('.st-answer').innerHTML = `<strong>min(${a}, ${b}) = ${Math.min(a,b)}</strong><span>${size + size - length ? '斜线部分重复取最小值，结果不变' : '两块恰好覆盖查询'} · 每块长度 ${size}</span>`;
+    document.querySelector('.st-answer').innerHTML = `<strong>$\\min(${a}, ${b}) = ${Math.min(a,b)}$</strong><span>${size + size - length ? '斜线部分重复取最小值，结果不变' : '两块恰好覆盖查询'} · 每块长度 ${size}</span>`;
   }
   left.addEventListener('input', () => { if (+left.value > +right.value) right.value = left.value; draw(); });
   right.addEventListener('input', () => { if (+right.value < +left.value) left.value = right.value; draw(); });

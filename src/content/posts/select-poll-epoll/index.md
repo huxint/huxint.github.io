@@ -663,7 +663,7 @@ function draw(lane, index) {
     marks += `<text class="zh warn" x="${mid(a, b)}" y="${top - 6}">没人读</text>`;
   }
   for (const [a, b] of runs(slots, s => !s.awake)) {
-    marks += `<rect class="nap" x="${a * dx + 2}" y="${LANE}" width="${(b - a) * dx - 4}" height="16" rx="8" />`;
+    marks += `<rect class="nap" x="${a * dx + 2}" y="${LANE}" width="${Math.max(0, (b - a) * dx - 4)}" height="16" rx="8" />`;
     marks += `<text class="zh" x="${mid(a, b)}" y="${LANE + 12}">睡</text>`;
   }
   svg.setAttribute('width', w);

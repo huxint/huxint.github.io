@@ -26,11 +26,16 @@ const mathStyle = `${katexStyle.replace(/@font-face\{[^}]*\}/g, '')}
 // The host owns vertical scrolling, so viewport scrollbars must not narrow the measurement.
 // Media queries see the frame, which on phones is the viewport less 40px of page margin:
 // 680px here is the 720px breakpoint of the article text around it.
+// A frame clips whatever crosses its edge. The body's block padding, which
+// prose.css takes back with a negative margin, leaves room for focus rings
+// above and below. Side padding would change the width media queries see, so
+// a ring that would still cross an edge is drawn inside its element instead.
 const baseStyle = `
   *,*::before,*::after{box-sizing:border-box}
   html{background:transparent;overflow-y:clip}
-  body{display:flow-root;margin:0;min-width:0;background:transparent;color:var(--text);font:17px/1.9 var(--font-sans);font-optical-sizing:auto;overflow-wrap:break-word;-webkit-font-smoothing:antialiased}
+  body{display:flow-root;margin:0;padding:6px 0;min-width:0;background:transparent;color:var(--text);font:17px/1.9 var(--font-sans);font-optical-sizing:auto;overflow-wrap:break-word;-webkit-font-smoothing:antialiased}
   b,strong,th{font-weight:600}
+  sub,sup{line-height:0}
   button,input,select,textarea{font:inherit;color:inherit}
   code,pre,kbd,samp{font-family:var(--font-mono);font-variant-ligatures:none}
   math{font-family:KaTeX_Main,var(--font-serif)}
@@ -38,6 +43,7 @@ const baseStyle = `
   math mtext{font-family:var(--font-sans)}
   img,svg,canvas{max-width:100%;height:auto}
   :focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+  [data-ring-inside]{outline-offset:-2px!important}
   @media(max-width:680px){body{font-size:16px;line-height:1.85}}
 `;
 const fontSources = [
@@ -156,6 +162,12 @@ function frameBridge(): void {
         katex.render(display ?? match[3] ?? match[4], holder, {
           displayMode: display !== undefined,
           throwOnError: false,
+          // \htmlClass{name}{…} gives part of a formula one of the block's own
+          // classes, so a term can share the colour of the handle that moves it.
+          trust: (context: { command: string }) =>
+            context.command === '\\htmlClass',
+          strict: (code: string) =>
+            code === 'htmlExtension' ? 'ignore' : 'warn',
         });
         fragment.append(text.slice(last, match.index), holder);
         last = pattern.lastIndex;
@@ -192,6 +204,28 @@ function frameBridge(): void {
       characterData: true,
     });
   }
+
+  let ringed: Element | undefined;
+  document.addEventListener('focusin', ({ target }) => {
+    ringed?.removeAttribute('data-ring-inside');
+    ringed = undefined;
+    if (!(target instanceof Element)) return;
+    const style = getComputedStyle(target);
+    if (style.outlineStyle === 'none') return;
+    const reach =
+      parseFloat(style.outlineWidth) + parseFloat(style.outlineOffset);
+    const box = target.getBoundingClientRect();
+    const view = document.documentElement;
+    if (
+      box.left >= reach &&
+      box.top >= reach &&
+      box.right + reach <= view.clientWidth &&
+      box.bottom + reach <= view.clientHeight
+    )
+      return;
+    target.setAttribute('data-ring-inside', '');
+    ringed = target;
+  });
 
   window.addEventListener('message', ({ source, data }) => {
     if (source !== parent) return;

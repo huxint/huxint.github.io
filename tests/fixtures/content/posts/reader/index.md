@@ -48,6 +48,16 @@ $$
 </script>
 ```
 
+```render html title="Fixture caption $x^2$"
+<style>
+  .mark { color: rgb(255, 0, 0); }
+  #inner { margin-left: 40px; }
+</style>
+<p id="classed">$a + \htmlClass{mark}{b}$</p>
+<button id="edge" type="button">Edge</button>
+<button id="inner" type="button">Inner</button>
+```
+
 ```render html title="Fixture plain frame"
 <p id="plain"></p>
 <script>
