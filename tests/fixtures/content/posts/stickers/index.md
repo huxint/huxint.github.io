@@ -1,6 +1,6 @@
 ---
-title: "Sticker Fixture :laugh_cry:"
-description: "Titles and descriptions show :thumbs_up: too."
+title: 'Sticker Fixture :laugh_cry:'
+description: 'Titles and descriptions show :thumbs_up: too.'
 pubDate: 2020-01-02
 tags: [StickerTag]
 ---

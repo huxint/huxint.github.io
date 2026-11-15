@@ -11,8 +11,13 @@ function storedTheme(): string | null {
   }
 }
 
+const themeColor = document.querySelector<HTMLMetaElement>(
+  'meta[name="theme-color"]',
+);
+
 function applyTheme(theme: string): void {
   document.documentElement.dataset.theme = theme;
+  if (themeColor) themeColor.content = theme === 'dark' ? '#161619' : '#f6f2ea';
   const label = `切换到${theme === 'dark' ? '浅' : '深'}色模式`;
   themeButton?.setAttribute('aria-label', label);
   themeButton?.setAttribute('title', label);

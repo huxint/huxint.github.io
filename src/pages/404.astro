@@ -6,9 +6,16 @@ import PageHeader from '../components/PageHeader.astro';
 <BaseLayout title="页面未找到" noindex>
   <main class="page" id="main">
     <PageHeader title="页面未找到">
-      <p slot="rail" class="error-code">404</p>
-      <p>地址可能有误，或文章已经移动。</p>
-      <a class="text-link" href="/">← 返回文章列表</a>
+      <p slot="rail" class="error-code figures">404</p>
+      <p class="lede">地址可能有误，或文章已经移动。</p>
+      <img
+        class="sticker is-large"
+        src="/stickers/confused.svg"
+        alt=""
+        width="128"
+        height="128"
+      />
+      <p><a class="text-link" href="/">← 返回文章列表</a></p>
     </PageHeader>
   </main>
 </BaseLayout>
@@ -17,12 +24,11 @@ import PageHeader from '../components/PageHeader.astro';
   .error-code {
     text-align: right;
     color: var(--faint);
-    font-family: var(--font-mono);
-    font-size: 14px;
-    letter-spacing: 0.08em;
+    letter-spacing: var(--tracking-label);
   }
-  .text-link {
-    margin-top: 28px;
+  .sticker {
+    display: block;
+    margin: 24px 0 20px -8px;
   }
   @media (max-width: 720px) {
     .error-code {

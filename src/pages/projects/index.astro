@@ -25,15 +25,17 @@ const introductions = await Promise.all(
 >
   <main class="page" id="main">
     <PageHeader title="项目">
-      <p>一些想法，写成了代码。</p>
+      <p class="lede">一些想法，写成了代码。</p>
     </PageHeader>
     <ol class="project-list">
       {
         projects.map((project, index) => (
           <li class="project">
-            <p class="project-index">{String(index + 1).padStart(2, '0')}</p>
+            <p class="project-index figures">
+              {String(index + 1).padStart(2, '0')}
+            </p>
             <div class="project-body">
-              <h2>
+              <h2 class="section-title">
                 <a href={`/projects/${project.slug}/`}>{project.name}</a>
               </h2>
               <p
@@ -43,11 +45,14 @@ const introductions = await Promise.all(
               >
                 {introductions[index]}
               </p>
-              <p class="project-links">
-                <a href={`/projects/${project.slug}/`}>
+              <p class="link-row">
+                <a
+                  class="action-link is-primary"
+                  href={`/projects/${project.slug}/`}
+                >
                   阅读 README <Icon name="arrow" size={15} />
                 </a>
-                <a href={project.repository}>
+                <a class="action-link" href={project.repository}>
                   <Icon name="github" size={15} />
                   {project.owner}/{project.name}
                 </a>
@@ -70,7 +75,7 @@ const introductions = await Promise.all(
     grid-template-columns: var(--rail) minmax(0, 1fr);
     column-gap: var(--gutter);
     align-items: baseline;
-    padding-block: 28px 30px;
+    padding-block: 26px 24px;
     border-top: 1px solid var(--rule);
   }
   .project:last-child {
@@ -79,78 +84,27 @@ const introductions = await Promise.all(
   .project-index {
     justify-self: end;
     color: var(--faint);
-    font-family: var(--font-mono);
-    font-size: 13px;
-    font-variant-numeric: tabular-nums;
   }
   .project-body {
     max-width: var(--measure);
   }
-  h2 {
-    font-family: var(--font-serif);
-    font-size: 26px;
-    font-weight: 600;
-    line-height: 1.35;
-    overflow-wrap: anywhere;
-  }
-  h2 a {
-    transition: color var(--dur-fast) ease;
-  }
-  h2 a:hover {
-    color: var(--accent-ink);
-  }
   .project-description {
+    margin-top: 8px;
+    color: var(--muted);
+  }
+  .link-row {
     margin-top: 10px;
-    color: var(--muted);
-    font-size: 16px;
-    line-height: 1.85;
-  }
-  .project-links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px 28px;
-    margin-top: 14px;
-    font-size: 14px;
-  }
-  .project-links a {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    min-height: 36px;
-    color: var(--muted);
-    transition: color var(--dur-fast) ease;
-  }
-  .project-links a:first-child {
-    color: var(--accent-ink);
-    font-weight: 550;
-  }
-  .project-links a:hover {
-    color: var(--accent-ink);
-  }
-  .project-links a :global(svg) {
-    transition: transform var(--dur-base) var(--ease-spring);
-  }
-  .project-links a:first-child:hover :global(svg) {
-    transform: translateX(3px);
   }
   @media (max-width: 720px) {
     .project {
       display: block;
-      padding-block: 22px 20px;
+      padding-block: 20px 16px;
     }
     .project-index {
-      justify-self: start;
-      margin-bottom: 4px;
+      margin-bottom: 2px;
     }
-    h2 {
-      font-size: 23px;
-    }
-    .project-description {
-      font-size: 15px;
-    }
-    .project-links {
-      gap: 0 22px;
-      margin-top: 10px;
+    .link-row {
+      column-gap: 22px;
     }
   }
 </style>

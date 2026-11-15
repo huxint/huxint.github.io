@@ -34,6 +34,36 @@ draft: true
 > [!CAUTION]
 > 注意用于低风险但值得留心的边界条件。
 
+提示框可以在类型后面接一个标题；类型后加 `-` 默认折叠，加 `+` 默认展开。数学文章常用的 `DEFINITION`、`THEOREM`、`LEMMA`、`PROOF`、`EXAMPLE` 也在。
+
+> [!THEOREM] 费马小定理
+> 若 $p$ 是质数且 $p\nmid a$，则 $a^{p-1}\equiv 1\pmod p$。
+
+> [!PROOF]- 点开看证明
+> $a,2a,\dots,(p-1)a$ 模 $p$ 两两不同，恰好是 $1,2,\dots,p-1$ 的一个排列。两边连乘，约去 $(p-1)!$ 即得。
+
+## 标签页
+
+连续几个 `> [!TAB] 名字` 会合成一组标签页，里面可以放任何内容。同名的标签在整页联动，选过的会记住。
+
+> [!TAB] C++
+> ```cpp
+> long long power(long long a, long long b, long long p) {
+>     long long r = 1;
+>     for (; b; b >>= 1, a = a * a % p) if (b & 1) r = r * a % p;
+>     return r;
+> }
+> ```
+
+> [!TAB] Python
+> ```python
+> def power(a, b, p):
+>     return pow(a, b, p)
+> ```
+
+> [!TAB] 思路
+> 把指数写成二进制：$a^{13}=a^{8}\cdot a^{4}\cdot a^{1}$，每一位只做一次平方。
+
 <details>
 <summary>折叠内容</summary>
 
@@ -352,6 +382,38 @@ SVG 可以使用 `currentColor` 和文章的 CSS 变量，随主题一起变化�
   draw();
 </script>
 ```
+
+`render html` 里的公式和正文用同一套写法：`$…$`、`\(…\)` 是行内公式，`$$…$$`、`\[…\]` 是独立公式，都由 KaTeX 排版。脚本后来写进页面的公式也会自动渲染，所以拖动滑块时可以直接拼一段 TeX。不想被当成公式的地方，加上 `data-no-math`，或放进 `<code>`。
+
+```render html title="拖动滑块，公式跟着重排"
+<style>
+  .sum-demo label { display: flex; align-items: center; gap: 16px; }
+  .sum-demo input { flex: 1; min-width: 0; accent-color: var(--accent); }
+</style>
+<div class="sum-demo">
+  <p>等差数列求和 $\sum_{i=1}^{n} i = \frac{n(n+1)}{2}$，取不同的 $n$：</p>
+  <div class="result"></div>
+  <label><span>$n$</span><input type="range" min="1" max="100" value="10" aria-label="项数" /></label>
+</div>
+<script>
+  const input = document.querySelector('input');
+  const result = document.querySelector('.result');
+  const draw = () => {
+    const n = Number(input.value);
+    result.textContent = `$$\\sum_{i=1}^{${n}} i = \\frac{${n}\\cdot${n + 1}}{2} = ${n * (n + 1) / 2}$$`;
+  };
+  input.addEventListener('input', draw);
+  draw();
+</script>
+```
+
+直接写在 Markdown 里的 HTML 块也一样，里面的公式不再原样显示：
+
+<table>
+  <tr><th>名称</th><th>公式</th></tr>
+  <tr><td>欧拉恒等式</td><td>$e^{i\pi}+1=0$</td></tr>
+  <tr><td>高斯积分</td><td>$\int_{-\infty}^{+\infty} e^{-x^2}\,\mathrm{d}x=\sqrt{\pi}$</td></tr>
+</table>
 
 普通的 `html` 代码块只显示源码，不会执行：
 

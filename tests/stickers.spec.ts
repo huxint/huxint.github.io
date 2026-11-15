@@ -158,6 +158,89 @@ test.describe('目录页', () => {
   });
 });
 
+test.describe('筛选', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/stickers/');
+  });
+
+  test('按名字、文案或写法筛选，Esc 清空', async ({ page }) => {
+    const filter = page.getByRole('searchbox');
+    const shown = page.locator('[data-sticker-item]:visible');
+    const count = page.locator('[data-sticker-count]');
+    await expect(count).toContainText(String(stickers.length));
+
+    // A caption finds its meme, and groups without a match disappear.
+    await filter.fill('笑死');
+    await expect(shown).toHaveCount(1);
+    await expect(shown.locator('code')).toHaveText(':rofl:');
+    await expect(page.locator('[data-sticker-group]:visible')).toHaveCount(1);
+    await expect(count).toHaveText('找到 1 个。');
+
+    // The written form works with its colons, in either case and width.
+    await filter.fill(':THUMBS_');
+    await expect(shown).toHaveCount(2);
+    await filter.fill('ｌｏｖｅ');
+    await expect(shown.locator('code')).toHaveText(':love:');
+
+    await filter.fill('no such sticker');
+    await expect(shown).toHaveCount(0);
+    await expect(page.locator('[data-sticker-empty]')).toBeVisible();
+
+    await filter.press('Escape');
+    await expect(filter).toHaveValue('');
+    await expect(shown).toHaveCount(stickers.length);
+    await expect(page.locator('[data-sticker-empty]')).toBeHidden();
+  });
+
+  test('斜杠键聚焦筛选框', async ({ page }) => {
+    await page.keyboard.press('/');
+    await expect(page.getByRole('searchbox')).toBeFocused();
+    await expect(page).toHaveURL('/stickers/');
+  });
+});
+
+test.describe('画法', () => {
+  test('文案画成轮廓，不依赖系统字体，并带有文字说明', async ({ request }) => {
+    for (const sticker of stickers) {
+      const svg = await (
+        await request.get(`/stickers/${sticker.id}.svg`)
+      ).text();
+      expect(svg, sticker.id).not.toContain('<text');
+      expect(svg, sticker.id).not.toContain('font-family');
+      expect(svg, sticker.id).toContain(
+        `<title>${sticker.caption ?? sticker.label}</title>`,
+      );
+      // Every clip path is defined once, ahead of the drawing.
+      const ids = [...svg.matchAll(/<clipPath id="([^"]+)"/g)].map(
+        ([, id]) => id,
+      );
+      expect(new Set(ids).size, sticker.id).toBe(ids.length);
+      for (const [, id] of svg.matchAll(/clip-path="url\(#([^)]+)\)"/g))
+        expect(ids, sticker.id).toContain(id);
+    }
+  });
+
+  test('文案在画面里左右居中', async ({ browser }) => {
+    const context = await browser.newContext({
+      viewport: { width: 128, height: 128 },
+      reducedMotion: 'reduce',
+    });
+    const page = await context.newPage();
+    // Full-width punctuation keeps its ink to one side of its box.
+    for (const id of ['smug', 'ship', 'derp', 'wa', 'clown']) {
+      await page.goto(`/stickers/${id}.svg`);
+      const box = await page.evaluate(() => {
+        const caption = document.querySelector('path[paint-order="stroke"]')!;
+        const { left, right, bottom } = caption.getBoundingClientRect();
+        return { left, right, bottom };
+      });
+      expect(Math.abs(box.left - (128 - box.right)), id).toBeLessThan(0.6);
+      expect(box.bottom, id).toBeLessThan(124);
+    }
+    await context.close();
+  });
+});
+
 test.describe('动画', () => {
   test('独立打开时，减少动态效果的偏好会关掉动画', async ({ browser }) => {
     const animations = async (reducedMotion: 'reduce' | 'no-preference') => {

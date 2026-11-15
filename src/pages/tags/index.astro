@@ -11,8 +11,6 @@ const tags = getTags(await getPosts());
 const tiers = [...Map.groupBy(tags, ([, tagged]) => tagged.length)].sort(
   ([left], [right]) => right - left,
 );
-const weight = (count: number) =>
-  Math.log(count) / Math.log(Math.max(2, tiers[0]?.[0] ?? 2));
 ---
 
 <BaseLayout
@@ -21,14 +19,14 @@ const weight = (count: number) =>
 >
   <main class="page" id="main">
     <PageHeader title="标签">
-      <p>从一个主题，找到想读的文章。</p>
+      <p class="lede">从一个主题，找到想读的文章。</p>
     </PageHeader>
     {
       tags.length ? (
         <section class="tag-index" aria-label="全部标签">
           <div class="tag-toolbar rail-grid">
             <div class="tag-filter">
-              <label class="tag-search">
+              <label class="field tag-search">
                 <Icon name="search" size={16} />
                 <span class="sr-only">筛选标签</span>
                 <input
@@ -37,8 +35,11 @@ const weight = (count: number) =>
                   autocomplete="off"
                   spellcheck="false"
                   data-tag-filter
+                  data-shortcut-focus
                 />
-                <kbd aria-hidden="true">/</kbd>
+                <kbd class="key" aria-hidden="true">
+                  /
+                </kbd>
               </label>
               <p class="tag-status" role="status" data-tag-status>
                 共 {tags.length} 个标签，按文章数分组。
@@ -47,12 +48,8 @@ const weight = (count: number) =>
           </div>
           <ol class="tag-tiers">
             {tiers.map(([count, entries]) => (
-              <li
-                class="tag-tier"
-                style={`--weight: ${weight(count).toFixed(2)}`}
-                data-tag-tier
-              >
-                <p class="tag-tier-count">{count} 篇</p>
+              <li class="tag-tier" data-tag-tier>
+                <p class="tag-tier-count label">{count} 篇</p>
                 <ul class="tag-tier-tags">
                   {entries.map(([tag, tagged]) => (
                     <li

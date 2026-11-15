@@ -52,7 +52,7 @@ const media = [photos && `${photos} 张照片`, videos && `${videos} 段视频`]
     <p class="moment-preview-excerpt">{momentExcerpt(moment, 140)}</p>
     <p class="moment-preview-footer">
       {media && <span>{media}</span>}
-      <span class="moment-preview-read">
+      <span class="moment-preview-read action-link is-primary">
         查看记录 <Icon name="arrow" size={14} />
       </span>
     </p>
@@ -63,7 +63,7 @@ const media = [photos && `${photos} 张照片`, videos && `${videos} 段视频`]
   /* Up to three photos and the opening lines; the date sits in the rail. */
   .moment-preview {
     align-items: start;
-    padding-block: 18px 22px;
+    padding-block: 18px 20px;
   }
   .moment-preview.is-note {
     align-items: baseline;
@@ -83,7 +83,7 @@ const media = [photos && `${photos} 张照片`, videos && `${videos} 段视频`]
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 6px;
-    margin-bottom: 16px;
+    margin-bottom: 14px;
   }
   .moment-preview-prints :global(img) {
     display: block;
@@ -91,43 +91,37 @@ const media = [photos && `${photos} 张照片`, videos && `${videos} 段视频`]
     height: auto;
     aspect-ratio: 4 / 5;
     object-fit: cover;
-    border-radius: 4px;
+    border-radius: var(--radius-xs);
     background: var(--surface);
     transition: filter 300ms ease;
   }
   .moment-preview-prints :global(img:first-child) {
-    border-top-left-radius: 10px;
-    border-bottom-left-radius: 10px;
+    border-top-left-radius: var(--radius-md);
+    border-bottom-left-radius: var(--radius-md);
   }
   .moment-preview-prints :global(img:last-child) {
-    border-top-right-radius: 10px;
-    border-bottom-right-radius: 10px;
+    border-top-right-radius: var(--radius-md);
+    border-bottom-right-radius: var(--radius-md);
   }
   .moment-preview-excerpt {
     display: -webkit-box;
     overflow: hidden;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
-    font-size: 16px;
-    line-height: 1.9;
+    line-height: var(--leading-body);
   }
   .moment-preview-footer {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 4px 20px;
-    margin-top: 10px;
+    gap: 0 20px;
+    margin-top: 6px;
     color: var(--muted);
-    font-size: 13px;
+    font-size: var(--text-sm);
+    line-height: var(--leading-ui);
   }
   .moment-preview-read {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--accent-ink);
-  }
-  .moment-preview-read :global(svg) {
-    transition: transform var(--dur-base) var(--ease-spring);
+    min-height: 32px;
   }
   .moment-preview:hover .entry-date time {
     color: var(--accent-ink);
@@ -143,22 +137,14 @@ const media = [photos && `${photos} 张照片`, videos && `${videos} 段视频`]
   }
   @media (max-width: 720px) {
     .moment-preview {
-      padding-block: 14px 18px;
+      padding-block: 14px 16px;
     }
     .moment-preview-prints {
       gap: 4px;
-      margin-bottom: 12px;
-    }
-    .moment-preview-prints :global(img:first-child) {
-      border-top-left-radius: 8px;
-      border-bottom-left-radius: 8px;
-    }
-    .moment-preview-prints :global(img:last-child) {
-      border-top-right-radius: 8px;
-      border-bottom-right-radius: 8px;
+      margin-bottom: 10px;
     }
     .moment-preview-excerpt {
-      font-size: 15px;
+      font-size: var(--text-md);
     }
   }
 </style>

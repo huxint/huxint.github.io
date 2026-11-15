@@ -138,3 +138,19 @@ test('视频先显示封面，点击后播放并出现播放器', async ({ page 
     .poll(() => video.evaluate((element: HTMLVideoElement) => element.paused))
     .toBe(false);
 });
+
+test('生活记录里可以用标签页，预览里不出现标记', async ({ page }) => {
+  await page.goto('/life/note/');
+  const tabs = page.locator('.moment-text .tabs');
+  await expect(tabs.getByRole('tab')).toHaveText(['Morning', 'Evening']);
+  await expect(page.getByText('Morning panel.')).toBeVisible();
+  await tabs.getByRole('tab', { name: 'Evening' }).click();
+  await expect(page.getByText('Morning panel.')).toBeHidden();
+  await expect(page.getByText('Evening panel.')).toBeVisible();
+
+  await page.goto('/life/');
+  const preview = page.getByRole('link', { name: '2020.01.02 的记录' });
+  await expect(preview).toContainText('Morning panel.');
+  await expect(preview).not.toContainText('[!TAB]');
+  await expect(preview).not.toContainText('Morning Morning');
+});

@@ -28,7 +28,7 @@ const groups = Map.groupBy(posts, (post) => yearOf(post.data.pubDate));
               <span>约 {readingMinutes(post.body)} 分钟</span>
             </p>
             <div class="post-body">
-              <Heading class="post-title">
+              <Heading class="post-title entry-title">
                 <a
                   class="inline-markdown"
                   href={`/posts/${post.id}/`}
@@ -37,7 +37,7 @@ const groups = Map.groupBy(posts, (post) => yearOf(post.data.pubDate));
                 {post.data.draft && <span class="draft-badge">草稿</span>}
               </Heading>
               <p
-                class="post-summary inline-markdown"
+                class="post-summary summary inline-markdown"
                 set:html={inlineHtml(post.data.description)}
               />
               <p class="tag-links">
@@ -60,28 +60,12 @@ const groups = Map.groupBy(posts, (post) => yearOf(post.data.pubDate));
   .post-body {
     max-width: var(--measure);
   }
-  .post-title {
-    font-family: var(--font-serif);
-    font-size: 20px;
-    font-weight: 600;
-    line-height: 1.5;
-    overflow-wrap: anywhere;
-  }
-  .post-title a {
-    transition: color var(--dur-fast) ease;
-  }
-  .post-title a:hover {
-    color: var(--accent-ink);
-  }
   .post-title .draft-badge {
     margin-left: 8px;
     vertical-align: 3px;
   }
   .post-summary {
     margin-top: 4px;
-    color: var(--muted);
-    font-size: 15px;
-    line-height: 1.8;
   }
   .tag-links {
     margin-top: 6px;
@@ -89,9 +73,6 @@ const groups = Map.groupBy(posts, (post) => yearOf(post.data.pubDate));
   @media (max-width: 720px) {
     .post-item {
       padding-block: 14px;
-    }
-    .post-title {
-      font-size: 19px;
     }
   }
 </style>

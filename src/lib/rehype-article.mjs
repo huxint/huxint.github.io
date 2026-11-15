@@ -12,6 +12,16 @@ const CALLOUTS = new Map([
   ['警告', { type: 'warning', label: '警告' }],
   ['caution', { type: 'caution', label: '注意' }],
   ['注意', { type: 'caution', label: '注意' }],
+  ['definition', { type: 'definition', label: '定义' }],
+  ['定义', { type: 'definition', label: '定义' }],
+  ['theorem', { type: 'theorem', label: '定理' }],
+  ['定理', { type: 'theorem', label: '定理' }],
+  ['lemma', { type: 'theorem', label: '引理' }],
+  ['引理', { type: 'theorem', label: '引理' }],
+  ['proof', { type: 'proof', label: '证明' }],
+  ['证明', { type: 'proof', label: '证明' }],
+  ['example', { type: 'example', label: '例' }],
+  ['例', { type: 'example', label: '例' }],
 ]);
 
 const CALLOUT_SYMBOLS = {
@@ -39,6 +49,22 @@ const CALLOUT_SYMBOLS = {
     outline: 'M6 1.5h8L18.5 6v8L14 18.5H6L1.5 14V6Z',
     detail: 'm7 7 6 6M13 7l-6 6',
   },
+  definition: {
+    outline: 'M4 2.5h8.5L16 6v11.5H4Z',
+    detail: 'M7 9.5h6M7 13h4',
+  },
+  theorem: {
+    outline: 'M3 3h14v14H3Z',
+    detail: 'M7 7.5h6M10 7.5V14',
+  },
+  proof: {
+    outline: 'M3 3h14v14H3Z',
+    detail: 'm6.5 10.3 2.5 2.5 4.5-5.3',
+  },
+  example: {
+    outline: 'M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0',
+    detail: 'M8.4 6.8v6.4l5-3.2Z',
+  },
 };
 
 function classesOf(node) {
@@ -54,11 +80,11 @@ function textContent(node) {
   return (node.children ?? []).map(textContent).join('');
 }
 
-function calloutTitle(callout) {
+function calloutTitle(callout, title, fold) {
   const symbol = CALLOUT_SYMBOLS[callout.type];
   return {
     type: 'element',
-    tagName: 'p',
+    tagName: fold ? 'summary' : 'p',
     properties: { className: ['callout-title'] },
     children: [
       {
@@ -113,32 +139,146 @@ function calloutTitle(callout) {
         properties: {},
         children: [{ type: 'text', value: callout.label }],
       },
+      ...(title.length
+        ? [
+            {
+              type: 'element',
+              tagName: 'span',
+              properties: { className: ['callout-name'] },
+              children: title,
+            },
+          ]
+        : []),
     ],
   };
 }
 
-function transformCallout(node) {
+// Reads `[!TYPE]`, an optional - or + to fold, and an optional title on the
+// same line from the start of a quote. The marker and title leave the quote.
+function takeMarker(node) {
   const firstIndex = node.children.findIndex(
     (child) => child.type === 'element' && child.tagName === 'p',
   );
   if (firstIndex < 0) return;
   const first = node.children[firstIndex];
-  const marker = first.children.find(
-    (child) => child.type === 'text' && /^\s*\[!/.test(child.value),
-  );
-  if (!marker) return;
-
-  const match = marker.value.match(/^\s*\[!([^\]]+)\]\s*/);
+  const marker = first.children[0];
+  if (marker?.type !== 'text') return;
+  const match = marker.value.match(/^\s*\[!([^\]]+)\]([-+]?)[^\S\n]*/);
   if (!match) return;
-  const callout = CALLOUTS.get(match[1].trim().toLowerCase());
-  if (!callout) return;
+  const type = match[1].trim().toLowerCase();
+  if (type !== 'tab' && !CALLOUTS.has(type)) return;
 
   marker.value = marker.value.slice(match[0].length);
-  if (!marker.value) first.children.splice(first.children.indexOf(marker), 1);
+  const title = [];
+  while (first.children.length) {
+    const child = first.children[0];
+    const line = child.type === 'text' ? child.value.indexOf('\n') : -1;
+    if (line < 0) {
+      title.push(first.children.shift());
+      continue;
+    }
+    if (line > 0)
+      title.push({ type: 'text', value: child.value.slice(0, line) });
+    child.value = child.value.slice(line + 1);
+    if (!child.value) first.children.shift();
+    break;
+  }
+  if (title[0]?.type === 'text' && !title[0].value) title.shift();
   if (first.children.length === 0) node.children.splice(firstIndex, 1);
+  return { type, fold: match[2], title };
+}
 
+function isTab(node) {
+  if (node.type !== 'element' || node.tagName !== 'blockquote') return false;
+  const first = node.children.find((child) => child.type === 'element');
+  const marker = first?.tagName === 'p' && first.children[0];
+  return marker?.type === 'text' && /^\s*\[!tab\]/i.test(marker.value);
+}
+
+// Consecutive `> [!TAB] 名字` quotes become one tab group.
+function groupTabs(parent, state) {
+  if (!parent.children) return;
+  const result = [];
+  let group;
+  for (const child of parent.children) {
+    if (isTab(child)) {
+      if (!group) {
+        group = [];
+        result.push(group);
+      }
+      group.push(child);
+      continue;
+    }
+    // Only the line breaks between quotes may sit inside a group.
+    if (!(child.type === 'text' && !child.value.trim())) group = undefined;
+    groupTabs(child, state);
+    result.push(child);
+  }
+  parent.children = result.map((item) => {
+    if (!Array.isArray(item)) return item;
+    const id = `tabs-${(state.count += 1)}`;
+    const tabs = item.map((quote, index) => {
+      const { title } = takeMarker(quote);
+      groupTabs(quote, state);
+      return {
+        label: title.length
+          ? title
+          : [{ type: 'text', value: `选项 ${index + 1}` }],
+        children: quote.children,
+      };
+    });
+    return {
+      type: 'element',
+      tagName: 'div',
+      properties: { className: ['tabs'] },
+      children: [
+        {
+          type: 'element',
+          tagName: 'div',
+          properties: { className: ['tabs-list'], role: 'tablist' },
+          children: tabs.map((tab, index) => ({
+            type: 'element',
+            tagName: 'button',
+            properties: {
+              type: 'button',
+              role: 'tab',
+              id: `${id}-tab-${index + 1}`,
+              ariaControls: `${id}-panel-${index + 1}`,
+              ariaSelected: String(index === 0),
+              tabIndex: index === 0 ? 0 : -1,
+            },
+            children: tab.label,
+          })),
+        },
+        ...tabs.map((tab, index) => ({
+          type: 'element',
+          tagName: 'div',
+          properties: {
+            className: ['tabs-panel'],
+            role: 'tabpanel',
+            id: `${id}-panel-${index + 1}`,
+            ariaLabelledBy: `${id}-tab-${index + 1}`,
+            hidden: index !== 0,
+          },
+          children: tab.children,
+        })),
+      ],
+    };
+  });
+}
+
+function transformCallout(node) {
+  const marker = takeMarker(node);
+  if (!marker) return;
+  const callout = CALLOUTS.get(marker.type);
   addClasses(node, ['callout', `callout--${callout.type}`]);
-  node.children.unshift(calloutTitle(callout));
+  if (marker.fold) {
+    node.tagName = 'details';
+    node.properties.open = marker.fold === '+';
+  }
+  node.children.unshift(
+    calloutTitle(callout, marker.title, Boolean(marker.fold)),
+  );
 }
 
 function mermaidFigure(source) {
@@ -187,6 +327,8 @@ export function rehypeArticle() {
       (message) => message.source === 'rehype-katex',
     );
     if (mathError) file.fail(mathError.reason, mathError.place);
+
+    groupTabs(tree, { count: 0 });
 
     visit(tree, 'element', (node, index, parent) => {
       if (

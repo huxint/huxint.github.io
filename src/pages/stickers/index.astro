@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PageHeader from '../../components/PageHeader.astro';
+import Icon from '../../components/Icon.astro';
 import { groups, stickers } from '../../lib/stickers/catalog.mjs';
 import '../../styles/stickers.css';
 ---
@@ -11,23 +12,57 @@ import '../../styles/stickers.css';
 >
   <main class="page" id="main">
     <PageHeader title="表情">
-      <p>
+      <p class="lede">
         在文章、标题和描述里写 <code>:名字:</code
-        >，就会换成对应的大猩猩。带字的梗图在文字里显示得更大，单独占一行时都会放大。点一下贴纸复制写法。
+        >，就会换成对应的大猩猩。带字的梗图在文字里显示得更大，单独占一行时都会放大。
       </p>
     </PageHeader>
+    <div class="sticker-toolbar rail-grid">
+      <div class="sticker-filter">
+        <label class="field sticker-search">
+          <Icon name="search" size={16} />
+          <span class="sr-only">筛选表情</span>
+          <input
+            type="search"
+            placeholder="筛选名字、配字或写法"
+            autocomplete="off"
+            spellcheck="false"
+            data-sticker-filter
+            data-shortcut-focus
+          />
+          <kbd class="key" aria-hidden="true">/</kbd>
+        </label>
+        <p class="sticker-count" data-sticker-count>
+          共 {stickers.length} 个，点一下复制写法。
+        </p>
+      </div>
+    </div>
     {
       groups.map((group) => {
         const members = stickers.filter(({ group: id }) => id === group.id);
         return (
-          <section class="sticker-group rail-grid" aria-labelledby={group.id}>
-            <h2 class="rail" id={group.id}>
+          <section
+            class="sticker-group rail-grid"
+            aria-labelledby={group.id}
+            data-sticker-group
+          >
+            <h2 class="rail label" id={group.id}>
               {group.label}
               <small>{members.length} 个</small>
             </h2>
             <ul class="sticker-grid">
               {members.map((sticker) => (
-                <li>
+                <li
+                  data-sticker-item
+                  data-sticker-search={[
+                    sticker.id,
+                    sticker.label,
+                    sticker.caption,
+                    group.label,
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                >
                   <button
                     class="sticker-card"
                     type="button"
@@ -36,9 +71,10 @@ import '../../styles/stickers.css';
                     <img
                       src={`/stickers/${sticker.id}.svg`}
                       alt=""
-                      width="96"
-                      height="96"
+                      width="88"
+                      height="88"
                       loading="lazy"
+                      decoding="async"
                     />
                     <span class="sticker-name">{sticker.label}</span>
                     <code>:{sticker.id}:</code>
@@ -50,6 +86,9 @@ import '../../styles/stickers.css';
         );
       })
     }
+    <div class="sticker-empty rail-grid" data-sticker-empty hidden>
+      <p>没有找到对应的表情。</p>
+    </div>
     <p class="sr-only" role="status" data-sticker-status></p>
   </main>
   <script>

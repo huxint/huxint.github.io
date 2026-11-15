@@ -24,10 +24,10 @@ test('目录点击后定位并高亮目标', async ({ page }) => {
 
 test('公式自适应桌面和窄屏，编号与正文保持间距', async ({ page }) => {
   const shortInline = page.locator('.prose u .math-inline');
-  const wideInline = page.locator('.prose p > .math-inline');
+  const wideInline = page.locator('.prose > p > .math-inline');
   await expect(shortInline).toHaveCount(1);
   await expect(wideInline).toHaveCount(1);
-  await expect(page.locator('.katex-display')).toHaveCount(2);
+  await expect(page.locator('.katex-display:not(.html-math *)')).toHaveCount(2);
 
   for (const width of [1280, 390, 320]) {
     await page.setViewportSize({ width, height: 900 });
@@ -131,7 +131,63 @@ test('文章图片在查看器里放大，可以切到下一张', async ({ page 
 
 test('提示块显示各自类型的标签', async ({ page }) => {
   const titles = page.locator('.prose .callout-title');
-  await expect(titles).toHaveText(['说明', '建议', '重点', '警告', '注意']);
+  await expect(titles).toHaveText([
+    '说明',
+    '建议',
+    '重点',
+    '警告',
+    '注意',
+    /^定理Folded/,
+  ]);
+});
+
+test('带标题的提示块可以折叠', async ({ page }) => {
+  const fold = page.locator('.prose details.callout');
+  await expect(fold.locator('.callout-name .katex')).toHaveCount(1);
+  await expect(fold.getByText('Folded body.')).toBeHidden();
+  await fold.locator('summary').click();
+  await expect(fold.getByText('Folded body.')).toBeVisible();
+});
+
+test('同名标签页联动并记住选择', async ({ page }) => {
+  const groups = page.locator('.prose .tabs');
+  await expect(groups).toHaveCount(2);
+  await expect(page.getByText('Alpha panel.')).toBeVisible();
+  await expect(page.getByText('Second beta.')).toBeVisible();
+  await groups.first().getByRole('tab', { name: 'Beta' }).click();
+  await expect(page.getByText('Alpha panel.')).toBeHidden();
+  await expect(groups.first().locator('.tabs-panel .katex')).toBeVisible();
+  await groups.first().getByRole('tab', { name: 'Beta' }).press('ArrowLeft');
+  await expect(page.getByText('Second alpha.')).toBeVisible();
+  await expect(page.getByText('Second beta.')).toBeHidden();
+  await page.reload();
+  await expect(page.getByText('Alpha panel.')).toBeVisible();
+  await expect(page.getByText('Second alpha.')).toBeVisible();
+});
+
+test('HTML 里的公式和正文公式一样渲染', async ({ page }) => {
+  const block = page.locator('.prose .html-math');
+  await expect(block.locator('.math-inline')).toHaveCount(1);
+  await expect(block.locator('.katex-display')).toHaveCount(1);
+  await expect(block.locator('p')).toContainText('costs $5 and $n$ stays.');
+
+  const frame = page
+    .locator('.render-block', { hasText: 'Fixture math frame' })
+    .frameLocator('iframe');
+  await expect(frame.locator('#static .math-inline .katex')).toHaveCount(2);
+  await expect(frame.locator('#dynamic .math-display .katex')).toHaveCount(1);
+  await expect(frame.locator('code')).toHaveText('$raw$');
+  await expect
+    .poll(() =>
+      frame
+        .locator('body')
+        .evaluate(() =>
+          [...document.fonts].some(
+            (font) => font.family === 'KaTeX_Size2' && font.status === 'loaded',
+          ),
+        ),
+    )
+    .toBe(true);
 });
 
 test('行内标记渲染高亮与下划线', async ({ page }) => {
@@ -158,4 +214,51 @@ test('脚注提供内容预览和返回正文的链接', async ({ page }) => {
 
   await page.getByRole('link', { name: '返回正文', exact: true }).click();
   await expect(page).toHaveURL(/#user-content-fnref-fixture$/);
+});
+
+test('没有公式的 HTML 块不加载公式脚本', async ({ page }) => {
+  const frame = (title: string) =>
+    page.locator('.render-block', { hasText: title }).locator('iframe');
+  // A regex replacement and a template literal use dollars of their own.
+  const plain = frame('Fixture plain frame');
+  await expect(plain.contentFrame().locator('#plain')).toHaveText(
+    'value key costs',
+  );
+  const size = (target: typeof plain) =>
+    target.evaluate((element) => (element as HTMLIFrameElement).srcdoc.length);
+  expect(await size(frame('Fixture math frame'))).toBeGreaterThan(
+    (await size(plain)) + 200_000,
+  );
+});
+
+test('标题悬停时出现指向自己的链接', async ({ page }) => {
+  const heading = page.locator('.prose h2#target-section');
+  const anchor = heading.locator('.heading-anchor');
+  await expect(anchor).toHaveAttribute('href', '#target-section');
+  await expect(anchor).toHaveCSS('opacity', '0');
+  await heading.hover();
+  await expect(anchor).toHaveCSS('opacity', '1');
+  // The link is a pointer aid; it stays out of the heading's name.
+  await expect(anchor).toHaveAttribute('aria-hidden', 'true');
+  await expect(page.locator('.footnotes .heading-anchor')).toHaveCount(0);
+});
+
+test.describe('复制', () => {
+  test.use({ permissions: ['clipboard-read', 'clipboard-write'] });
+
+  test('复制带公式的文字得到 LaTeX 源码', async ({ page }) => {
+    await page
+      .locator('.prose p', { hasText: 'An underlined formula' })
+      .evaluate((paragraph) => {
+        const range = document.createRange();
+        range.selectNodeContents(paragraph);
+        const selection = getSelection()!;
+        selection.removeAllRanges();
+        selection.addRange(range);
+      });
+    await page.keyboard.press('ControlOrMeta+C');
+    await expect
+      .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+      .toBe('An underlined formula: $a^2+b^2=c^2$.');
+  });
 });

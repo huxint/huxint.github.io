@@ -1,3 +1,5 @@
+/* Paper, ink and one accent. Text has three strengths, and each of them
+   passes 4.5:1 on the page and on raised surfaces. */
 :root {
   color-scheme: light;
   --bg: #f6f2ea;
@@ -5,40 +7,90 @@
   --bg-sunken: #f0eadf;
   --surface: #eee8dd;
   --text: #201d18;
-  --muted: #6b655c;
-  --faint: #847d72;
+  --muted: #5f5a52;
+  --faint: #736d63;
   --rule: #e2dbcf;
   --rule-strong: #cfc6b7;
   --accent: #b85a31;
   --accent-ink: #893c1d;
   --accent-soft: #f3e2d5;
-  --accent-glow: rgb(184 90 49 / 0.16);
   --portrait-bg: #ece5d8;
   --portrait-border: #ddd3c2;
   --shadow:
     0 1px 2px rgb(40 30 10 / 0.05), 0 18px 46px -32px rgb(40 30 10 / 0.32);
+
+  /* Type. One sans family sets every heading, label and paragraph, so a page
+     reads the same on a phone, a Mac and a Windows laptop: Inter draws the
+     Latin letters and figures, the system's own sans the Chinese. Mono is for
+     code and for figures that line up; formulas are KaTeX's. */
   --font-cjk:
-    'PingFang SC', 'Hiragino Sans GB', 'Noto Sans CJK SC', 'Source Han Sans SC',
-    'Microsoft YaHei';
+    'PingFang SC', 'Hiragino Sans GB', 'Noto Sans CJK SC', 'Noto Sans SC',
+    'Source Han Sans SC', 'HarmonyOS Sans SC', 'Microsoft YaHei';
   --font-sans:
     'Inter Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI',
     var(--font-cjk), sans-serif;
-  --font-serif:
-    'Source Han Serif SC', 'Noto Serif CJK SC', 'Songti SC', 'STSong', 'SimSun',
-    'Georgia', 'Times New Roman', serif;
   /* Chinese in code uses the body's Chinese face. Left to the generic
      monospace, it falls to whatever the system pairs with it, often a Song
      face on Windows. Liberation Mono keeps arrows and symbols narrow on Linux. */
   --font-mono:
     'JetBrains Mono Variable', 'SFMono-Regular', Menlo, Consolas,
     'Liberation Mono', var(--font-cjk), monospace;
+  /* Titles share the text family. Point this at another stack to give every
+     title on the site a different face in one place. */
+  --font-display: var(--font-sans);
+  /* Not a text face. Figures that draw their own formulas name it after
+     KaTeX's fonts, for the glyphs those lack. */
+  --font-serif:
+    'Source Han Serif SC', 'Noto Serif CJK SC', 'Songti SC', 'STSong', Georgia,
+    'Times New Roman', serif;
+
+  /* The scale. Every font size on the site is one of these steps. */
+  --text-xs: 0.75rem; /* 12  counts, badges, keys */
+  --text-sm: 0.8125rem; /* 13  meta, captions, labels */
+  --text-ui: 0.875rem; /* 14  controls, secondary links */
+  --text-md: 0.9375rem; /* 15  navigation, summaries */
+  --text-base: 1rem; /* 16  paragraphs outside articles */
+  --text-prose: 1.0625rem; /* 17  article text */
+  --text-lg: 1.125rem; /* 18  ledes */
+  --text-xl: 1.25rem; /* 20  entry titles, h3 */
+  --text-2xl: 1.5rem; /* 24  section titles, h2 */
+  --text-3xl: clamp(1.75rem, 1.2rem + 2.2vw, 2.5rem); /* 28–40  page titles */
+  --text-4xl: clamp(2rem, 1.3rem + 3vw, 3rem); /* 32–48  the two heroes */
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-bold: 600;
+  /* Titles are large enough to lead without being heavy. Medium also keeps
+     Chinese and Latin at the same weight: asked for 600, the system's Chinese
+     face answers with its bold. Headings inside an article and small labels
+     stay bold, since only weight sets them apart from the text. */
+  --weight-title: var(--weight-medium);
+
+  --leading-display: 1.22;
+  --leading-title: 1.45;
+  --leading-ui: 1.6;
+  --leading-body: 1.8;
+  --leading-prose: 1.9;
+
+  /* Large type is set a little tighter, small capitals of data a little looser. */
+  --tracking-display: -0.02em;
+  --tracking-title: -0.011em;
+  --tracking-label: 0.04em;
+
+  --radius-xs: 3px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-full: 999px;
+
   /* Every page hangs off one edge: a rail for labels, dates and navigation,
      then the main column. The header aligns its navigation to the same line. */
   --wide: 1080px;
   --measure: 720px;
   --rail: clamp(120px, 16vw, 200px);
   --gutter: clamp(28px, 4vw, 48px);
-  --header-height: 64px;
+  --page-margin: 24px;
+  --header-height: 60px;
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-spring: cubic-bezier(0.34, 1.28, 0.64, 1);
   --dur-fast: 140ms;
@@ -52,14 +104,13 @@
   --bg-sunken: #131315;
   --surface: #232328;
   --text: #e9e3d9;
-  --muted: #a49d92;
-  --faint: #8a847a;
+  --muted: #a8a196;
+  --faint: #918b81;
   --rule: #2d2c32;
   --rule-strong: #3d3c44;
   --accent: #df9b6f;
   --accent-ink: #edb690;
   --accent-soft: #30251e;
-  --accent-glow: rgb(223 155 111 / 0.14);
   --portrait-bg: #232328;
   --portrait-border: #35343b;
   --shadow: 0 1px 2px rgb(0 0 0 / 0.38), 0 20px 48px -32px rgb(0 0 0 / 0.82);
@@ -85,23 +136,31 @@ body {
   background-color: var(--bg);
   color: var(--text);
   font-family: var(--font-sans);
-  font-size: 16px;
-  line-height: 1.8;
+  font-size: var(--text-base);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-body);
   font-optical-sizing: auto;
+  /* A thin space between Chinese and Latin where the author typed none. */
+  text-autospace: normal;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
-strong {
-  font-weight: 650;
+strong,
+b,
+th {
+  font-weight: var(--weight-bold);
 }
 a {
   color: inherit;
   text-decoration: none;
 }
 button,
-input {
+input,
+select,
+textarea {
   font: inherit;
+  letter-spacing: inherit;
 }
 button {
   color: inherit;
@@ -119,8 +178,8 @@ summary {
 }
 :focus-visible {
   outline: 2px solid var(--accent);
-  outline-offset: 4px;
-  border-radius: 2px;
+  outline-offset: 3px;
+  border-radius: var(--radius-xs);
 }
 svg {
   display: block;
@@ -134,6 +193,12 @@ h1,
 h2,
 h3,
 h4,
+h5,
+h6 {
+  margin: 0;
+  font-size: inherit;
+  font-weight: var(--weight-bold);
+}
 p,
 dl,
 dd,
@@ -145,6 +210,9 @@ ol {
   margin: 0;
   padding: 0;
   list-style: none;
+}
+small {
+  font-size: var(--text-xs);
 }
 [hidden] {
   display: none !important;
@@ -166,10 +234,11 @@ ol {
   left: 1rem;
   z-index: 100;
   padding: 0.6rem 1rem;
-  background: var(--bg-raised);
   border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  background: var(--bg-raised);
   color: var(--accent-ink);
-  font-size: 14px;
+  font-size: var(--text-ui);
 }
 .skip-link:focus {
   top: 0.75rem;
@@ -178,9 +247,20 @@ ol {
   overflow: hidden;
 }
 
+/* Pages cross-fade into each other where the browser can do it by itself. */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition {
+    navigation: auto;
+  }
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 160ms;
+  }
+}
+
 /* Page frame and the shared rail grid */
 .page {
-  width: min(100% - 48px, var(--wide));
+  width: min(100% - var(--page-margin) * 2, var(--wide));
   margin: 0 auto;
   padding: 64px 0 112px;
   flex: 1;
@@ -218,19 +298,18 @@ ol {
   align-self: start;
   display: flex;
   flex-direction: column;
-  padding-top: 14px;
-  font-family: var(--font-serif);
-  font-size: 24px;
-  font-weight: 600;
-  line-height: 1.2;
+  padding-top: 16px;
+  font-size: var(--text-xl);
+  font-weight: var(--weight-title);
+  line-height: var(--leading-title);
+  letter-spacing: var(--tracking-title);
   font-variant-numeric: tabular-nums;
 }
 .year-label small {
-  margin-top: 6px;
   color: var(--faint);
-  font-family: var(--font-sans);
-  font-size: 12px;
-  font-weight: 400;
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-ui);
+  letter-spacing: 0;
 }
 .year-group > ol {
   grid-area: 1 / 1 / auto / -1;
@@ -246,33 +325,123 @@ ol {
   flex-direction: column;
   align-items: flex-end;
   color: var(--muted);
-  line-height: 1.5;
+  font-size: var(--text-xs);
+  line-height: var(--leading-ui);
   text-align: right;
 }
 .entry-date time {
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-variant-numeric: tabular-nums;
 }
 .entry-date span {
   color: var(--faint);
-  font-size: 12px;
 }
 
-/* Shared text pieces */
+/* Shared text pieces. Pages lay these out; none of them restyles the type. */
+.hero-title,
+.page-title,
+.section-title,
+.entry-title,
+.year-label {
+  font-family: var(--font-display);
+}
+.hero-title,
+.page-title {
+  font-weight: var(--weight-title);
+  line-height: var(--leading-display);
+  letter-spacing: var(--tracking-display);
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+.hero-title {
+  font-size: var(--text-4xl);
+}
+.page-title {
+  font-size: var(--text-3xl);
+}
+.section-title {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-title);
+  line-height: var(--leading-title);
+  letter-spacing: var(--tracking-title);
+  overflow-wrap: anywhere;
+}
+.entry-title {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-title);
+  line-height: var(--leading-title);
+  letter-spacing: var(--tracking-title);
+  overflow-wrap: anywhere;
+}
+:is(.section-title, .entry-title) a {
+  transition: color var(--dur-fast) ease;
+}
+:is(.section-title, .entry-title) a:hover {
+  color: var(--accent-ink);
+}
+.lede {
+  max-width: 36em;
+  color: var(--muted);
+  font-size: var(--text-base);
+  line-height: var(--leading-body);
+}
+.summary {
+  color: var(--muted);
+  font-size: var(--text-md);
+  line-height: var(--leading-body);
+}
+/* What a rail or a group is called: small, quiet, never bold. */
+.label {
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-ui);
+}
+.label small {
+  margin-left: 6px;
+  color: var(--faint);
+  font-weight: var(--weight-regular);
+}
+/* Dates, counts and indexes line up in mono. */
+.figures {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
 /* Post titles and descriptions, rendered by src/lib/inline-markdown.ts. */
 .inline-markdown .katex {
   font-size: 1.055em;
 }
 /* Code anywhere shows the characters as typed, without ligatures, and inline
    code sits a little smaller than the text around it. */
-:where(code, kbd, pre) {
+:where(code, kbd, pre, samp) {
   font-family: var(--font-mono);
   font-variant-ligatures: none;
+  text-autospace: no-autospace;
 }
 :where(:not(pre) > code) {
   font-size: 0.88em;
 }
+:where(.katex, svg) {
+  text-autospace: no-autospace;
+}
+.key {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-sm);
+  color: var(--faint);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: 1;
+}
+
 .text-link {
   display: inline-flex;
   align-items: center;
@@ -293,13 +462,81 @@ ol {
 .footnote-popover a:hover {
   text-decoration-color: var(--accent);
 }
+/* Links that lead somewhere: a row of them, the first one in the accent. An
+   arrow steps forward on hover. */
+.link-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 28px;
+  font-size: var(--text-ui);
+  line-height: var(--leading-ui);
+}
+.action-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+  color: var(--muted);
+  transition: color var(--dur-fast) ease;
+}
+.action-link.is-primary {
+  color: var(--accent-ink);
+  font-weight: var(--weight-medium);
+}
+.action-link:hover {
+  color: var(--accent-ink);
+}
+.action-link svg {
+  transition: transform var(--dur-base) var(--ease-spring);
+}
+.action-link.is-primary:hover svg:last-child,
+a:hover > .action-link svg:last-child {
+  transform: translateX(3px);
+}
+/* The entries on either side of this one: newer on the left, older right. */
+.pager {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--rule);
+}
+.pager a {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 56px;
+  font-size: var(--text-md);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-ui);
+}
+.pager a.is-next {
+  grid-column: 2;
+  flex-direction: row-reverse;
+  text-align: right;
+}
+.pager-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  transition: color var(--dur-fast) ease;
+}
+.pager small {
+  display: block;
+  color: var(--faint);
+  font-weight: var(--weight-regular);
+  font-variant-numeric: tabular-nums;
+}
+.pager a:hover .pager-text {
+  color: var(--accent-ink);
+}
 .back-link {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   min-height: 32px;
   color: var(--muted);
-  font-size: 14px;
+  font-size: var(--text-ui);
+  line-height: var(--leading-ui);
   white-space: nowrap;
   transition:
     color var(--dur-fast) ease,
@@ -309,6 +546,93 @@ ol {
   color: var(--accent-ink);
   transform: translateX(-2px);
 }
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 18px;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-md);
+  background: var(--bg-raised);
+  color: var(--text);
+  font-size: var(--text-ui);
+  font-weight: var(--weight-medium);
+  line-height: 1;
+  transition:
+    border-color var(--dur-fast) ease,
+    color var(--dur-fast) ease,
+    transform var(--dur-fast) ease;
+}
+.button:hover {
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+.button:active {
+  transform: scale(0.98);
+}
+.button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+/* A text field with its icon and shortcut inside one border. */
+.field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  height: 44px;
+  padding: 0 12px 0 14px;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-md);
+  background: var(--bg-raised);
+  color: var(--faint);
+  transition:
+    border-color var(--dur-fast) ease,
+    box-shadow var(--dur-base) ease;
+}
+.field:hover {
+  border-color: color-mix(in srgb, var(--rule-strong) 60%, var(--accent));
+}
+.field:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 13%, transparent);
+  color: var(--accent-ink);
+}
+.field input {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: var(--text-md);
+  appearance: none;
+}
+.field input::placeholder {
+  color: var(--faint);
+  opacity: 1;
+}
+.field input::-webkit-search-cancel-button {
+  display: none;
+}
+.field:focus-within .key {
+  visibility: hidden;
+}
+.field.is-large {
+  height: 56px;
+  padding-inline: 18px 14px;
+  gap: 12px;
+  border-radius: var(--radius-lg);
+}
+.field.is-large input {
+  font-size: var(--text-prose);
+}
+
 /* An emote sits in the line like a character. The art is detailed, so it needs
    about 38px to stay legible; beside large type it follows the text instead.
    A meme carries a caption, so it is drawn larger. Alone on its line, either
@@ -348,18 +672,20 @@ ol {
   height: 20px;
   padding: 0 6px;
   border: 1px solid var(--rule-strong);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-regular);
   line-height: 1;
+  letter-spacing: 0;
 }
 .tag-links {
   display: flex;
   flex-wrap: wrap;
   gap: 2px 14px;
   color: var(--muted);
-  font-size: 13px;
-  line-height: 1.7;
+  font-size: var(--text-sm);
+  line-height: var(--leading-ui);
 }
 .tag-links a {
   display: inline-flex;
@@ -383,7 +709,7 @@ ol {
   height: 40px;
   padding: 0;
   border: 0;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: transparent;
   color: var(--muted);
   transition:
@@ -399,13 +725,21 @@ ol {
   transform: scale(0.92);
 }
 
+/* On a phone the larger steps of the scale come down one notch, so no page
+   needs its own small-screen type rules. */
 @media (max-width: 720px) {
   :root {
-    --header-height: 96px;
+    --text-prose: 1rem;
+    --text-lg: 1.0625rem;
+    --text-xl: 1.125rem;
+    --text-2xl: 1.375rem;
+    --leading-prose: 1.85;
+    --page-margin: 20px;
+    /* Only the navigation row stays on screen; see Header.astro. */
+    --header-height: 44px;
   }
   .page {
-    width: calc(100% - 40px);
-    padding: 40px 0 80px;
+    padding: 36px 0 80px;
   }
   .rail-grid {
     display: block;
@@ -423,24 +757,28 @@ ol {
     align-items: baseline;
     gap: 10px;
     padding: 0 0 4px;
-    font-size: 22px;
   }
-  .year-label small {
-    margin: 0;
+  .pager {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .pager a.is-next {
+    grid-column: auto;
   }
   .year-entry {
     display: block;
   }
   .entry-date {
     flex-direction: row;
+    align-items: baseline;
     gap: 12px;
     margin-bottom: 2px;
     text-align: left;
   }
 }
 @media (max-width: 360px) {
-  .page {
-    width: calc(100% - 32px);
+  :root {
+    --page-margin: 16px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -470,7 +808,8 @@ ol {
     width: 100%;
     padding: 0;
   }
-  .back-link {
+  .back-link,
+  .pager {
     display: none;
   }
 }

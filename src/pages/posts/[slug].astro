@@ -6,6 +6,7 @@ import '../../styles/prose.css';
 import '../../styles/post.css';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ImageViewer from '../../components/ImageViewer.astro';
+import Icon from '../../components/Icon.astro';
 import { site } from '../../data/site';
 import { inlineHtml, inlineText } from '../../lib/inline-markdown';
 import {
@@ -19,14 +20,19 @@ export const getStaticPaths = (async () => {
   const posts = await getPosts();
   return posts.map((post, index) => ({
     params: { slug: post.id },
-    props: { post, next: posts[index + 1] ?? posts[index - 1] },
+    props: { post, newer: posts[index - 1], older: posts[index + 1] },
   }));
 }) satisfies GetStaticPaths;
 interface Props {
   post: Post;
-  next?: Post;
+  newer?: Post;
+  older?: Post;
 }
-const { post, next } = Astro.props;
+const { post, newer, older }: Props = Astro.props;
+const neighbours = [
+  newer && { post: newer, rel: 'prev', label: '较新' },
+  older && { post: older, rel: 'next', label: '较早' },
+].filter(Boolean) as { post: Post; rel: string; label: string }[];
 const title = inlineText(post.data.title);
 const description = inlineText(post.data.description);
 const { Content, headings } = await render(post);
@@ -83,7 +89,7 @@ const structuredArticle = {
       </div>
       <header class="post-header">
         <h1
-          class="inline-markdown"
+          class="page-title inline-markdown"
           data-pagefind-meta="title[data-title], titleWords[data-search-title]"
           data-title={title}
           data-search-title={searchTitle}
@@ -133,29 +139,30 @@ const structuredArticle = {
       }
       <div class="prose"><Content /></div>
     </article>
-    <footer class="post-footer">
+    <footer class="post-footer" data-pagefind-ignore>
       {
-        next && (
-          <section class="post-next" aria-labelledby="next-title">
-            <p class="post-next-label" id="next-title">
-              继续阅读
-            </p>
-            <div>
-              <a
-                class="post-next-link inline-markdown"
-                href={`/posts/${next.id}/`}
-                set:html={inlineHtml(next.data.title)}
-              />
-              <p
-                class="inline-markdown"
-                set:html={inlineHtml(next.data.description)}
-              />
-            </div>
-          </section>
+        neighbours.length > 0 && (
+          <nav class="pager" aria-label="前后文章">
+            {neighbours.map(({ post: neighbour, rel, label }) => (
+              <a href={`/posts/${neighbour.id}/`} rel={rel} class={`is-${rel}`}>
+                <span class="pager-text">
+                  <small>
+                    {label} · {formatDate(neighbour.data.pubDate)}
+                  </small>
+                  <span
+                    class="inline-markdown"
+                    set:html={inlineHtml(neighbour.data.title)}
+                  />
+                </span>
+              </a>
+            ))}
+          </nav>
         )
       }
       <p class="post-end">
-        <a href="/rss.xml">通过 RSS 订阅</a><a href="#top">回到顶部 ↑</a>
+        <a class="action-link" href="/rss.xml"
+          ><Icon name="rss" size={15} />通过 RSS 订阅</a
+        ><a class="action-link" href="#top">回到顶部 ↑</a>
       </p>
     </footer>
   </main>

@@ -32,7 +32,7 @@ const { project } = Astro.props;
         >
       </p>
     </div>
-    <h1>{project.name}</h1>
+    <h1 class="page-title">{project.name}</h1>
     <section
       class="readme"
       data-project-readme
@@ -45,11 +45,13 @@ const { project } = Astro.props;
         正在读取 README…
       </p>
       <div class="readme-error" data-readme-error hidden>
-        <p>README 暂时无法读取。</p><button type="button" data-readme-retry
-          >重试</button
-        ><a href={`${project.repository}#readme`}
-          >在 GitHub 阅读 <Icon name="external" size={14} /></a
-        >
+        <p>README 暂时无法读取。</p>
+        <p class="link-row">
+          <button class="button" type="button" data-readme-retry>重试</button>
+          <a class="action-link" href={`${project.repository}#readme`}
+            >在 GitHub 阅读 <Icon name="external" size={14} /></a
+          >
+        </p>
       </div>
       <article class="prose readme-body" data-readme-body></article>
       <noscript

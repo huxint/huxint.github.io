@@ -26,7 +26,9 @@ const date = formatDate(datetime);
       {draft && <span class="draft-badge">草稿</span>}
     </p>
   </div>
-  <h1><time datetime={datetime.toISOString()}>{date}</time></h1>
+  <h1 class="page-title">
+    <time datetime={datetime.toISOString()}>{date}</time>
+  </h1>
   <div class="prose moment-text">
     <Content />
   </div>

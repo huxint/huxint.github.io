@@ -55,7 +55,7 @@ const neighbours = [
     <Moment moment={moment} />
     {
       neighbours.length > 0 && (
-        <nav class="moment-pager" aria-label="前后记录">
+        <nav class="pager moment-pager" aria-label="前后记录">
           {neighbours.map(({ moment: neighbour, rel, label }) => {
             const thumbnail = momentCover(neighbour);
             return (

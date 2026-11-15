@@ -1,77 +1,117 @@
-/* The catalogue: one grid per group, each card copies its :name:. */
+/* The catalogue: one grid per group, each tile copies its :name:. Tiles sit
+   straight on the page, where the stickers' white edge shows as it does in
+   an article. */
+.sticker-toolbar {
+  margin-bottom: 28px;
+}
+.sticker-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 24px;
+}
+.sticker-search {
+  flex: 0 1 320px;
+}
+.sticker-count {
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-ui);
+}
 .sticker-group {
-  margin-bottom: 40px;
+  padding-block: 20px 12px;
+  border-top: 1px solid var(--rule);
 }
 .sticker-group .rail {
   position: sticky;
   top: calc(var(--header-height) + 24px);
   align-self: start;
-  color: var(--muted);
-  font-size: 14px;
-  font-weight: 600;
+  display: flex;
+  flex-direction: column;
 }
 .sticker-group .rail small {
-  display: block;
-  margin-top: 4px;
-  color: var(--faint);
-  font-size: 12px;
-  font-weight: 400;
+  margin: 0;
 }
 .sticker-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
-  gap: 12px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+  grid-template-columns: repeat(auto-fill, minmax(116px, 1fr));
+  gap: 4px;
+  margin: -8px -8px 0;
 }
 .sticker-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
   width: 100%;
-  padding: 14px 8px 12px;
-  border: 1px solid var(--rule);
-  border-radius: 12px;
-  background: var(--bg-raised);
+  padding: 12px 6px 10px;
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: transparent;
   color: var(--text);
-  cursor: pointer;
-  transition:
-    border-color var(--dur-fast) ease,
-    transform var(--dur-base) var(--ease-out);
+  line-height: var(--leading-ui);
+  transition: background-color var(--dur-fast) ease;
 }
-.sticker-card:hover {
-  border-color: var(--accent);
-  transform: translateY(-2px);
+.sticker-card:hover,
+.sticker-card.is-copied {
+  background: var(--surface);
 }
 .sticker-card img {
-  margin-bottom: 6px;
+  margin-bottom: 4px;
+  transition: transform var(--dur-base) var(--ease-spring);
+}
+.sticker-card:hover img {
+  transform: scale(1.08) rotate(-2deg);
+}
+.sticker-card:active img {
+  transform: scale(0.96);
 }
 .sticker-name {
-  font-size: 14px;
+  font-size: var(--text-ui);
 }
 .sticker-card code {
+  max-width: 100%;
+  overflow: hidden;
   color: var(--faint);
-  font-family: var(--font-mono);
-  font-size: 12px;
-}
-.sticker-card.is-copied {
-  border-color: var(--accent);
+  font-size: var(--text-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color var(--dur-fast) ease;
 }
 .sticker-card.is-copied code {
   color: var(--accent-ink);
 }
+.sticker-empty {
+  padding-block: 32px;
+  border-top: 1px solid var(--rule);
+  color: var(--muted);
+  font-size: var(--text-ui);
+}
 @media (max-width: 720px) {
   .sticker-group {
     display: block;
+    padding-top: 14px;
   }
   .sticker-group .rail {
     position: static;
-    margin-bottom: 12px;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 14px;
   }
-  .sticker-group .rail small {
-    display: inline;
-    margin-left: 8px;
+  .sticker-search {
+    flex-basis: 100%;
+  }
+  .sticker-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 2px;
+    margin-inline: -6px;
+  }
+  .sticker-card img {
+    width: 76px;
+    height: 76px;
+  }
+  .sticker-empty {
+    display: block;
   }
 }

@@ -87,6 +87,10 @@ test('不存在的地址返回 404 并提供返回入口', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(
     '页面未找到',
   );
+  await expect(page.locator('main img.sticker')).toHaveAttribute(
+    'src',
+    '/stickers/confused.svg',
+  );
   await page.getByRole('link', { name: '← 返回文章列表', exact: true }).click();
   await expect(page).toHaveURL('/');
   await expect(page.locator('.post-title a').first()).toBeVisible();
@@ -109,4 +113,58 @@ test('标签页可以筛选标签并进入标签详情', async ({ page }) => {
   await expect(
     page.getByRole('navigation', { name: '相邻主题' }),
   ).toBeVisible();
+});
+
+test('文章末尾链接到前后两篇', async ({ page }) => {
+  await page.goto('/posts/reader/');
+  const pager = page.getByRole('navigation', { name: '前后文章' });
+  await expect(pager.getByRole('link')).toHaveCount(1);
+  const newer = pager.getByRole('link', { name: /较新/ });
+  await expect(newer).toContainText('Sticker Fixture');
+  await expect(newer.locator('img.sticker')).toHaveAttribute('alt', '笑哭');
+  await newer.click();
+
+  await expect(page).toHaveURL('/posts/stickers/');
+  const older = page
+    .getByRole('navigation', { name: '前后文章' })
+    .getByRole('link', { name: /较早/ });
+  await expect(older).toContainText('Fixture Reader');
+  await expect(older).toHaveAttribute('rel', 'next');
+});
+
+test('斜杠键聚焦本页的筛选框，没有时打开搜索', async ({ page }) => {
+  await page.goto('/tags/');
+  await page.keyboard.press('/');
+  const filter = page.getByRole('searchbox');
+  await expect(filter).toBeFocused();
+  // While typing, the key is a character.
+  await page.keyboard.type('a/b');
+  await expect(filter).toHaveValue('a/b');
+  await expect(page).toHaveURL('/tags/');
+
+  await page.goto('/about/');
+  await page.keyboard.press('/');
+  await expect(page).toHaveURL('/search/');
+  await expect(page.getByRole('searchbox')).toBeFocused();
+});
+
+test('Ctrl+K 在任何页面打开搜索', async ({ page }) => {
+  await page.goto('/tags/');
+  await page.getByRole('searchbox').focus();
+  await page.keyboard.press('Control+k');
+  await expect(page).toHaveURL('/search/');
+  await page.getByRole('link', { name: '关于', exact: true }).focus();
+  await page.keyboard.press('Control+k');
+  await expect(page.getByRole('searchbox')).toBeFocused();
+});
+
+test('主题色跟随当前主题', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.goto('/');
+  const themeColor = page.locator('meta[name="theme-color"]');
+  await expect(themeColor).toHaveAttribute('content', '#f6f2ea');
+  await page.getByRole('button', { name: '切换到深色模式' }).click();
+  await expect(themeColor).toHaveAttribute('content', '#161619');
+  await page.reload();
+  await expect(themeColor).toHaveAttribute('content', '#161619');
 });

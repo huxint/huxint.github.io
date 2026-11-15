@@ -65,6 +65,8 @@ export function momentCover(moment: Moment): ImageMetadata | undefined {
 export function momentExcerpt(moment: Moment, limit = 60): string {
   const text = joinLines(
     stickerText(moment.body ?? '')
+      // A callout or tab marker names a box; it is not part of the text.
+      .replace(/^\s*>\s*\[![A-Za-z]+\][-+]?.*$/gm, '')
       .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
       .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
       .replace(/[#>*_`~]/g, ''),

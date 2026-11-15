@@ -1,4 +1,5 @@
 import './article-enhancements';
+import './tabs';
 import './math';
 import { openViewer } from './image-viewer';
 import { livePlayer } from './live-player';

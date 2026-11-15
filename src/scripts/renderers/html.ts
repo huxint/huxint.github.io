@@ -1,7 +1,27 @@
-import interFont from '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url';
+import interFont from '@fontsource-variable/inter/files/inter-latin-opsz-normal.woff2?url';
 import monoFont from '@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2?url';
 import mathMainFont from 'katex/dist/fonts/KaTeX_Main-Regular.woff2?url';
 import mathItalicFont from 'katex/dist/fonts/KaTeX_Math-Italic.woff2?url';
+import katexScript from 'katex/dist/katex.min.js?url';
+import katexStyle from 'katex/dist/katex.min.css?inline';
+
+// name ("KaTeX_Main-Bold") -> url. Frames ask for the faces their formulas use.
+const mathFonts = new Map(
+  Object.entries(
+    import.meta.glob<string>('/node_modules/katex/dist/fonts/*.woff2', {
+      query: '?url',
+      import: 'default',
+      eager: true,
+    }),
+  ).map(([path, url]) => [path.match(/([^/]+)\.woff2$/)![1], url]),
+);
+const mathFontData = new Map<string, Promise<ArrayBuffer>>();
+// The frame cannot fetch the host's font files, so the faces arrive by message.
+const mathStyle = `${katexStyle.replace(/@font-face\{[^}]*\}/g, '')}
+  .katex{font-size:1.055em}
+  .math-display{display:block;margin:1em 0;overflow-x:auto;overflow-y:hidden;text-align:center}
+  .math-display>.katex-display{margin:0}
+`;
 
 // The host owns vertical scrolling, so viewport scrollbars must not narrow the measurement.
 // Media queries see the frame, which on phones is the viewport less 40px of page margin:
@@ -9,9 +29,10 @@ import mathItalicFont from 'katex/dist/fonts/KaTeX_Math-Italic.woff2?url';
 const baseStyle = `
   *,*::before,*::after{box-sizing:border-box}
   html{background:transparent;overflow-y:clip}
-  body{display:flow-root;margin:0;min-width:0;background:transparent;color:var(--text);font:17px/1.95 var(--font-sans);overflow-wrap:break-word}
+  body{display:flow-root;margin:0;min-width:0;background:transparent;color:var(--text);font:17px/1.9 var(--font-sans);font-optical-sizing:auto;overflow-wrap:break-word;-webkit-font-smoothing:antialiased}
+  b,strong,th{font-weight:600}
   button,input,select,textarea{font:inherit;color:inherit}
-  code,pre{font-family:var(--font-mono);font-variant-ligatures:none}
+  code,pre,kbd,samp{font-family:var(--font-mono);font-variant-ligatures:none}
   math{font-family:KaTeX_Main,var(--font-serif)}
   math mi{font-family:KaTeX_Math;font-style:italic;text-transform:none}
   math mtext{font-family:var(--font-sans)}
@@ -90,8 +111,100 @@ function frameBridge(): void {
     queueMicrotask(reportHeight);
   }
 
+  // Formulas use the article's delimiters: $…$, \(…\), $$…$$ and \[…\].
+  // KaTeX is present only when the block's source looks like it has any.
+  const katex = (window as any).katex;
+  if (katex) {
+    const pattern =
+      /\$\$([\s\S]+?)\$\$|\\\[([\s\S]+?)\\\]|\\\(([\s\S]+?)\\\)|(?<![\\$A-Za-z0-9])\$(?![\s$])((?:\\[\s\S]|[^$\\])+?)(?<![\s\\])\$(?![\d$])/g;
+    const skipped =
+      'script,style,code,pre,textarea,kbd,samp,svg,math,template,.katex,[data-no-math],[contenteditable]';
+    // The two faces every formula needs are already in the base style.
+    const requestedFonts = new Set(['KaTeX_Main-Regular', 'KaTeX_Math-Italic']);
+
+    const requestFonts = (formula: HTMLElement): void => {
+      for (const element of formula.querySelectorAll<HTMLElement>(
+        '.katex-html *',
+      )) {
+        if (!element.firstChild || element.firstChild.nodeType !== 3) continue;
+        const style = getComputedStyle(element);
+        const family = style.fontFamily.split(',')[0].replace(/["']/g, '');
+        if (!family.startsWith('KaTeX_')) continue;
+        const variant =
+          (Number(style.fontWeight) >= 600 ? 'Bold' : '') +
+          (style.fontStyle === 'italic' ? 'Italic' : '');
+        const name = `${family}-${variant || 'Regular'}`;
+        if (requestedFonts.has(name)) continue;
+        requestedFonts.add(name);
+        parent.postMessage({ type: 'article-render:font', name }, '*');
+      }
+    };
+
+    const renderText = (node: Text): void => {
+      const text = node.data;
+      if (!text.includes('$') && !text.includes('\\')) return;
+      if (!node.parentElement || node.parentElement.closest(skipped)) return;
+      let fragment: DocumentFragment | undefined;
+      let last = 0;
+      pattern.lastIndex = 0;
+      for (let match; (match = pattern.exec(text));) {
+        fragment ??= document.createDocumentFragment();
+        const display = match[1] ?? match[2];
+        const holder = document.createElement('span');
+        holder.className =
+          display === undefined ? 'math-inline' : 'math-display';
+        katex.render(display ?? match[3] ?? match[4], holder, {
+          displayMode: display !== undefined,
+          throwOnError: false,
+        });
+        fragment.append(text.slice(last, match.index), holder);
+        last = pattern.lastIndex;
+      }
+      if (!fragment) return;
+      fragment.append(text.slice(last));
+      const formulas = [...fragment.children] as HTMLElement[];
+      node.replaceWith(fragment);
+      // Computed fonts exist only once the formula is in the document.
+      formulas.forEach(requestFonts);
+    };
+
+    const renderMath = (root: Node): void => {
+      if (root.nodeType === 3) return renderText(root as Text);
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+      const texts: Text[] = [];
+      while (walker.nextNode()) texts.push(walker.currentNode as Text);
+      texts.forEach(renderText);
+    };
+
+    renderMath(document.body);
+    // Scripts keep writing formulas as readers drag and click.
+    new MutationObserver((records) => {
+      for (const record of records) {
+        if (record.type === 'characterData') renderMath(record.target);
+        else
+          record.addedNodes.forEach((node) => {
+            if (node.isConnected) renderMath(node);
+          });
+      }
+    }).observe(document.body, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+  }
+
   window.addEventListener('message', ({ source, data }) => {
-    if (source !== parent || data?.type !== 'article-render:theme') return;
+    if (source !== parent) return;
+    if (data?.type === 'article-render:font') {
+      document.fonts.add(
+        new FontFace(data.family, data.buffer, {
+          weight: data.weight,
+          style: data.style,
+        }),
+      );
+      return;
+    }
+    if (data?.type !== 'article-render:theme') return;
     if (document.documentElement.dataset.theme === data.theme) return;
     document.documentElement.dataset.theme = data.theme;
     document.getElementById('article-render-theme')!.textContent = data.css;
@@ -131,8 +244,35 @@ function syncTheme(frame: HTMLIFrameElement): void {
   );
 }
 
+function sendFont(frame: HTMLIFrameElement, name: string): void {
+  const url = mathFonts.get(name);
+  if (!url) return;
+  let data = mathFontData.get(name);
+  if (!data) {
+    data = fetch(url).then((response) => response.arrayBuffer());
+    mathFontData.set(name, data);
+  }
+  const [family, variant] = name.split('-');
+  void data.then((buffer) =>
+    frame.contentWindow?.postMessage(
+      {
+        type: 'article-render:font',
+        family,
+        weight: variant.startsWith('Bold') ? 'bold' : 'normal',
+        style: variant.endsWith('Italic') ? 'italic' : 'normal',
+        buffer,
+      },
+      '*',
+    ),
+  );
+}
+
 window.addEventListener('message', ({ source, data }) => {
   const frame = frames.get(source);
+  if (frame && data?.type === 'article-render:font') {
+    if (typeof data.name === 'string') sendFont(frame, data.name);
+    return;
+  }
   if (
     !frame ||
     data?.type !== 'article-render:height' ||
@@ -153,20 +293,42 @@ window.addEventListener('resize', () => {
   themeSnapshot = undefined;
 });
 
-function frameDocument(source: string, fonts: string): string {
+// A dollar sign or a TeX bracket means formulas. Template literals (\${x}) and
+// the groups of a regex replacement ($1, $&) are JavaScript's own dollars.
+function hasMath(source: string): boolean {
+  return /\$|\\[([]|katex/.test(source.replace(/\$(?:[{&\d])/g, ''));
+}
+
+let katexSource: Promise<string> | undefined;
+
+// Like the fonts, the script is fetched here: the frame's origin may not load it.
+function frameKatex(): Promise<string> {
+  return (katexSource ??= fetch(katexScript)
+    .then((response) => response.text())
+    .then((code) => code.replaceAll('</script', '<\\/script')));
+}
+
+function frameDocument(source: string, fonts: string, katex?: string): string {
   const { theme, css } = currentTheme();
+  const math = katex !== undefined;
+  const style = fonts + baseStyle + (math ? mathStyle : '');
   // Fragments go straight to the browser parser; full documents retain their attributes.
   if (!/<(?:!doctype\b|\/?(?:html|head|body)\b)/i.test(source))
-    return `<!doctype html><html lang="${document.documentElement.lang}" data-theme="${theme}"><head><style>${fonts}${baseStyle}</style><style id="article-render-theme">${css}</style>${source}<body><script>${bridgeSource}</script></body></html>`;
+    return `<!doctype html><html lang="${document.documentElement.lang}" data-theme="${theme}"><head><style>${style}</style><style id="article-render-theme">${css}</style>${math ? `<script>${katex}</script>` : ''}${source}<body><script>${bridgeSource}</script></body></html>`;
   const content = new DOMParser().parseFromString(source, 'text/html');
   content.documentElement.lang = document.documentElement.lang;
   content.documentElement.dataset.theme = theme;
   const base = content.createElement('style');
-  base.textContent = fonts + baseStyle;
+  base.textContent = style;
   const themeStyle = content.createElement('style');
   themeStyle.id = 'article-render-theme';
   themeStyle.textContent = css;
   content.head.prepend(base, themeStyle);
+  if (math) {
+    const script = content.createElement('script');
+    script.textContent = katex;
+    themeStyle.after(script);
+  }
   const bridge = content.createElement('script');
   bridge.textContent = bridgeSource;
   content.body.append(bridge);
@@ -177,13 +339,16 @@ export async function render(
   target: HTMLElement,
   source: string,
 ): Promise<void> {
-  const fonts = await frameFontStyle();
+  const [fonts, katex] = await Promise.all([
+    frameFontStyle(),
+    hasMath(source) ? frameKatex() : undefined,
+  ]);
   const frame = document.createElement('iframe');
   frame.title = target.getAttribute('aria-label')!;
   frame.setAttribute('sandbox', 'allow-scripts');
   frame.height = '1';
   frame.addEventListener('load', () => syncTheme(frame));
-  frame.srcdoc = frameDocument(source, fonts);
+  frame.srcdoc = frameDocument(source, fonts, katex);
   target.replaceChildren(frame);
   frames.set(frame.contentWindow!, frame);
 }

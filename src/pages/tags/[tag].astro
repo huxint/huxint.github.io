@@ -50,7 +50,7 @@ const latest = posts[0];
     <PageHeader>
       <a slot="rail" class="back-link" href="/tags/">← 所有标签</a>
       <Fragment slot="title"><span class="tag-hash">#</span>{tag}</Fragment>
-      <p>
+      <p class="lede">
         {posts.length} 篇文章，最近一篇写于 {formatDate(latest.data.pubDate)}。
       </p>
       {

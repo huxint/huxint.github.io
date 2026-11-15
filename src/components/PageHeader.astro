@@ -14,7 +14,7 @@ const { title } = Astro.props;
     )
   }
   <div>
-    <h1><slot name="title">{title}</slot></h1>
+    <h1 class="page-title"><slot name="title">{title}</slot></h1>
     <slot />
   </div>
 </header>
@@ -23,35 +23,18 @@ const { title } = Astro.props;
   .page-header {
     margin-bottom: 48px;
   }
-  h1 {
-    font-family: var(--font-serif);
-    font-size: clamp(34px, 4vw, 44px);
-    font-weight: 600;
-    line-height: 1.25;
-    letter-spacing: -0.015em;
-    overflow-wrap: anywhere;
-    text-wrap: balance;
-  }
-  .page-header :global(:where(p)) {
-    max-width: 36em;
-    margin-top: 14px;
-    color: var(--muted);
-    font-size: 16px;
-    line-height: 1.8;
+  .page-header :global(:where(.lede)) {
+    margin-top: 12px;
   }
   @media (max-width: 720px) {
     .page-header {
-      margin-bottom: 36px;
+      margin-bottom: 32px;
     }
     .rail {
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
-    h1 {
-      font-size: 32px;
-    }
-    .page-header :global(:where(p)) {
-      margin-top: 10px;
-      font-size: 15px;
+    .page-header :global(:where(.lede)) {
+      margin-top: 8px;
     }
   }
 </style>

@@ -32,6 +32,30 @@ g(x)=\begin{cases}x,&x\ge0,\\-x,&x<0.\end{cases}
 \tag{1}
 $$
 
+## HTML math
+
+<div class="html-math">
+  <p>Inline $x^2 + y^2 &lt; r^2$ costs $5 and <code>$n$</code> stays.</p>
+  $$\int_0^1 x\,\mathrm{d}x = \frac12$$
+</div>
+
+```render html title="Fixture math frame"
+<p id="static">Static $a^2+b^2=c^2$ and \(\mathbf{v}\) here.</p>
+<p id="dynamic"></p>
+<code>$raw$</code>
+<script>
+  document.getElementById('dynamic').textContent = '$$\\sum_{i=1}^{n} i$$';
+</script>
+```
+
+```render html title="Fixture plain frame"
+<p id="plain"></p>
+<script>
+  const pair = 'key value'.replace(/(\w+) (\w+)/, '$2 $1');
+  document.getElementById('plain').textContent = `${pair} costs`;
+</script>
+```
+
 ## Callouts
 
 > [!NOTE]
@@ -48,6 +72,25 @@ $$
 
 > [!CAUTION]
 > Fixture caution.
+
+> [!THEOREM]- Folded $x$ title
+> Folded body.
+
+## Tabs
+
+> [!TAB] Alpha
+> Alpha panel.
+
+> [!TAB] Beta
+> Beta panel with $b^2$.
+
+Between groups.
+
+> [!TAB] Beta
+> Second beta.
+
+> [!TAB] Alpha
+> Second alpha.
 
 ## Diff
 

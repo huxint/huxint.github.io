@@ -29,11 +29,13 @@ function renderResult(result: ResultContent): HTMLLIElement {
   const item = document.createElement('li');
   item.className = 'search-result';
   const heading = document.createElement('h2');
+  heading.className = 'entry-title';
   const link = document.createElement('a');
   link.href = result.url;
   link.textContent = result.meta.title;
   heading.append(link);
   const excerpt = document.createElement('p');
+  excerpt.className = 'summary';
   excerpt.innerHTML = result.excerpt;
   item.append(heading, excerpt);
   return item;
@@ -144,3 +146,7 @@ moreButton.addEventListener('click', () => {
 
 input.value = new URL(location.href).searchParams.get('q') ?? '';
 if (input.value.trim()) void search();
+// With a keyboard at hand the page is ready to type into. On touch screens
+// focusing would raise the keyboard over the page.
+else if (matchMedia('(hover: hover) and (pointer: fine)').matches)
+  input.focus({ preventScroll: true });

@@ -70,7 +70,7 @@ const calendar = await getContributionCalendar('huxint');
   <main class="page" id="main">
     <header class="about-intro">
       <div class="intro-text">
-        <h1>{site.name}<span>.</span></h1>
+        <h1 class="hero-title">{site.name}<span>.</span></h1>
         <a class="school" href="https://www.jxnu.edu.cn/">
           <span class="school-emblem" aria-hidden="true"></span>
           <span>江西师范大学 · 人工智能专业，本科在读</span>
@@ -90,7 +90,9 @@ const calendar = await getContributionCalendar('huxint');
     {
       sections.map(({ id, title, links }) => (
         <section class="about-section" aria-labelledby={`${id}-heading`}>
-          <h2 id={`${id}-heading`}>{title}</h2>
+          <h2 class="label" id={`${id}-heading`}>
+            {title}
+          </h2>
           <ul class="links">
             {links.map(({ name, detail, href, icon: Glyph, size }) => (
               <li>
@@ -114,7 +116,9 @@ const calendar = await getContributionCalendar('huxint');
     {
       calendar && (
         <section class="about-section" aria-labelledby="github-heading">
-          <h2 id="github-heading">GitHub</h2>
+          <h2 class="label" id="github-heading">
+            GitHub
+          </h2>
           <figure class="calendar">
             <figcaption data-calendar-caption>
               过去一年 {calendar.total.toLocaleString('zh-CN')} 次贡献
@@ -179,17 +183,10 @@ const calendar = await getContributionCalendar('huxint');
   .about-intro {
     grid-template-columns: var(--rail) minmax(0, 1fr) auto;
     align-items: center;
-    padding: 8px 0 64px;
+    padding: 8px 0 56px;
   }
   .intro-text {
     grid-column: 2;
-  }
-  h1 {
-    font-family: var(--font-serif);
-    font-size: clamp(48px, 6vw, 68px);
-    font-weight: 600;
-    line-height: 1.1;
-    letter-spacing: -0.03em;
   }
   h1 span {
     color: var(--accent);
@@ -199,7 +196,8 @@ const calendar = await getContributionCalendar('huxint');
     align-items: center;
     gap: 10px;
     margin-top: 18px;
-    font-size: 15px;
+    font-size: var(--text-md);
+    line-height: var(--leading-ui);
     transition: color var(--dur-fast) ease;
   }
   .school:hover {
@@ -218,7 +216,6 @@ const calendar = await getContributionCalendar('huxint');
   .intro {
     margin-top: 8px;
     color: var(--muted);
-    font-size: 16px;
   }
 
   /* The avatar is a postage stamp in the envelope's top-right corner, its
@@ -260,7 +257,7 @@ const calendar = await getContributionCalendar('huxint');
 
   .about-section {
     align-items: start;
-    padding-block: 30px;
+    padding-block: 28px;
     border-top: 1px solid var(--rule);
   }
   .about-section:last-child {
@@ -268,9 +265,6 @@ const calendar = await getContributionCalendar('huxint');
   }
   h2 {
     justify-self: end;
-    color: var(--muted);
-    font-size: 14px;
-    font-weight: 500;
     line-height: 24px;
     white-space: nowrap;
   }
@@ -303,7 +297,7 @@ const calendar = await getContributionCalendar('huxint');
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    font-weight: 550;
+    font-weight: var(--weight-medium);
     line-height: 24px;
     transition: color var(--dur-fast) ease;
   }
@@ -317,8 +311,8 @@ const calendar = await getContributionCalendar('huxint');
   }
   .link-detail {
     color: var(--muted);
-    font-size: 14px;
-    line-height: 1.5;
+    font-size: var(--text-sm);
+    line-height: var(--leading-ui);
     overflow-wrap: anywhere;
   }
   .links a:hover .glyph {
@@ -334,7 +328,7 @@ const calendar = await getContributionCalendar('huxint');
 
   .calendar figcaption {
     color: var(--muted);
-    font-size: 14px;
+    font-size: var(--text-sm);
     line-height: 24px;
     font-variant-numeric: tabular-nums;
   }
@@ -358,7 +352,7 @@ const calendar = await getContributionCalendar('huxint');
   .calendar-months {
     margin-bottom: 6px;
     color: var(--faint);
-    font-size: 12px;
+    font-size: var(--text-xs);
     line-height: 1;
     white-space: nowrap;
   }
@@ -393,17 +387,14 @@ const calendar = await getContributionCalendar('huxint');
     .about-intro {
       grid-template-columns: minmax(0, 1fr) auto;
       column-gap: 20px;
-      padding: 0 0 40px;
+      padding: 0 0 36px;
     }
     .intro-text {
       grid-column: 1;
     }
-    h1 {
-      font-size: 44px;
-    }
     .school {
       align-items: flex-start;
-      font-size: 14px;
+      font-size: var(--text-ui);
       word-break: keep-all;
     }
     .stamp {

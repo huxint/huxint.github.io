@@ -8,6 +8,7 @@ import { rehypeArticle } from './src/lib/rehype-article.mjs';
 import { remarkMoment } from './src/lib/remark-moment.mjs';
 import { remarkStickers } from './src/lib/remark-stickers.mjs';
 import { remarkArticleExtras } from './src/lib/remark-article-extras.mjs';
+import { remarkHtmlMath } from './src/lib/remark-html-math.mjs';
 import { lifeMedia } from './src/integrations/life-media.mjs';
 import { pluginDiffDetails } from './src/lib/expressive-diff.mjs';
 
@@ -66,12 +67,14 @@ export default defineConfig({
       useDarkModeMediaQuery: false,
       themeCssSelector: (theme) => `[data-theme="${theme.type}"]`,
       styleOverrides: {
-        borderRadius: '8px',
+        borderRadius: 'var(--radius-md)',
         borderColor: 'var(--rule)',
         codeBackground: 'var(--bg-sunken)',
         codeFontFamily: 'var(--font-mono)',
-        codeFontSize: '0.83rem',
+        codeFontSize: 'var(--text-sm)',
         codeLineHeight: '1.75',
+        uiFontFamily: 'var(--font-sans)',
+        uiFontSize: 'var(--text-xs)',
         frames: {
           frameBoxShadowCssValue: 'none',
           editorActiveTabBackground: 'transparent',
@@ -98,6 +101,7 @@ export default defineConfig({
       remarkRehype: { footnoteLabel: '注释', footnoteBackLabel: '返回正文' },
       remarkPlugins: [
         remarkMath,
+        remarkHtmlMath,
         remarkArticleExtras,
         remarkStickers,
         remarkMoment,

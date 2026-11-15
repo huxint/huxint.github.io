@@ -12,29 +12,34 @@ const hasPosts = (await getPosts()).length > 0;
     <div class="search rail-grid">
       <div>
         <form class="search-form" role="search" action="/search/">
-          <label class="sr-only" for="search-input">搜索文章</label><Icon
-            name="search"
-          />
-          <input
-            class="search-input"
-            id="search-input"
-            name="q"
-            type="search"
-            placeholder="输入关键词"
-            autocomplete="off"
-            disabled={!hasPosts}
-          />
+          <label class="sr-only" for="search-input">搜索文章</label>
+          <div class="field is-large">
+            <Icon name="search" size={19} />
+            <input
+              id="search-input"
+              name="q"
+              type="search"
+              placeholder="输入关键词"
+              autocomplete="off"
+              spellcheck="false"
+              disabled={!hasPosts}
+              data-shortcut-focus
+            />
+            <kbd class="key" aria-hidden="true">/</kbd>
+          </div>
         </form>
         <div class="search-toolbar">
           <p class="search-status" role="status" aria-live="polite">
             {hasPosts ? '输入关键词开始搜索。' : '目前还没有可搜索的文章。'}
           </p>
-          <a class="text-link" href="/tags/">
+          <a class="action-link" href="/tags/">
             按标签浏览 <Icon name="arrow" size={15} />
           </a>
         </div>
         <ol class="search-results"></ol>
-        <button class="more-results" type="button" hidden>显示更多</button>
+        <button class="button more-results" type="button" hidden
+          >显示更多</button
+        >
         {
           hasPosts && (
             <noscript>
@@ -58,110 +63,36 @@ const hasPosts = (await getPosts()).length > 0;
   .search > div {
     max-width: var(--measure);
   }
-  .search-form {
-    position: relative;
-  }
-  .search-form > :global(svg) {
-    position: absolute;
-    top: 50%;
-    left: 18px;
-    color: var(--faint);
-    transform: translateY(-50%);
-    pointer-events: none;
-  }
-  .search-input {
-    width: 100%;
-    height: 56px;
-    padding: 0 18px 0 50px;
-    border: 1px solid var(--rule-strong);
-    border-radius: 12px;
-    background: var(--bg-raised);
-    color: var(--text);
-    font-size: 17px;
-    appearance: none;
-    transition:
-      border-color var(--dur-fast) ease,
-      box-shadow var(--dur-base) ease;
-  }
-  .search-input::placeholder {
-    color: var(--faint);
-  }
-  .search-input:hover {
-    border-color: color-mix(in srgb, var(--rule-strong) 70%, var(--accent));
-  }
-  .search-input:focus {
-    outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 13%, transparent);
-  }
   .search-toolbar {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 8px 16px;
-    margin-top: 16px;
-    font-size: 14px;
+    gap: 4px 16px;
+    margin-top: 12px;
+    font-size: var(--text-ui);
+    line-height: var(--leading-ui);
   }
   .search-status {
-    min-height: 26px;
     color: var(--muted);
   }
   .search-results {
-    margin-top: 16px;
+    margin-top: 12px;
   }
   .search-results :global(.search-result) {
     padding-block: 18px;
     border-top: 1px solid var(--rule);
   }
-  .search-results :global(h2) {
-    font-family: var(--font-serif);
-    font-size: 20px;
-    font-weight: 600;
-    line-height: 1.5;
-  }
-  .search-results :global(h2 a) {
-    transition: color var(--dur-fast) ease;
-  }
-  .search-results :global(h2 a:hover) {
-    color: var(--accent-ink);
-  }
-  .search-results :global(p) {
-    margin-top: 6px;
-    color: var(--muted);
-    font-size: 15px;
-    line-height: 1.85;
+  .search-results :global(.summary) {
+    margin-top: 4px;
   }
   .search-results :global(mark) {
     padding: 1px 3px;
-    border-radius: 3px;
+    border-radius: var(--radius-xs);
     background: var(--accent-soft);
     color: var(--accent-ink);
   }
   .more-results {
-    min-height: 44px;
-    margin-top: 24px;
-    padding: 0 20px;
-    border: 1px solid var(--rule-strong);
-    border-radius: 8px;
-    background: var(--bg-raised);
-    font-size: 15px;
-    transition:
-      border-color var(--dur-fast) ease,
-      color var(--dur-fast) ease;
-  }
-  .more-results:hover {
-    border-color: var(--accent);
-    color: var(--accent-ink);
-  }
-  .more-results:disabled {
-    opacity: 0.6;
-    cursor: progress;
-  }
-  @media (max-width: 720px) {
-    .search-input {
-      height: 52px;
-      font-size: 16px;
-    }
+    margin-top: 20px;
   }
 </style>

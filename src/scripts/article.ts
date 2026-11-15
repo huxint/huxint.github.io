@@ -1,7 +1,22 @@
 import './article-images';
 import './article-enhancements';
+import './tabs';
 import './render-blocks';
 import './math';
+
+// Each section heading gets a link to itself in the margin. The contents list
+// already names the sections, so assistive technology skips these.
+for (const heading of document.querySelectorAll<HTMLElement>(
+  '.post .prose :is(h2, h3, h4)[id]:not(.footnotes *)',
+)) {
+  const anchor = document.createElement('a');
+  anchor.className = 'heading-anchor';
+  anchor.href = `#${encodeURIComponent(heading.id)}`;
+  anchor.textContent = '#';
+  anchor.tabIndex = -1;
+  anchor.setAttribute('aria-hidden', 'true');
+  heading.append(anchor);
+}
 
 const tocLinks = [
   ...document.querySelectorAll<HTMLAnchorElement>('[data-toc-link]'),

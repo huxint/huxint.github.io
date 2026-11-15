@@ -34,18 +34,14 @@
   gap: 16px;
   padding: 14px 16px 14px 24px;
 }
-.image-viewer-meta {
-  color: rgb(242 238 232 / 0.72);
-  font-family: var(--font-mono);
-  font-size: 13px;
-  letter-spacing: 0.04em;
-}
+.image-viewer-meta,
 .image-viewer-count {
   color: rgb(242 238 232 / 0.72);
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: var(--text-sm);
+  line-height: var(--leading-ui);
   font-variant-numeric: tabular-nums;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--tracking-label);
 }
 .image-viewer-bar .image-viewer-button {
   justify-self: end;
@@ -85,7 +81,7 @@
   display: block;
   max-width: 100%;
   max-height: calc(100svh - 150px);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
 }
 /* Transparent figures keep the white ground they have in the article. */
 .image-viewer-frame img {
@@ -129,7 +125,8 @@
   min-height: 56px;
   padding: 16px 24px 20px;
   color: rgb(242 238 232 / 0.8);
-  font-size: 14px;
+  font-size: var(--text-ui);
+  line-height: var(--leading-ui);
   text-align: center;
 }
 

@@ -49,21 +49,6 @@ function setupTagFilter(): void {
   filter.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && filter.value) clearFilter();
   });
-  document.addEventListener('keydown', (event) => {
-    if (event.key !== '/' || event.metaKey || event.ctrlKey || event.altKey)
-      return;
-    const target = event.target;
-    if (
-      target instanceof HTMLInputElement ||
-      target instanceof HTMLTextAreaElement ||
-      target instanceof HTMLSelectElement ||
-      (target instanceof HTMLElement && target.isContentEditable)
-    )
-      return;
-    event.preventDefault();
-    filter.focus();
-    filter.select();
-  });
 }
 
 setupTagFilter();

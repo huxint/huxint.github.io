@@ -11,61 +11,12 @@
   max-width: var(--measure);
 }
 .tag-search {
-  display: flex;
-  flex: 0 1 300px;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-  height: 40px;
-  padding: 0 10px 0 12px;
-  border: 1px solid var(--rule);
-  border-radius: 10px;
-  background: var(--bg-raised);
-  color: var(--faint);
-  transition: border-color var(--dur-fast) ease;
-}
-.tag-search:hover {
-  border-color: var(--rule-strong);
-}
-.tag-search:focus-within {
-  border-color: var(--accent);
-  color: var(--accent-ink);
-}
-.tag-search input {
-  width: 100%;
-  min-width: 0;
-  padding: 0;
-  border: 0;
-  outline: 0;
-  background: transparent;
-  color: var(--text);
-  font-size: 14px;
-}
-.tag-search input::placeholder {
-  color: var(--faint);
-}
-.tag-search input::-webkit-search-cancel-button {
-  display: none;
-}
-.tag-search kbd {
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  width: 20px;
-  height: 22px;
-  border: 1px solid var(--rule);
-  border-radius: 5px;
-  color: var(--faint);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  line-height: 1;
-}
-.tag-search:focus-within kbd {
-  visibility: hidden;
+  flex: 0 1 320px;
 }
 .tag-status {
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--text-sm);
+  line-height: var(--leading-ui);
 }
 
 .tag-tier {
@@ -73,7 +24,7 @@
   grid-template-columns: var(--rail) minmax(0, 1fr);
   column-gap: var(--gutter);
   align-items: baseline;
-  padding-block: 18px;
+  padding-block: 16px;
   border-top: 1px solid var(--rule);
 }
 .tag-tier:last-child {
@@ -81,8 +32,6 @@
 }
 .tag-tier-count {
   justify-self: end;
-  color: var(--muted);
-  font-size: 13px;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -90,34 +39,34 @@
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 6px 32px;
+  gap: 2px 28px;
   max-width: var(--measure);
 }
 .tag-tier-tags a {
   display: inline-flex;
   min-height: 36px;
   align-items: center;
-  font-family: var(--font-serif);
-  font-size: calc(17px + var(--weight) * 6px);
-  font-weight: 500;
-  line-height: 1.4;
-  text-decoration: underline;
-  text-decoration-color: transparent;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 0.25em;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-title);
   overflow-wrap: anywhere;
-  transition:
-    color var(--dur-fast) ease,
-    text-decoration-color var(--dur-fast) ease;
+  transition: color var(--dur-fast) ease;
 }
-.tag-tier-tags a:hover {
+.tag-tier-tags a::before {
+  content: '#';
+  margin-right: 3px;
+  color: var(--faint);
+  font-weight: var(--weight-regular);
+  transition: color var(--dur-fast) ease;
+}
+.tag-tier-tags a:hover,
+.tag-tier-tags a:hover::before {
   color: var(--accent-ink);
-  text-decoration-color: color-mix(in srgb, var(--accent) 55%, transparent);
 }
 .tag-empty {
   padding-block: 32px;
   color: var(--muted);
-  font-size: 14px;
+  font-size: var(--text-ui);
 }
 .tag-empty button {
   margin-left: 12px;
@@ -134,21 +83,21 @@
 .tag-hash {
   margin-right: 0.12em;
   color: var(--faint);
-  font-family: var(--font-sans);
-  font-weight: 400;
+  font-weight: var(--weight-regular);
 }
 .tag-related {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 4px 18px;
-  margin-top: 16px;
+  gap: 2px 18px;
+  margin-top: 14px;
   color: var(--muted);
-  font-size: 14px;
+  font-size: var(--text-ui);
+  line-height: var(--leading-ui);
 }
 .tag-related > span {
   color: var(--faint);
-  font-size: 13px;
+  font-size: var(--text-sm);
 }
 .tag-related a {
   display: inline-flex;
@@ -163,7 +112,6 @@
 }
 .tag-related small {
   color: var(--faint);
-  font-size: 11px;
   font-variant-numeric: tabular-nums;
 }
 .tag-related a:hover {
@@ -175,19 +123,15 @@
     flex-basis: 100%;
   }
   .tag-tier {
-    grid-template-columns: 52px minmax(0, 1fr);
+    grid-template-columns: 44px minmax(0, 1fr);
     column-gap: 16px;
-    padding-block: 14px;
+    padding-block: 12px;
   }
   .tag-tier-count {
     justify-self: start;
-    padding-top: 2px;
   }
   .tag-tier-tags {
-    gap: 2px 22px;
-  }
-  .tag-tier-tags a {
-    font-size: calc(16px + var(--weight) * 4px);
+    gap: 0 22px;
   }
   .tag-empty {
     display: block;

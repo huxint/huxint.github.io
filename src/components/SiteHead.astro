@@ -1,4 +1,6 @@
 ---
+// The Latin text face is on every page; fetching it early avoids a reflow.
+import textFont from '@fontsource-variable/inter/files/inter-latin-opsz-normal.woff2?url';
 import { site } from '../data/site';
 
 interface Props {
@@ -25,11 +27,13 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="color-scheme" content="light dark" />
+<meta name="theme-color" content="#f6f2ea" />
 <meta name="description" content={description} />
 <meta name="generator" content={Astro.generator} />
 {noindex && <meta name="robots" content="noindex" />}
 <link rel="canonical" href={canonical} />
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="preload" href={textFont} as="font" type="font/woff2" crossorigin />
 {
   rss && (
     <link
@@ -69,5 +73,8 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
           : 'light';
     document.documentElement.dataset.theme = theme;
     document.documentElement.classList.add('js');
+    // The browser's own chrome takes the page colour.
+    if (theme === 'dark')
+      document.querySelector('meta[name="theme-color"]').content = '#161619';
   })();
 </script>

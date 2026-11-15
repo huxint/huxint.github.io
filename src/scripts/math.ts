@@ -4,6 +4,10 @@
  * gently scale it down until it fits the reading column. A too-wide inline
  * expression becomes a centred mini equation for the same reason.
  */
+// Copying a selection that holds formulas puts their LaTeX source on the
+// clipboard, in $…$ and $$…$$, instead of the scattered glyphs.
+import 'katex/contrib/copy-tex';
+
 const proseBlocks = [...document.querySelectorAll<HTMLElement>('.prose')];
 const displayMath = [
   ...document.querySelectorAll<HTMLElement>('.prose .katex-display'),
