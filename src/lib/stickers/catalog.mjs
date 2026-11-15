@@ -1,6 +1,11 @@
 // The sticker set. Authors type :id: in Markdown; art.mjs draws each sticker
 // from the parts named here. label is the alt text and catalogue name. Memes
 // carry a caption and show larger in text than the small emotes.
+//
+// The gorilla is one character: round glasses and a hoodie unless a sticker
+// says otherwise. The glasses come off only in bed (glasses: 'none'); shades
+// and glare are the same frames with something else in them. After adding or
+// changing a caption, run `node scripts/sticker-glyphs.mjs`.
 
 export const groups = [
   { id: 'emotion', label: '情绪' },
@@ -27,7 +32,6 @@ export const stickers = [
     tilt: -4,
   }),
   sticker('laugh_cry', '笑哭', 'emotion', {
-    glasses: 'none',
     eyes: 'joy',
     brows: 'raised',
     mouth: 'big',
@@ -36,7 +40,6 @@ export const stickers = [
     motion: 'bounce',
   }),
   sticker('happy', '开心', 'emotion', {
-    glasses: 'none',
     body: 'tee',
     eyes: 'happy',
     brows: 'raised',
@@ -50,7 +53,6 @@ export const stickers = [
     extras: ['blush', 'hearts'],
   }),
   sticker('blush', '害羞', 'emotion', {
-    glasses: 'none',
     eyes: 'open',
     look: [-4, 3],
     brows: 'worried',
@@ -59,7 +61,6 @@ export const stickers = [
     extras: ['blush'],
   }),
   sticker('kiss', '亲亲', 'emotion', {
-    glasses: 'none',
     eyes: ['closed', 'open'],
     brows: ['neutral', 'raised'],
     mouth: 'kiss',
@@ -67,7 +68,6 @@ export const stickers = [
     extras: ['hearts'],
   }),
   sticker('wink', '眨眼', 'emotion', {
-    glasses: 'none',
     eyes: ['open', 'happy'],
     brows: ['neutral', 'raised'],
     mouth: 'tongue',
@@ -89,7 +89,6 @@ export const stickers = [
     extras: ['tears_stream'],
   }),
   sticker('sob', '大哭', 'emotion', {
-    glasses: 'none',
     eyes: 'joy',
     brows: 'worried',
     mouth: 'wail',
@@ -98,7 +97,6 @@ export const stickers = [
     motion: 'shake',
   }),
   sticker('sad', '难过', 'emotion', {
-    glasses: 'none',
     eyes: 'open',
     look: [0, 3],
     brows: 'worried',
@@ -121,7 +119,6 @@ export const stickers = [
     extras: ['exclaim'],
   }),
   sticker('shock', '震惊', 'reaction', {
-    glasses: 'none',
     eyes: 'tiny',
     brows: 'high',
     mouth: 'scream',
@@ -138,14 +135,12 @@ export const stickers = [
     extras: ['question'],
   }),
   sticker('speechless', '无语', 'reaction', {
-    glasses: 'none',
     eyes: 'half',
     brows: 'flat',
     mouth: 'flat',
     extras: ['speech_dots', 'sweat'],
   }),
   sticker('awkward', '尴尬', 'reaction', {
-    glasses: 'none',
     eyes: 'open',
     look: [-4, 0],
     brows: 'worried',
@@ -153,7 +148,6 @@ export const stickers = [
     extras: ['sweat'],
   }),
   sticker('facepalm', '捂脸', 'reaction', {
-    glasses: 'none',
     eyes: 'half',
     brows: 'flat',
     mouth: 'flat',
@@ -168,7 +162,6 @@ export const stickers = [
     motion: 'wobble',
   }),
   sticker('sleepy', '犯困', 'reaction', {
-    glasses: 'none',
     eyes: 'sleepy',
     brows: 'flat',
     mouth: 'yawn',
@@ -187,7 +180,6 @@ export const stickers = [
     motion: 'sway',
   }),
   sticker('pitiful', '可怜', 'reaction', {
-    glasses: 'none',
     eyes: 'big',
     brows: 'worried',
     mouth: 'pout',
@@ -204,7 +196,6 @@ export const stickers = [
     hands: ['thumb'],
   }),
   sticker('clap', '鼓掌', 'gesture', {
-    glasses: 'none',
     eyes: 'open',
     brows: 'raised',
     mouth: 'grin',
@@ -219,7 +210,6 @@ export const stickers = [
     hands: ['ok'],
   }),
   sticker('wave', '挥手', 'gesture', {
-    glasses: 'none',
     body: 'tee',
     eyes: 'open',
     mouth: 'grin',
@@ -227,7 +217,6 @@ export const stickers = [
     hands: ['wave'],
   }),
   sticker('salute', '敬礼', 'gesture', {
-    glasses: 'none',
     gear: 'cap',
     eyes: 'open',
     brows: 'angry',
@@ -235,7 +224,6 @@ export const stickers = [
     hands: ['salute'],
   }),
   sticker('pray', '拜托', 'gesture', {
-    glasses: 'none',
     eyes: 'big',
     brows: 'worried',
     mouth: 'smile',
@@ -243,7 +231,6 @@ export const stickers = [
     hands: ['pray'],
   }),
   sticker('fist', '加油', 'gesture', {
-    glasses: 'none',
     gear: 'headband',
     eyes: 'open',
     brows: 'fierce',
@@ -279,7 +266,6 @@ export const stickers = [
   // Memes
   sticker('rofl', '笑死', 'meme', {
     caption: '笑死',
-    glasses: 'none',
     body: 'tee',
     eyes: 'joy',
     brows: 'raised',
@@ -300,7 +286,6 @@ export const stickers = [
   }),
   sticker('eyeroll', '白眼', 'meme', {
     caption: '呵呵',
-    glasses: 'none',
     eyes: 'roll',
     brows: 'flat',
     mouth: 'smile',
@@ -308,7 +293,6 @@ export const stickers = [
   }),
   sticker('mock', '略略略', 'meme', {
     caption: '略略略',
-    glasses: 'none',
     eyes: 'happy',
     brows: 'raised',
     mouth: 'blep',
@@ -318,7 +302,6 @@ export const stickers = [
   }),
   sticker('point_laugh', '嘲笑', 'meme', {
     caption: '哈哈哈',
-    glasses: 'none',
     eyes: 'joy',
     brows: 'raised',
     mouth: 'big',
@@ -336,7 +319,6 @@ export const stickers = [
   }),
   sticker('derp', '傻眼', 'meme', {
     caption: '啊？',
-    glasses: 'none',
     eyes: 'derp',
     brows: ['raised', 'sad'],
     mouth: 'drool',
@@ -345,18 +327,16 @@ export const stickers = [
   }),
   sticker('dead', '寄了', 'meme', {
     caption: '寄了',
-    glasses: 'none',
     gear: 'halo',
     eyes: 'x',
     brows: 'flat',
     mouth: 'blep',
-    tilt: 14,
+    tilt: 12,
     lift: 6,
     extras: ['soul'],
   }),
   sticker('melt', '麻了', 'meme', {
     caption: '麻了',
-    glasses: 'none',
     eyes: 'sleepy',
     brows: 'worried',
     mouth: 'wavy',
@@ -365,7 +345,6 @@ export const stickers = [
   }),
   sticker('crack', '裂开', 'meme', {
     caption: '裂开了',
-    glasses: 'none',
     eyes: 'wide',
     brows: 'worried',
     mouth: 'scream',
@@ -374,7 +353,6 @@ export const stickers = [
   }),
   sticker('clown', '小丑', 'meme', {
     caption: '小丑竟是我',
-    glasses: 'none',
     gear: 'clown_wig',
     eyes: 'open',
     look: [0, 2],
@@ -385,7 +363,6 @@ export const stickers = [
   }),
   sticker('melon', '吃瓜', 'meme', {
     caption: '吃瓜',
-    glasses: 'none',
     eyes: 'open',
     look: [-5, 0],
     brows: ['flat', 'raised'],
@@ -411,7 +388,6 @@ export const stickers = [
   }),
   sticker('evil', '坏笑', 'meme', {
     caption: '嘿嘿',
-    glasses: 'none',
     eyes: 'smug',
     look: [4, 0],
     brows: 'angry',
@@ -421,7 +397,6 @@ export const stickers = [
   }),
   sticker('rage', '红温', 'meme', {
     caption: '红温了',
-    glasses: 'none',
     eyes: 'open',
     brows: 'fierce',
     mouth: 'gritted',
@@ -430,7 +405,6 @@ export const stickers = [
   }),
   sticker('broken', '破防', 'meme', {
     caption: '破防了',
-    glasses: 'none',
     eyes: 'big',
     brows: 'worried',
     mouth: 'wail',
@@ -438,7 +412,6 @@ export const stickers = [
   }),
   sticker('woohoo', '芜湖', 'meme', {
     caption: '芜湖',
-    glasses: 'none',
     body: 'tee',
     eyes: 'happy',
     brows: 'raised',
@@ -541,7 +514,6 @@ export const stickers = [
   }),
   sticker('coffee', '续命', 'code', {
     caption: '续命',
-    glasses: 'none',
     eyes: 'half',
     brows: 'low',
     mouth: 'smile',
@@ -568,7 +540,6 @@ export const stickers = [
   // Everyday life
   sticker('eat', '干饭', 'life', {
     caption: '干饭',
-    glasses: 'none',
     eyes: 'big',
     brows: 'raised',
     mouth: 'chew',
@@ -578,21 +549,18 @@ export const stickers = [
   }),
   sticker('milk_tea', '奶茶', 'life', {
     caption: '奶茶',
-    glasses: 'none',
     eyes: 'happy',
     mouth: 'smile',
     extras: ['blush', 'tea'],
   }),
   sticker('mooncake', '月饼', 'life', {
     caption: '月饼',
-    glasses: 'none',
     eyes: 'star',
     mouth: 'smile',
     extras: ['mooncake', 'moon'],
   }),
   sticker('work', '搬砖', 'life', {
     caption: '搬砖',
-    glasses: 'none',
     gear: 'hardhat',
     body: 'tee',
     eyes: 'half',
@@ -602,7 +570,6 @@ export const stickers = [
   }),
   sticker('poor', '吃土', 'life', {
     caption: '吃土',
-    glasses: 'none',
     eyes: 'open',
     look: [0, 4],
     brows: 'worried',
@@ -621,7 +588,6 @@ export const stickers = [
   }),
   sticker('run', '润了', 'life', {
     caption: '润了',
-    glasses: 'none',
     eyes: 'wide',
     look: [4, 0],
     brows: 'worried',
@@ -653,7 +619,6 @@ export const stickers = [
   }),
   sticker('off_work', '下班', 'life', {
     caption: '下班！',
-    glasses: 'none',
     body: 'tee',
     eyes: 'joy',
     brows: 'raised',

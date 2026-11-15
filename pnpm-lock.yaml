@@ -75,6 +75,9 @@ importers:
       '@types/three':
         specifier: 0.185.4
         version: 0.185.4
+      fontkitten:
+        specifier: 1.0.3
+        version: 1.0.3
       pagefind:
         specifier: 1.5.2
         version: 1.5.2

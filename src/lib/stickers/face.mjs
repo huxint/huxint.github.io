@@ -1,6 +1,16 @@
 // The gorilla's face: head shape, glasses, eyes, brows and mouths.
 
-import { C, at, heart, outline, shape, sparkle, stroke } from './draw.mjs';
+import {
+  C,
+  LINE,
+  at,
+  heart,
+  lightFrom,
+  litEllipse,
+  outline,
+  sparkle,
+  stroke,
+} from './draw.mjs';
 
 export const HEAD =
   'M64 8C89 8 105 25 105 47C105 53 104 58 106 63C112 67 114 77 109 87C103 99 86 105 64 105C42 105 25 99 19 87C14 77 16 67 22 63C24 58 23 53 23 47C23 25 39 8 64 8Z';
@@ -14,29 +24,30 @@ const BRIDGE = stroke(
   3.2,
 );
 
-// What the eyes sit in. Without glasses they are plain eye whites.
+// What the eyes sit in. The gorilla wears round glasses; only in bed are they
+// off, and then the eyes are plain eye whites.
 export const LENSES = {
   round: {
     R: 13.5,
     back: (x) => `<circle cx="${x}" cy="${EYE_Y}" r="13.5" fill="${C.lens}"/>`,
     front: (x) =>
-      `<circle cx="${x}" cy="${EYE_Y}" r="13.5" fill="none" ${outline(3.4)}/>` +
+      `<circle cx="${x}" cy="${EYE_Y}" r="13.5" fill="none" ${outline(LINE.frame)}/>` +
       `<path d="M${x - 8} ${EYE_Y - 7}L${x - 3} ${EYE_Y - 11}" stroke="${C.white}" stroke-width="2.4" stroke-linecap="round"/>`,
     bridge: BRIDGE,
   },
   none: {
     R: 11,
     back: (x) =>
-      `<circle cx="${x}" cy="${EYE_Y}" r="11" fill="${C.white}" ${outline(2.8)}/>`,
+      `<circle cx="${x}" cy="${EYE_Y}" r="11" fill="${C.white}" ${outline(LINE.part)}/>`,
     front: () => '',
     bridge: '',
   },
   shades: {
     R: 13.5,
     hidesEyes: true,
-    back: (x) => `<circle cx="${x}" cy="${EYE_Y}" r="13.5" fill="#1d2029"/>`,
+    back: (x) => `<circle cx="${x}" cy="${EYE_Y}" r="13.5" fill="${C.dark}"/>`,
     front: (x) =>
-      `<circle cx="${x}" cy="${EYE_Y}" r="13.5" fill="none" ${outline(3.4)}/>` +
+      `<circle cx="${x}" cy="${EYE_Y}" r="13.5" fill="none" ${outline(LINE.frame)}/>` +
       `<path d="M${x - 8} ${EYE_Y - 5}L${x - 2} ${EYE_Y - 10}M${x - 8} ${EYE_Y}L${x - 5} ${EYE_Y - 3}" stroke="${C.white}" stroke-width="2.4" stroke-linecap="round" opacity=".85"/>`,
     bridge: BRIDGE,
   },
@@ -46,8 +57,8 @@ export const LENSES = {
     hidesEyes: true,
     back: (x) => `<circle cx="${x}" cy="${EYE_Y}" r="13.5" fill="${C.white}"/>`,
     front: (x) =>
-      `<path d="M${x - 9} ${EYE_Y + 6}L${x + 4} ${EYE_Y - 10}M${x - 2} ${EYE_Y + 10}L${x + 9} ${EYE_Y - 3}" stroke="#c4dbf6" stroke-width="3.6" stroke-linecap="round"/>` +
-      `<circle cx="${x}" cy="${EYE_Y}" r="13.5" fill="none" ${outline(3.4)}/>`,
+      `<path d="M${x - 9} ${EYE_Y + 6}L${x + 4} ${EYE_Y - 10}M${x - 2} ${EYE_Y + 10}L${x + 9} ${EYE_Y - 3}" stroke="${C.glint}" stroke-width="3.6" stroke-linecap="round"/>` +
+      `<circle cx="${x}" cy="${EYE_Y}" r="13.5" fill="none" ${outline(LINE.frame)}/>`,
     bridge: BRIDGE,
   },
 };
@@ -62,7 +73,7 @@ const pupil = (x, y, r = 5.6, light = true) =>
 // its edge hangs.
 function lid(x, y, R, cut) {
   const half = Math.sqrt(R * R - cut * cut);
-  return `<path d="M${x - half} ${y + cut}A${R} ${R} 0 ${cut > 0 ? 1 : 0} 1 ${x + half} ${y + cut}Z" fill="${C.skin}" ${outline(3)}/>`;
+  return `<path d="M${x - half} ${y + cut}A${R} ${R} 0 ${cut > 0 ? 1 : 0} 1 ${x + half} ${y + cut}Z" fill="${C.skin}" ${outline(LINE.form)}/>`;
 }
 
 function spiral(x, y, R, direction) {
@@ -96,9 +107,14 @@ export const EYES = {
   open: ({ x, y, dx, dy }) => pupil(x + dx, y + dy),
   wide: ({ x, y, dx, dy }) => pupil(x + dx, y + dy, 3.2, false),
   tiny: ({ x, y, dx, dy }) => pupil(x + dx, y + dy, 1.8, false),
-  big: ({ x, y, dx, dy }) =>
-    pupil(x + dx, y + dy, 8.2) +
-    `<circle cx="${x + dx + 2.4}" cy="${y + dy + 2.6}" r="1.4" fill="${C.white}"/>`,
+  // The pupil fills most of the eye, whatever the eye is drawn in.
+  big: ({ x, y, dx, dy, R }) => {
+    const r = +(R * 0.7).toFixed(1);
+    return (
+      pupil(x + dx, y + dy, r) +
+      `<circle cx="${x + dx + r * 0.3}" cy="${y + dy + r * 0.32}" r="${+(r * 0.17).toFixed(1)}" fill="${C.white}"/>`
+    );
+  },
   happy: ({ x, y }) =>
     stroke(`M${x - 8} ${y + 3}Q${x} ${y - 8} ${x + 8} ${y + 3}`, 4.2),
   joy: ({ x, y, side }) =>
@@ -155,7 +171,7 @@ export function brows(kind, R) {
 }
 
 const TONGUE = (path) =>
-  `<path d="${path}" fill="${C.tongue}" ${outline(2.4)}/>`;
+  `<path d="${path}" fill="${C.tongue}" ${outline(LINE.part)}/>`;
 
 export const MOUTHS = {
   smile: stroke('M52 90Q64 99 76 90'),
@@ -187,7 +203,7 @@ export const MOUTHS = {
     TONGUE('M56 94Q56 114 64 114Q72 114 72 94Z') +
     stroke('M64 99V108', 2),
   grimace:
-    `<path d="M45 90Q64 84 83 90L81 102Q64 106 47 102Z" fill="${C.white}" ${outline(3)}/>` +
+    `<path d="M45 90Q64 84 83 90L81 102Q64 106 47 102Z" fill="${C.white}" ${outline(LINE.form)}/>` +
     stroke('M54 87V103M64 86V104M74 87V103M46 96Q64 100 82 96', 1.8),
   open:
     `<path d="M52 88Q64 112 76 88Z" fill="${C.mouth}"/>` +
@@ -202,10 +218,10 @@ export const MOUTHS = {
     `<path d="M56 102Q64 93 72 102Z" fill="${C.tongue}"/>` +
     stroke('M45 102Q64 80 83 102Z', 3),
   sly:
-    `<path d="M44 89Q64 112 84 89Q64 95 44 89Z" fill="${C.white}" ${outline(3)}/>` +
+    `<path d="M44 89Q64 112 84 89Q64 95 44 89Z" fill="${C.white}" ${outline(LINE.form)}/>` +
     stroke('M54 93.5V98M64 95V101M74 93.5V98', 1.8),
   kiss:
-    `<path d="M57 95Q64 87 71 95Q64 104 57 95Z" fill="${C.heart}" ${outline(2.6)}/>` +
+    `<path d="M57 95Q64 87 71 95Q64 104 57 95Z" fill="${C.heart}" ${outline(LINE.part)}/>` +
     stroke('M58 95H70', 1.8, C.white),
   drool:
     `<ellipse cx="64" cy="94" rx="5.5" ry="6.5" fill="${C.mouth}" stroke="${C.line}" stroke-width="3"/>` +
@@ -232,10 +248,45 @@ export function eyesOf(kind, lens, look) {
   ).join('');
 }
 
-export const muzzle =
-  `<ellipse cx="64" cy="83" rx="21" ry="15" fill="${C.muzzle}"/>` +
-  `<ellipse cx="57" cy="79" rx="4.4" ry="2.8" fill="${C.nostril}" transform="rotate(24 57 79)"/>` +
-  `<ellipse cx="71" cy="79" rx="4.4" ry="2.8" fill="${C.nostril}" transform="rotate(-24 71 79)"/>`;
+// The head is lit from the upper left of the picture. A head that is drawn
+// tilted turns its light back by as much, so a gorilla lying on its side is
+// still lit from above.
 
-export const skull =
-  shape(HEAD, C.fur) + `<path d="${MASK}" fill="${C.skin}"/>`;
+// The muzzle: its shade, with the lit copy laid over it a little higher.
+export function muzzle(tilt = 0) {
+  const [dx, dy] = lightFrom(tilt, [0, -2]);
+  return (
+    `<ellipse cx="64" cy="84.6" rx="21" ry="14.6" fill="${C.muzzleShade}"/>` +
+    `<ellipse cx="${64 + dx}" cy="${84.6 + dy}" rx="21" ry="14.6" fill="${C.muzzle}"/>` +
+    `<ellipse cx="57" cy="79" rx="4.4" ry="2.8" fill="${C.nostril}" transform="rotate(24 57 79)"/>` +
+    `<ellipse cx="71" cy="79" rx="4.4" ry="2.8" fill="${C.nostril}" transform="rotate(-24 71 79)"/>` +
+    `<ellipse cx="64" cy="72.5" rx="6" ry="1.6" fill="${C.white}" opacity=".5"/>`
+  );
+}
+
+const ear = (x, side, by) =>
+  litEllipse(x, 61, 8, 10.5, C.fur, LINE.form, by, C.furShade) +
+  `<ellipse cx="${x - side * 1.2}" cy="61.5" rx="3.4" ry="5.4" fill="${C.skinShade}"/>`;
+
+export function skull(tilt = 0) {
+  const [furX, furY] = lightFrom(tilt, [-3.5, -4.5]);
+  const [skinX, skinY] = lightFrom(tilt, [-1.5, -3.5]);
+  const earLight = lightFrom(tilt, [-1.6, -2]);
+  const rim = stroke('M31 43Q33 24 52 16.5', 4.2, C.furLight);
+  return (
+    ear(19.5, -1, earLight) +
+    ear(108.5, 1, earLight) +
+    `<clipPath id="head"><path d="${HEAD}"/></clipPath>` +
+    `<clipPath id="mask"><path d="${MASK}"/></clipPath>` +
+    `<g clip-path="url(#head)"><path d="${HEAD}" fill="${C.furShade}"/>` +
+    `<path d="${HEAD}" fill="${C.fur}" transform="translate(${furX} ${furY})"/>` +
+    (tilt ? `<g transform="rotate(${-tilt} 64 56)">${rim}</g>` : rim) +
+    `</g>` +
+    `<g clip-path="url(#mask)"><path d="${MASK}" fill="${C.skinShade}"/>` +
+    `<path d="${MASK}" fill="${C.skin}" transform="translate(${skinX} ${skinY})"/>` +
+    // The brow ridge throws a soft shadow over the top of the face.
+    `<ellipse cx="64" cy="27" rx="38" ry="13" fill="${C.skinShade}" opacity=".5"/>` +
+    `</g>` +
+    `<path d="${HEAD}" fill="none" ${outline(LINE.form)}/>`
+  );
+}

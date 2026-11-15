@@ -3,8 +3,13 @@
 // mouth, a tilt, the hands and the props around. Memes also carry a caption.
 // One filter over the whole drawing adds the white die-cut border, which keeps
 // the outline readable on light and dark pages alike.
+//
+// What makes the set one set: every sticker is the same gorilla in round
+// glasses, lit from the upper left, drawn in the palette and the line weights
+// of draw.mjs, and captioned in one typeface.
 
 import { C } from './draw.mjs';
+import { CAPTION_GLYPHS } from './glyphs.mjs';
 import {
   EYE_X,
   LENSES,
@@ -22,11 +27,9 @@ import {
   HANDS,
   HEAD_EXTRAS,
   MOTION,
+  SKIN_EXTRAS,
   SLEEVES,
 } from './props.mjs';
-
-const FONT =
-  "'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC','Source Han Sans SC','WenQuanYi Micro Hei',sans-serif";
 
 // A group moves about the middle of its own box unless the motion names an
 // origin. A 'pivot' group is drawn around the joint it turns on, so it turns
@@ -72,14 +75,52 @@ const DIE_CUT =
 const escape = (text) =>
   text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-// Wide characters take a full em, Latin letters about 0.62 of it.
+// The caption is drawn from glyph outlines (see glyphs.mjs), not set in a
+// font, so it has the same weight and width on every system. It is centred
+// on its ink, not on its advance widths: a full-width ？ or ！ keeps its ink
+// in the left half of its box and would otherwise pull the line off centre.
+const CAPTION = { size: 25, width: 108, bottom: 115.5, descent: 96 };
+
 function captionText(text, color = C.white) {
-  const em = [...text].reduce(
-    (total, char) => total + (char.charCodeAt(0) > 127 ? 1 : 0.62),
-    0,
+  let advance = 0;
+  let left = Infinity;
+  let right = 0;
+  let descent = CAPTION.descent;
+  let d = '';
+  for (const character of text) {
+    const glyph = CAPTION_GLYPHS[character];
+    if (!glyph)
+      throw new Error(
+        `No outline for “${character}” in the caption “${text}”. Run node scripts/sticker-glyphs.mjs.`,
+      );
+    const [width, inkLeft, inkRight, below, x, y, path] = glyph;
+    if (path) {
+      left = Math.min(left, advance + inkLeft);
+      right = advance + inkRight;
+      descent = Math.max(descent, below);
+      d += `M${advance + x} ${y}${path}`;
+    }
+    advance += width;
+  }
+  const size = Math.min(CAPTION.size, (CAPTION.width * 1000) / (right - left));
+  const scale = size / 1000;
+  const x = 64 - ((left + right) / 2) * scale;
+  const y = CAPTION.bottom - descent * scale;
+  return `<path transform="translate(${x.toFixed(2)} ${y.toFixed(2)}) scale(${scale.toFixed(4)})" d="${d}" fill="${color}" stroke="${C.line}" stroke-width="280" stroke-linejoin="round" paint-order="stroke"/>`;
+}
+
+// A shaded shape brings its own clip path. They are gathered into the file's
+// <defs>, each one once however often its shape is drawn.
+function gatherClips(body) {
+  const clips = new Map();
+  const drawing = body.replace(
+    /<clipPath id="([^"]+)">.*?<\/clipPath>/g,
+    (clip, id) => {
+      clips.set(id, clip);
+      return '';
+    },
   );
-  const size = Math.min(25, 108 / em);
-  return `<text x="64" y="${/[gjpqy]/.test(text) ? 108 : 113}" text-anchor="middle" font-family="${FONT}" font-weight="900" font-size="${size.toFixed(1)}" fill="${color}" stroke="${C.line}" stroke-width="${(size * 0.28).toFixed(1)}" stroke-linejoin="round" paint-order="stroke">${escape(text)}</text>`;
+  return [[...clips.values()].join(''), drawing];
 }
 
 function head(sticker) {
@@ -102,21 +143,27 @@ function head(sticker) {
   const lens = LENSES[glasses];
   const worn = [].concat(gear).map((name) => GEAR[name]);
   const eyeMarks = lens.hidesEyes ? '' : eyesOf(eyes, lens, look);
+  // An extra that follows the eyes is a function of what they sit in.
+  const from = (table) =>
+    extras
+      .filter((name) => name in table)
+      .map((name) =>
+        typeof table[name] === 'function' ? table[name](lens) : table[name],
+      )
+      .join('');
   const face =
     worn.map((part) => part.back ?? '').join('') +
-    skull +
+    skull(tilt) +
     brows(brow, lens.R) +
-    muzzle +
+    muzzle(tilt) +
+    from(SKIN_EXTRAS) +
     EYE_X.map(lens.back).join('') +
     (blink ? `<g class="blink">${eyeMarks}</g>` : eyeMarks) +
     EYE_X.map(lens.front).join('') +
     lens.bridge +
     MOUTHS[mouth] +
     worn.map((part) => part.front ?? '').join('') +
-    extras
-      .filter((name) => name in HEAD_EXTRAS)
-      .map((name) => HEAD_EXTRAS[name])
-      .join('');
+    from(HEAD_EXTRAS);
   const [px, py] = pivot;
   // Without a body the head fills the frame.
   const zoom =
@@ -127,6 +174,7 @@ function head(sticker) {
 
 export function drawSticker(sticker) {
   const {
+    label,
     body = 'hoodie',
     hands = [],
     extras = [],
@@ -150,11 +198,14 @@ export function drawSticker(sticker) {
   const fitted = caption
     ? `<g transform="translate(64 6) scale(.78) translate(-64 -4)" color="${SLEEVES[body]}">${drawing}</g>${captionText(caption, captionColor)}`
     : `<g transform="translate(64 64) scale(.9) translate(-64 -64)" color="${SLEEVES[body]}">${drawing}</g>`;
+  const [clips, picture] = gatherClips(fitted);
   return (
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">' +
-    `<defs>${DIE_CUT}</defs>` +
-    styles(fitted) +
-    `<g filter="url(#cut)">${fitted}</g>` +
+    // The caption is outlines, so the file says in words what it shows.
+    (label ? `<title>${escape(caption ?? label)}</title>` : '') +
+    `<defs>${DIE_CUT}${clips}</defs>` +
+    styles(picture) +
+    `<g filter="url(#cut)">${picture}</g>` +
     '</svg>'
   );
 }
