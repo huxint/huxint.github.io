@@ -230,7 +230,7 @@ $$
   <label class="pick"><span>拿去对的波的频率</span><input type="range" min="0" max="12" value="2" aria-label="拿去对的波的频率" /><output></output></label>
   <p class="read" aria-live="polite"></p>
   <p class="cap">从 0 到 12，每个频率都量一遍，得到的份量</p>
-  <div class="stage"><canvas class="c3" role="img" aria-label="各个频率的份量"></canvas></div>
+  <div class="stage"><canvas class="c3" role="img" aria-label="各个频率的份量" style="cursor: pointer"></canvas></div>
 </section>
 <script>
 (() => {
@@ -349,6 +349,11 @@ $$
     over = f === null ? null : Math.min(KMAX, Math.floor(f * (KMAX + 1))); draw();
     return f === null ? null : [[null, num(share(over)), '频率 ' + over + ' 的份量']];
   });
+  cv3.addEventListener('click', (event) => {
+    const box = cv3.getBoundingClientRect();
+    slider.value = Math.min(KMAX, Math.floor((event.clientX - box.left) / box.width * (KMAX + 1)));
+    draw();
+  });
   slider.addEventListener('input', draw);
   window.addEventListener('themechange', () => { theme(); draw(); });
   theme();
@@ -380,6 +385,7 @@ $$
   :root[data-theme="dark"] .ft { --s1: #d57935; --s2: #409dd5; }
   .ft .view { display: grid; grid-template-columns: minmax(0, 1fr) 170px; gap: 16px; align-items: end; }
   .ft canvas { display: block; width: 100%; }
+  .ft .plane { touch-action: none; cursor: grab; }
   .ft .key { display: inline-block; width: 14px; margin-right: 6px; border-top: 2px solid; vertical-align: middle; }
   .ft .cap { display: flex; flex-wrap: wrap; gap: 0 16px; margin: 0 0 4px; color: var(--muted); font-size: 12px; }
   .ft .knobs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 24px; margin-top: 8px; }
@@ -466,6 +472,17 @@ $$
     read.innerHTML = '<i class="key" style="color: var(--s2)"></i>$\\cos$ 的读数是 <b>' + num(a) + '</b>，<i class="key" style="color: var(--s1)"></i>$\\sin$ 的读数是 <b>' + num(b)
       + '</b>。把它们当成一个点的横、纵坐标：这个点到原点的距离是 <b>' + num(Math.hypot(a, b)) + '</b>，正是幅度；它的方向转过了 <b>' + ph.value + '°</b>，正是起点挪动的角度。';
   };
+  // 平面上的点可以直接拖：方向定起点，离原点多远定幅度
+  const grab = (event) => {
+    if (!event.buttons && event.pointerType === 'mouse') return;
+    const box = plane.getBoundingClientRect(), c = box.width / 2, unit = c - 14;
+    const dx = (event.clientX - box.left - c) / unit, dy = (c - (event.clientY - box.top)) / unit;
+    ph.value = (Math.round(Math.atan2(dy, dx) * 180 / Math.PI / 5) * 5 + 360) % 360;
+    am.value = Math.round(Math.hypot(dx, dy) * 20) * 5;
+    draw();
+  };
+  plane.addEventListener('pointerdown', (event) => { plane.setPointerCapture(event.pointerId); grab(event); });
+  plane.addEventListener('pointermove', (event) => { if (plane.hasPointerCapture(event.pointerId)) grab(event); });
   ph.addEventListener('input', draw); am.addEventListener('input', draw);
   window.addEventListener('themechange', () => { theme(); draw(); });
   theme();
@@ -596,7 +613,7 @@ $$
 
 这就是**离散傅里叶变换**（Discrete Fourier Transform，DFT）：$n$ 个采样 $x_0,\dots,x_{n-1}$ 进去，$n$ 个复数 $X_0,\dots,X_{n-1}$ 出来。$X_k$ 说的是信号里频率 $k$ 的那一份。
 
-那个负号是约定：拿去对的是一个**顺时针**转的点 $\omega^{-jk}$。用正号也能把两个读数装进去，只是大家都这么约定；这样一来，下一节变回去的时候正好是正号。另外，这里没有除以 $n/2$ 或 $n$，习惯上把除法留到变回去的时候一起做。
+拿去对的是一个**顺时针**转的点 $\omega^{-jk}$，负号是这么来的；为什么要顺时针，手算完就能看到。另外，这里没有除以 $n/2$ 或 $n$，习惯上把除法留到变回去的时候一起做。
 
 ### 手算一遍
 
@@ -613,6 +630,150 @@ $$
 
 和前面的实数算法对一下：$X_0=8$ 是 $x\cdot c_0$；$X_1=6-2i$，实部的 $6$ 是 $x\cdot c_1$，虚部 $-2$ 里的那个 $2$ 是 $x\cdot s_1$；$X_2=0$ 是 $x\cdot c_2$。同样的数，换了个装法。
 
+### 一个箭头一个箭头地加
+
+求和里的每一项 $x_j\,\omega^{-jk}$ 都是平面上的一个箭头。它的方向是 $\omega^{-jk}$：从横轴出发顺时针转，每过一个采样多转 $k$ 格。它的长度是 $x_j$，采样是负数就掉个头。$X_k$ 是这 $n$ 个箭头首尾相接，最后走到的地方。
+
+下面的信号有 32 个采样，是两个波的和：一个频率 3、幅度 1、起点往后挪了 $60°$；一个频率 7、幅度 0.6。为了能和幅度直接比，图上的每个箭头都缩到了原来的 $1/16$，也就是除以了 $n/2$：
+
+```render html
+<style>
+  .ft { --s1: #b85a31; --s2: #125d8e; font-size: 13px; line-height: 1.5; }
+  :root[data-theme="dark"] .ft { --s1: #d57935; --s2: #409dd5; }
+  .ft .view { display: grid; grid-template-columns: minmax(0, 1fr) 210px; gap: 16px; align-items: end; }
+  .ft canvas { display: block; width: 100%; }
+  .ft .key { display: inline-block; width: 14px; margin-right: 6px; border-top: 2px solid; vertical-align: middle; }
+  .ft .cap { display: flex; flex-wrap: wrap; gap: 0 16px; margin: 0 0 4px; color: var(--muted); font-size: 12px; }
+  .ft .knobs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 24px; margin-top: 8px; }
+  .ft label { display: grid; grid-template-columns: 1fr auto; align-items: center; color: var(--muted); }
+  .ft output { color: var(--text); font: 13px var(--font-mono); }
+  .ft input { grid-column: 1 / -1; width: 100%; min-height: 36px; margin: 0; accent-color: var(--s1); }
+  .ft .foot { display: flex; flex-wrap: wrap; align-items: start; gap: 4px 20px; margin-top: 6px; }
+  .ft .read { flex: 1; min-width: 220px; min-height: 4.8em; margin: 0; }
+  .ft button { min-height: 36px; padding: 4px 0; border: 0; border-bottom: 2px solid var(--rule-strong); background: none; color: var(--accent-ink); font-size: 14px; cursor: pointer; }
+  @media (max-width: 520px) {
+    .ft .view { grid-template-columns: 1fr; }
+    .ft .plane { max-width: 210px; margin-inline: auto; }
+    .ft .knobs { grid-template-columns: 1fr; }
+  }
+</style>
+<section class="ft" aria-label="把每个采样转过一个角度，再首尾相接地加起来">
+  <div class="view">
+    <div>
+      <p class="cap"><span><i class="key" style="color: var(--s1)"></i>已经加进去的采样</span><span><i class="key" style="border-top-width: 3px; color: var(--text)"></i>刚加的一个</span></p>
+      <canvas class="wave" role="img" aria-label="32 个采样"></canvas>
+    </div>
+    <canvas class="plane" role="img" aria-label="每个采样变成一个箭头，首尾相接；圆的半径是 1"></canvas>
+  </div>
+  <div class="knobs">
+    <label><span>要量的频率 $k$</span><output class="ko"></output><input class="k" type="range" min="0" max="16" value="3" aria-label="要量的频率" /></label>
+    <label><span>加到第几个采样</span><output class="mo"></output><input class="m" type="range" min="1" max="32" value="32" aria-label="加到第几个采样" /></label>
+  </div>
+  <div class="foot">
+    <p class="read" aria-live="polite"></p>
+    <button type="button">从第一个采样加起</button>
+  </div>
+</section>
+<script>
+(() => {
+  const root = document.querySelector('.ft');
+  const wave = root.querySelector('.wave'), plane = root.querySelector('.plane');
+  const kIn = root.querySelector('.k'), mIn = root.querySelector('.m'), read = root.querySelector('.read');
+  const N = 32, TAU = 2 * Math.PI, C = {};
+  // 两个波的和：频率 3、幅度 1、起点往后挪 60°；频率 7、幅度 0.6
+  const signal = (t) => Math.cos(TAU * 3 * t - Math.PI / 3) + .6 * Math.cos(TAU * 7 * t);
+  const x = Array.from({ length: N }, (_, j) => signal(j / N));
+  let timer = 0;
+  const theme = () => {
+    const s = getComputedStyle(root);
+    for (const key of ['text', 'muted', 'bg', 'rule-strong', 's1']) C[key] = s.getPropertyValue('--' + key).trim();
+  };
+  const fit = (cv, h) => {
+    const w = cv.clientWidth, r = window.devicePixelRatio || 1, ctx = cv.getContext('2d');
+    cv.width = Math.round(w * r); cv.height = Math.round(h * r); cv.style.height = h + 'px';
+    ctx.setTransform(r, 0, 0, r, 0, 0); ctx.clearRect(0, 0, w, h);
+    return [ctx, w];
+  };
+  const seg = (ctx, x1, y1, x2, y2, color, width) => {
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+    ctx.strokeStyle = color; ctx.lineWidth = width; ctx.lineCap = 'round'; ctx.stroke();
+  };
+  const disc = (ctx, px, py, r, color) => { ctx.beginPath(); ctx.arc(px, py, r, 0, TAU); ctx.fillStyle = color; ctx.fill(); };
+  const num = (v) => (Math.abs(v) < .005 ? 0 : v).toFixed(2).replace('-', '−');
+  const complex = (re, im) => Math.abs(im) < .005 ? num(re) : num(re) + (im < 0 ? ' − ' : ' + ') + num(Math.abs(im)) + 'i';
+  const draw = () => {
+    if (!wave.clientWidth) return;
+    const k = Number(kIn.value), m = Number(mIn.value);
+    // 前 m 个箭头首尾相接：第 j 个是 x_j·ω^(-jk)，画的时候缩小到 1/16
+    const pts = [[0, 0]];
+    for (let j = 0; j < m; j++) {
+      const turn = -TAU * j * k / N;
+      pts.push([pts[j][0] + x[j] * Math.cos(turn) / (N / 2), pts[j][1] + x[j] * Math.sin(turn) / (N / 2)]);
+    }
+    {
+      const h = 170, [ctx, w] = fit(wave, h), scale = (h / 2 - 10) / 1.6, X = (j) => (j + .5) / N * w;
+      seg(ctx, 0, h / 2, w, h / 2, C['rule-strong'], 1);
+      ctx.beginPath();
+      for (let p = 0; p <= w; p += 2) { const y = h / 2 - signal(p / w - .5 / N) * scale; if (p) ctx.lineTo(p, y); else ctx.moveTo(p, y); }
+      ctx.strokeStyle = C['rule-strong']; ctx.lineWidth = 1; ctx.stroke();
+      for (let j = 0; j < N; j++) {
+        const last = j === m - 1, color = last ? C.text : j < m ? C.s1 : C['rule-strong'], y = h / 2 - x[j] * scale;
+        seg(ctx, X(j), h / 2, X(j), y, color, last ? 3 : 1.5);
+        disc(ctx, X(j), y, last ? 4 : 2.5, color);
+      }
+    }
+    {
+      const [ctx, w] = fit(plane, plane.clientWidth), c = w / 2, unit = (c - 10) / 1.25;
+      const P = ([re, im]) => [c + re * unit, c - im * unit];
+      seg(ctx, 0, c, w, c, C['rule-strong'], 1); seg(ctx, c, 0, c, w, C['rule-strong'], 1);
+      ctx.beginPath(); ctx.arc(c, c, unit, 0, TAU); ctx.strokeStyle = C['rule-strong']; ctx.lineWidth = 1; ctx.stroke();
+      ctx.beginPath();
+      pts.forEach((p, j) => { const [px, py] = P(p); if (j) ctx.lineTo(px, py); else ctx.moveTo(px, py); });
+      ctx.strokeStyle = C.s1; ctx.lineWidth = 1.5; ctx.lineJoin = 'round'; ctx.stroke();
+      pts.forEach((p) => disc(ctx, ...P(p), 1.75, C.s1));
+      seg(ctx, ...P(pts[m - 1]), ...P(pts[m]), C.text, 3);
+      disc(ctx, ...P(pts[m]), 7, C.bg); disc(ctx, ...P(pts[m]), 5, C.text);
+    }
+    const re = pts[m][0] * N / 2, im = pts[m][1] * N / 2, size = Math.hypot(re, im);
+    const angle = Math.round(Math.atan2(im, re) * 180 / Math.PI);
+    root.querySelector('.ko').textContent = k;
+    root.querySelector('.mo').textContent = m;
+    read.innerHTML = m < N
+      ? '前 ' + m + ' 个采样加起来，走到了 <b>' + complex(re, im) + '</b>。'
+      : size < .005
+        ? '32 个箭头绕回了原点，$X_{' + k + '}$ 是 <b>0</b>：信号里没有这个频率。'
+        : '32 个箭头的终点是 $X_{' + k + '}$，等于 <b>' + complex(re, im) + '</b>，长度 <b>' + num(size) + '</b>。除以 16，幅度是 <b>' + num(size / 16) + '</b>；方向'
+          + (angle ? '在横轴' + (angle < 0 ? '下方' : '上方') + ' <b>' + Math.abs(angle) + '°</b>。' : '正好沿着横轴。');
+  };
+  root.querySelector('button').addEventListener('click', () => {
+    clearInterval(timer);
+    mIn.value = 1; draw();
+    timer = setInterval(() => {
+      if (Number(mIn.value) >= N) return clearInterval(timer);
+      mIn.value = Number(mIn.value) + 1; draw();
+    }, 80);
+  });
+  kIn.addEventListener('input', draw);
+  mIn.addEventListener('input', () => { clearInterval(timer); draw(); });
+  window.addEventListener('themechange', () => { theme(); draw(); });
+  theme();
+  new ResizeObserver(draw).observe(root.querySelector('.view'));
+})();
+</script>
+```
+
+量频率 3 的时候，箭头一路打着小弯，却始终朝同一个方向挪，最后停在半径为 1 的圆上、横轴下方 $60°$ 的地方：幅度和起点都在这一个点里。量频率 7，终点在横轴上离原点 0.6 处。量别的频率，箭头兜完整圈，回到原点。
+
+原因在 $\cos$ 波的另一种写法里。一个逆时针转的点和一个顺时针转的点，纵坐标总是相反，横坐标总是相同，加起来除以 2 就只剩横坐标：
+
+$$
+\cos\frac{2\pi kj}{n}=\frac{\omega^{jk}+\omega^{-jk}}{2}
+$$
+
+**一个 $\cos$ 波，是两个反着转的点各出一半。** 拿 $\omega^{-jk}$ 去乘它：逆时针的那一半 $\omega^{jk}$ 被转了回去，$\omega^{jk}\cdot\omega^{-jk}=1$，每一步都指着同一个方向，$n$ 步攒下来就是 $n/2$ 份幅度；顺时针的那一半成了 $\omega^{-2jk}$，转得更快，兜完整圈抵消掉。信号里别的频率，两半都还在转，也都抵消。
+
+定义里的负号是干这个用的：**顺时针转回去，把要量的那个频率转停。** 幅度要除以 $n/2$ 而不是 $n$，也是因为 $X_k$ 只收到了这个波的一半；另一半在 $X_{n-k}$ 那里，下面就会看到。
+
 ### 怎么读
 
 - **$X_k$ 的长度**是这个频率有多强，**角度**是这个波从哪开始。$X_1=6-2i$ 的长度是 $\sqrt{6^2+2^2}\approx6.32$。
@@ -620,6 +781,71 @@ $$
 - $X_0$ 除以 $n$ 是整段信号的平均值：$8\div4=2$。
 - **后一半是前一半的镜像。** $X_3=6+2i$ 和 $X_1=6-2i$ 只差虚部的符号。原因是 $\omega^{-3}=\omega^{1}$：只有 4 个采样的时候，“顺时针每次走 3 格”和“逆时针每次走 1 格”落在同样的点上，分不出来。只要信号是实数，$X_{n-k}$ 总是 $X_k$ 上下翻过来的样子。真正有内容的是 $X_0$ 到 $X_{n/2}$。
 - 这也说明 $n$ 个采样最高只能分辨到频率 $n/2$：一次起伏里至少得有两个采样，才看得出它在起伏。
+
+镜像这件事值得亲眼看一下。8 个采样，频率 $k$ 的 $\cos$ 波和频率 $8-k$ 的 $\cos$ 波：
+
+```render html
+<style>
+  .ft { --s1: #b85a31; --s2: #125d8e; font-size: 13px; line-height: 1.5; }
+  :root[data-theme="dark"] .ft { --s1: #d57935; --s2: #409dd5; }
+  .ft canvas { display: block; width: 100%; }
+  .ft .key { display: inline-block; width: 14px; margin-right: 6px; border-top: 2px solid; vertical-align: middle; }
+  .ft .dot { display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50%; background: var(--text); }
+  .ft .cap { display: flex; flex-wrap: wrap; gap: 0 16px; margin: 0 0 4px; color: var(--muted); font-size: 12px; }
+  .ft .pick { display: flex; align-items: center; gap: 12px; margin-top: 8px; color: var(--muted); }
+  .ft .pick input { flex: 1; min-width: 0; min-height: 36px; margin: 0; accent-color: var(--s1); }
+  .ft .pick output { min-width: 1.5em; color: var(--text); font: 15px var(--font-mono); text-align: right; }
+  .ft .read { min-height: 3.2em; margin: 4px 0 0; }
+  .ft .read span { font-family: var(--font-mono); }
+</style>
+<section class="ft" aria-label="两个不同频率的波经过同样的八个采样点">
+  <p class="cap"><span><i class="key" style="color: var(--s1)"></i>频率 <b class="a"></b></span><span><i class="key" style="border-top-style: dashed; color: var(--s2)"></i>频率 <b class="b"></b></span><span><i class="dot"></i>8 个采样</span></p>
+  <canvas role="img" aria-label="两条余弦曲线和它们共同经过的八个采样点"></canvas>
+  <label class="pick"><span>频率 $k$</span><input type="range" min="0" max="4" value="3" aria-label="频率 k" /><output></output></label>
+  <p class="read" aria-live="polite"></p>
+</section>
+<script>
+(() => {
+  const root = document.querySelector('.ft'), cv = root.querySelector('canvas'), ctx = cv.getContext('2d');
+  const slider = root.querySelector('input'), read = root.querySelector('.read');
+  const N = 8, TAU = 2 * Math.PI, H = 150, C = {};
+  const theme = () => {
+    const s = getComputedStyle(root);
+    for (const key of ['text', 'bg', 'rule-strong', 's1', 's2']) C[key] = s.getPropertyValue('--' + key).trim();
+  };
+  const num = (v) => (Math.abs(v) < .005 ? 0 : v).toFixed(2).replace('-', '−');
+  const draw = () => {
+    const w = cv.clientWidth, r = window.devicePixelRatio || 1;
+    if (!w) return;
+    cv.width = Math.round(w * r); cv.height = Math.round(H * r); cv.style.height = H + 'px';
+    ctx.setTransform(r, 0, 0, r, 0, 0); ctx.clearRect(0, 0, w, H);
+    const k = Number(slider.value), pad = 8, X = (t) => pad + t * (w - 2 * pad), Y = (v) => H / 2 - v * (H / 2 - 12);
+    ctx.beginPath(); ctx.moveTo(0, H / 2); ctx.lineTo(w, H / 2); ctx.strokeStyle = C['rule-strong']; ctx.lineWidth = 1; ctx.stroke();
+    const curve = (f, color, width, dash) => {
+      ctx.beginPath();
+      for (let p = 0; p <= 400; p++) { const t = p / 400; if (p) ctx.lineTo(X(t), Y(Math.cos(TAU * f * t))); else ctx.moveTo(X(t), Y(1)); }
+      ctx.setLineDash(dash); ctx.strokeStyle = color; ctx.lineWidth = width; ctx.lineJoin = 'round'; ctx.stroke(); ctx.setLineDash([]);
+    };
+    curve(N - k, C.s2, 1.5, [5, 4]); curve(k, C.s1, 2.5, []);
+    const values = Array.from({ length: N }, (_, j) => Math.cos(TAU * k * j / N));
+    values.forEach((v, j) => {
+      ctx.beginPath(); ctx.arc(X(j / N), Y(v), 7, 0, TAU); ctx.fillStyle = C.bg; ctx.fill();
+      ctx.beginPath(); ctx.arc(X(j / N), Y(v), 5, 0, TAU); ctx.fillStyle = C.text; ctx.fill();
+    });
+    root.querySelector('output').textContent = k;
+    root.querySelector('.a').textContent = k;
+    root.querySelector('.b').textContent = N - k;
+    read.innerHTML = (k === N / 2 ? '两条线重合，采样点上的值是：' : '两个波在 8 个采样点上的值相同：') + '<span>' + values.map(num).join('，') + '</span>。';
+  };
+  slider.addEventListener('input', draw);
+  window.addEventListener('themechange', () => { theme(); draw(); });
+  theme();
+  new ResizeObserver(draw).observe(cv);
+})();
+</script>
+```
+
+两条曲线在采样之间走的路完全不同，落到采样点上却分毫不差。电脑手里只有采样，它没有办法知道哪一条才是真的。$\sin$ 波也是这样，只是两边差一个正负号，$X_{n-k}$ 的虚部反号就是从这来的。频率 0 和频率 8 也是一对：起伏得和采样一样快的波，每次都在最高点被量到，看上去是一条不动的直线。录音之前要先把高于采样率一半的频率滤掉，就是怕它们冒充成低频混进来。
 
 如果信号是每秒采 $f_s$ 次得到的，这 $n$ 个采样一共是 $n/f_s$ 秒。在这段时间里起伏 $k$ 次，就是每秒起伏 $k\cdot f_s/n$ 次。所以 $X_k$ 对应的频率是 $k\cdot f_s/n$ 赫兹。
 
@@ -712,7 +938,7 @@ $$
   <label class="pick"><span>最高留到哪个频率</span><input type="range" min="1" max="64" value="8" aria-label="留下的最高频率" /><output></output></label>
   <p class="read" aria-live="polite"></p>
   <p class="cap"><span>每个频率的份量</span><span><i class="box" style="background: var(--s1)"></i>留下</span><span><i class="box" style="background: var(--rule-strong)"></i>清零</span></p>
-  <div class="stage"><canvas class="c2" role="img" aria-label="信号的频谱"></canvas></div>
+  <div class="stage"><canvas class="c2" role="img" aria-label="信号的频谱" style="cursor: pointer"></canvas></div>
 </section>
 <script>
 (() => {
@@ -829,6 +1055,11 @@ $$
   hover(cv2, (f) => {
     over = f === null ? null : Math.min(HALF, Math.floor(f * (HALF + 1))); draw();
     return f === null ? null : [[null, num(strength[over]), '频率 ' + over + (over <= cut ? '，留下' : '，清零')]];
+  });
+  cv2.addEventListener('click', (event) => {
+    const box = cv2.getBoundingClientRect();
+    slider.value = Math.max(1, Math.min(HALF, Math.floor((event.clientX - box.left) / box.width * (HALF + 1))));
+    draw();
   });
   slider.addEventListener('input', draw);
   window.addEventListener('themechange', () => { theme(); draw(); });
@@ -1306,47 +1537,138 @@ std::vector<Complex> fft(const std::vector<Complex>& x, bool inverse) {
 1. 先把数组按位逆序重排。这时每一格是一段“长度为 1 的信号”，它的变换就是它自己。
 2. 相邻的两格合成长度 2 的段，相邻的两段再合成长度 4 的段，一直合到长度 $n$。每次合并就是一批蝶形运算。
 
-合并可以直接在原数组上做。一段的左半边放着 $E$，右半边放着 $O$；一次蝶形运算读左半边第 $k$ 格和右半边第 $k$ 格，算出来的两个数正好该写回这两格。$n=8$ 时，整个过程画出来是这样：
+合并可以直接在原数组上做。一段的左半边放着 $E$，右半边放着 $O$；一次蝶形运算读左半边第 $k$ 格和右半边第 $k$ 格，算出来的两个数正好该写回这两格。$n=8$ 时，拿 $5,3,-1,1,0,2,4,2$ 这八个采样把整个过程走一遍（$\omega_m$ 指 $m$ 次单位根里的第一个点，段长是多少就用多少次的单位根）：
 
-```render svg title="$n=8$ 的蝶形网络。左边是按位逆序排好的采样，每过一列，段长翻一倍；加粗的四条线是一次蝶形运算"
-<svg viewBox="0 0 360 312" width="360" xmlns="http://www.w3.org/2000/svg">
-  <g fill="none" stroke="var(--rule-strong)" stroke-width="1.5">
-    <path d="M64 40H304M64 76H304M64 112H304M64 148H304M64 184H304M64 220H304M64 256H304M64 292H304" />
-    <path d="M64 40L144 76M64 76L144 40M64 112L144 148M64 148L144 112M64 184L144 220M64 220L144 184M64 256L144 292M64 292L144 256" />
-    <path d="M144 40L224 112M144 112L224 40M144 76L224 148M144 148L224 76M144 184L224 256M144 256L224 184M144 220L224 292M144 292L224 220" />
-    <path d="M224 40L304 184M224 184L304 40M224 76L304 220M224 220L304 76M224 112L304 256M224 256L304 112M224 148L304 292M224 292L304 148" />
-  </g>
-  <path d="M224 40H304M224 184H304M224 40L304 184M224 184L304 40" fill="none" stroke="currentColor" stroke-width="3" />
-  <path d="M64 40h.01M144 40h.01M224 40h.01M304 40h.01M64 76h.01M144 76h.01M224 76h.01M304 76h.01M64 112h.01M144 112h.01M224 112h.01M304 112h.01M64 148h.01M144 148h.01M224 148h.01M304 148h.01M64 184h.01M144 184h.01M224 184h.01M304 184h.01M64 220h.01M144 220h.01M224 220h.01M304 220h.01M64 256h.01M144 256h.01M224 256h.01M304 256h.01M64 292h.01M144 292h.01M224 292h.01M304 292h.01" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" />
-  <g fill="var(--muted)" font-size="12" text-anchor="middle">
-    <text x="104" y="18">合成 2 格</text>
-    <text x="184" y="18">合成 4 格</text>
-    <text x="264" y="18">合成 8 格</text>
-  </g>
-  <g fill="currentColor" font-size="15" text-anchor="end">
-    <text x="50" y="45">x<tspan dy="4" font-size="11">0</tspan></text>
-    <text x="50" y="81">x<tspan dy="4" font-size="11">4</tspan></text>
-    <text x="50" y="117">x<tspan dy="4" font-size="11">2</tspan></text>
-    <text x="50" y="153">x<tspan dy="4" font-size="11">6</tspan></text>
-    <text x="50" y="189">x<tspan dy="4" font-size="11">1</tspan></text>
-    <text x="50" y="225">x<tspan dy="4" font-size="11">5</tspan></text>
-    <text x="50" y="261">x<tspan dy="4" font-size="11">3</tspan></text>
-    <text x="50" y="297">x<tspan dy="4" font-size="11">7</tspan></text>
-  </g>
-  <g fill="currentColor" font-size="15">
-    <text x="318" y="45">X<tspan dy="4" font-size="11">0</tspan></text>
-    <text x="318" y="81">X<tspan dy="4" font-size="11">1</tspan></text>
-    <text x="318" y="117">X<tspan dy="4" font-size="11">2</tspan></text>
-    <text x="318" y="153">X<tspan dy="4" font-size="11">3</tspan></text>
-    <text x="318" y="189">X<tspan dy="4" font-size="11">4</tspan></text>
-    <text x="318" y="225">X<tspan dy="4" font-size="11">5</tspan></text>
-    <text x="318" y="261">X<tspan dy="4" font-size="11">6</tspan></text>
-    <text x="318" y="297">X<tspan dy="4" font-size="11">7</tspan></text>
-  </g>
-</svg>
+```render html title="$n=8$ 的蝶形网络。最左一列是按位逆序排好的采样，每过一列，段长翻一倍"
+<style>
+  .ft { --s1: #b85a31; --s2: #125d8e; --gap: 44px; font-size: 13px; line-height: 1.5; }
+  :root[data-theme="dark"] .ft { --s1: #d57935; --s2: #409dd5; }
+  .ft .cap { display: flex; flex-wrap: wrap; gap: 0 16px; margin: 0 0 4px; color: var(--muted); font-size: 12px; }
+  .ft .box { display: inline-block; width: 10px; height: 10px; margin-right: 6px; border: 2px solid; border-radius: 3px; vertical-align: -1px; }
+  .ft .net { display: grid; grid-template-columns: minmax(0, 1fr) var(--gap) minmax(0, 1fr) var(--gap) minmax(0, 1fr) var(--gap) minmax(0, 1fr) auto; grid-auto-rows: 30px; align-items: center; }
+  .ft .head { color: var(--muted); font-size: 12px; text-align: center; white-space: nowrap; }
+  .ft .cell { height: 26px; padding: 0 2px; border: 1px solid var(--rule-strong); border-radius: 6px; background: var(--bg-raised); color: var(--text); font: 12px var(--font-mono); white-space: nowrap; overflow: hidden; cursor: pointer; }
+  .ft .cell:focus-visible { outline-offset: 1px; }
+  .ft .cell.src { border-color: var(--s2); box-shadow: inset 0 0 0 1px var(--s2); }
+  .ft .cell.dst { border-color: var(--s1); box-shadow: inset 0 0 0 1px var(--s1); }
+  .ft .wire { grid-row: 2 / span 8; width: 100%; height: 240px; }
+  .ft .wire line { stroke: var(--rule-strong); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+  .ft .wire line.on { stroke: var(--text); stroke-width: 2.5; }
+  .ft .name { padding-left: 8px; color: var(--muted); font-size: 12px; white-space: nowrap; }
+  .ft .read { min-height: 6.4em; margin: 8px 0 0; }
+  @media (max-width: 480px) {
+    .ft { --gap: 18px; }
+    .ft .cell { font-size: 11px; }
+    .ft .name { padding-left: 4px; }
+  }
+</style>
+<section class="ft" aria-label="八个采样的蝶形网络，每一格都是算出来的数">
+  <p class="cap"><span><i class="box" style="color: var(--s2)"></i>读这两格</span><span><i class="box" style="color: var(--s1)"></i>算出这两格</span></p>
+  <div class="net" role="group" aria-label="四列数：位逆序之后，以及每一轮合并之后"></div>
+  <p class="read" aria-live="polite"></p>
+</section>
+<script>
+(() => {
+  const root = document.querySelector('.ft'), net = root.querySelector('.net'), read = root.querySelector('.read');
+  const N = 8, x = [5, 3, -1, 1, 0, 2, 4, 2], TAU = 2 * Math.PI;
+  const reverse = (i) => (i & 1) << 2 | (i & 2) | (i >> 2);
+  // cols[0] 是位逆序后的采样，cols[s] 是合并成段长 2^s 之后的数；每个数是 [实部, 虚部]
+  const cols = [Array.from({ length: N }, (_, i) => [x[reverse(i)], 0])];
+  const root8 = (len, k) => [Math.cos(TAU * k / len), -Math.sin(TAU * k / len)];
+  const mul = ([a, b], [c, d]) => [a * c - b * d, a * d + b * c];
+  for (let s = 1; s <= 3; s++) {
+    const len = 1 << s, prev = cols[s - 1], next = [];
+    for (let start = 0; start < N; start += len) {
+      for (let k = 0; k < len / 2; k++) {
+        const even = prev[start + k], odd = mul(prev[start + k + len / 2], root8(len, k));
+        next[start + k] = [even[0] + odd[0], even[1] + odd[1]];
+        next[start + k + len / 2] = [even[0] - odd[0], even[1] - odd[1]];
+      }
+    }
+    cols.push(next);
+  }
+  const part = (v) => String(Number(v.toFixed(2)) || 0);
+  const show = ([re, im]) => {
+    const a = part(re), b = part(im);
+    if (b === '0') return a;
+    const bi = (b === '1' ? '' : b === '-1' ? '-' : b) + 'i';
+    return a === '0' ? bi : a + (bi[0] === '-' ? '' : '+') + bi;
+  };
+  const wrap = (text) => /^[\d.]+$/.test(text) ? text : '(' + text + ')';
+  const minus = (text) => text.replaceAll('-', '−');
+  // 第 s 列第 r 格属于哪只蝴蝶：上面一格、下面一格、段长、段内第几格
+  const wing = (s, r) => {
+    const len = 1 << s, half = len / 2, k = r % half, top = r - r % len + k;
+    return { len, k, top, bottom: top + half };
+  };
+  ['位逆序', '段长 2', '段长 4', '段长 8'].forEach((text, s) => {
+    const head = net.appendChild(Object.assign(document.createElement('span'), { className: 'head', textContent: text }));
+    head.style.gridArea = '1 / ' + (2 * s + 1);
+  });
+  const cells = cols.map((col, s) => col.map((value, r) => {
+    const cell = net.appendChild(Object.assign(document.createElement('button'), { type: 'button', className: 'cell', tabIndex: -1 }));
+    cell.innerHTML = s ? minus(show(value)) : 'x<sub>' + reverse(r) + '</sub> = ' + minus(show(value));
+    cell.style.gridArea = (r + 2) + ' / ' + (2 * s + 1);
+    cell.addEventListener('pointerenter', () => select(s, r));
+    cell.addEventListener('focus', () => select(s, r));
+    cell.addEventListener('click', () => select(s, r));
+    return cell;
+  }));
+  const wires = [0, 1, 2].map((s) => {
+    const svg = net.appendChild(document.createElementNS('http://www.w3.org/2000/svg', 'svg'));
+    svg.setAttribute('class', 'wire'); svg.setAttribute('viewBox', '0 0 10 80'); svg.setAttribute('preserveAspectRatio', 'none'); svg.setAttribute('aria-hidden', 'true');
+    svg.style.gridColumn = 2 * s + 2;
+    return svg;
+  });
+  for (let r = 0; r < N; r++) {
+    const name = net.appendChild(Object.assign(document.createElement('span'), { className: 'name' }));
+    name.innerHTML = 'X<sub>' + r + '</sub>';
+    name.style.gridArea = (r + 2) + ' / 8';
+  }
+  let at = [3, 0];
+  const select = (s, r) => {
+    cells[at[0]][at[1]].tabIndex = -1;
+    at = [s, r];
+    cells[s][r].tabIndex = 0;
+    const pair = s ? wing(s, r) : null;
+    cells.forEach((col, cs) => col.forEach((cell, cr) => {
+      const hit = pair && (cr === pair.top || cr === pair.bottom);
+      cell.classList.toggle('src', Boolean(hit && cs === s - 1));
+      cell.classList.toggle('dst', s ? Boolean(hit && cs === s) : cs === 0 && cr === r);
+    }));
+    wires.forEach((svg, ws) => {
+      let plain = '', bold = '';
+      for (let row = 0; row < N; row++) {
+        const { top, bottom } = wing(ws + 1, row), other = row === top ? bottom : top;
+        for (const to of [row, other]) {
+          const line = '<line x1="0" y1="' + (10 * row + 5) + '" x2="10" y2="' + (10 * to + 5) + '"';
+          if (pair && ws === s - 1 && (row === pair.top || row === pair.bottom)) bold += line + ' class="on" />'; else plain += line + ' />';
+        }
+      }
+      svg.innerHTML = plain + bold;
+    });
+    if (!pair) {
+      const bits = r.toString(2).padStart(3, '0');
+      read.innerHTML = '第 ' + r + ' 格放的是 $x_{' + reverse(r) + '}$：' + r + ' 写成二进制是 <code>' + bits + '</code>，倒过来读是 <code>' + [...bits].reverse().join('') + '</code>，也就是 ' + reverse(r) + '。';
+      return;
+    }
+    const E = show(cols[s - 1][pair.top]), O = show(cols[s - 1][pair.bottom]), w = show(root8(pair.len, pair.k));
+    read.innerHTML = '这一段长 ' + pair.len + '，蝴蝶在段内第 ' + pair.k + ' 格，要乘的单位根是 $\\omega_{' + pair.len + '}^{' + (pair.k ? -pair.k : 0) + '}=' + w + '$。'
+      + '<br>第 ' + pair.top + ' 格：$' + wrap(E) + '+' + wrap(w) + '\\cdot' + wrap(O) + '=' + show(cols[s][pair.top]) + '$'
+      + '<br>第 ' + pair.bottom + ' 格：$' + wrap(E) + '-' + wrap(w) + '\\cdot' + wrap(O) + '=' + show(cols[s][pair.bottom]) + '$';
+  };
+  net.addEventListener('keydown', (event) => {
+    const step = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[event.key];
+    if (!step) return;
+    event.preventDefault();
+    cells[Math.max(0, Math.min(3, at[0] + step[0]))][Math.max(0, Math.min(N - 1, at[1] + step[1]))].focus();
+  });
+  select(3, 0);
+})();
+</script>
 ```
 
-每一列有 $n/2$ 只“蝴蝶”，一共 $\log_2n$ 列。加粗的那一只读的是第 0 格和第 4 格，写回的也是第 0 格和第 4 格。
+每一列有 $n/2$ 只“蝴蝶”，一共 $\log_2n$ 列。每只蝴蝶读左边一列的两格，算出的两个数写在右边一列的同样两格里，所以四列数其实可以共用一个数组。越往右，一只蝴蝶的两格隔得越远：段长 2 时相邻，段长 8 时隔着 4 格。
 
 ### 就地做的版本
 
