@@ -47,14 +47,12 @@ export function mountGorilla(element: HTMLElement): void {
   const motionButton = element.querySelector<HTMLButtonElement>(
     '[data-gorilla-motion]',
   )!;
-  const greetingStatus = element.querySelector<HTMLElement>(
-    '[data-gorilla-status]',
-  )!;
+  const status = element.querySelector<HTMLElement>('[data-gorilla-status]')!;
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const scene = new Scene();
-  const camera = new OrthographicCamera(-2.65, 2.65, 2.65, -2.65, 0.1, 30);
-  camera.position.set(0, 0.65, 8);
-  camera.lookAt(0, -0.04, 0);
+  const camera = new OrthographicCamera(-1.89, 1.89, 1.89, -1.89, 0.1, 30);
+  camera.position.set(0, 2.66, 8);
+  camera.lookAt(0, 1.44, 0);
 
   const renderer = new WebGLRenderer({
     canvas,
@@ -64,11 +62,12 @@ export function mountGorilla(element: HTMLElement): void {
   });
   renderer.setClearColor(0x000000, 0);
   renderer.toneMapping = ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.14;
+  renderer.toneMappingExposure = 1.06;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = PCFShadowMap;
 
-  const { body, head, eyes, rightArm, rightForearm } = createGorilla();
+  const { body, head, setEyes } = createGorilla();
+  const neckHeight = head.position.y;
   body.traverse((object) => {
     if (!(object instanceof Mesh)) return;
     object.castShadow = true;
@@ -76,20 +75,19 @@ export function mountGorilla(element: HTMLElement): void {
   });
   scene.add(body);
   const floorMaterial = new MeshBasicMaterial({
-    color: '#25251f',
+    color: '#34343b',
     map: contactShadow(),
     transparent: true,
     depthWrite: false,
     opacity: 0.32,
   });
-  const floor = new Mesh(new PlaneGeometry(4.1, 3), floorMaterial);
+  const floor = new Mesh(new PlaneGeometry(3.55, 2.65), floorMaterial);
   floor.rotation.x = -Math.PI / 2;
-  const groundY = -2.085;
-  floor.position.y = groundY;
   scene.add(floor);
-  const ambient = new HemisphereLight('#fbf3e2', '#6b6b79', 1.92);
-  const key = new DirectionalLight('#ffeacd', 3.05);
-  key.position.set(-3.2, 5.2, 4.6);
+  const ambient = new HemisphereLight('#fcf5ea', '#8a8790', 1.83);
+  const key = new DirectionalLight('#fff3e1', 2.5);
+  key.position.set(-4.5, 6.0, 4.3);
+  key.target.position.set(0, 1.5, 0);
   key.castShadow = true;
   key.shadow.mapSize.set(1024, 1024);
   key.shadow.camera.left = -3;
@@ -98,29 +96,34 @@ export function mountGorilla(element: HTMLElement): void {
   key.shadow.camera.bottom = -3;
   key.shadow.camera.near = 0.5;
   key.shadow.camera.far = 15;
-  key.shadow.normalBias = 0.025;
+  key.shadow.normalBias = 0.014;
+  key.shadow.intensity = 0.8;
   key.shadow.bias = -0.0001;
   key.shadow.radius = 3;
-  const fill = new DirectionalLight('#e6ecff', 1.05);
-  fill.position.set(4, 1, 3);
-  const rim = new DirectionalLight('#eef0e2', 3.4);
-  rim.position.set(1, 3, -4);
-  scene.add(ambient, key, fill, rim);
+  const fill = new DirectionalLight('#e2ecfc', 0.83);
+  fill.position.set(3, 2, 4);
+  const rim = new DirectionalLight('#efeee8', 2.05);
+  rim.position.set(2.5, 4.8, -3.5);
+  scene.add(ambient, key, key.target, fill, rim);
 
   let inView = true;
   let hasContext = true;
   let motionEnabled = !reducedMotion.matches;
   let frame = 0;
   let lastRender = 0;
-  let lastPoseTime = 0;
-  let yaw = -0.2;
+  let lastPoseTime = performance.now();
+  let poseTime = 0;
+  const defaultYaw = -0.32;
+  let yaw = defaultYaw;
   let headX = 0;
   let headY = 0;
+  let gazeX = 0;
+  let gazeY = 0;
   let greetingStart = -Infinity;
-  let greetingPose = 0;
-  let greetingTimeout: ReturnType<typeof setTimeout> | undefined;
+  let stillGreeting = false;
   let pointerId: number | undefined;
   let pointerX = 0;
+  let pointerY = 0;
   let dragDistance = 0;
 
   function updateMotionButton() {
@@ -134,43 +137,33 @@ export function mountGorilla(element: HTMLElement): void {
 
   function draw(time = performance.now()) {
     if (!canRender()) return;
-    const delta = MathUtils.clamp((time - lastPoseTime) / 1000, 0, 0.1);
+    const delta = Math.max(0, (time - lastPoseTime) / 1000);
     lastPoseTime = time;
-    const elapsed = (time - greetingStart) / 1900;
-    const greeting =
-      motionEnabled && elapsed >= 0 && elapsed < 1
-        ? MathUtils.smoothstep(elapsed, 0, 0.25) *
-          (1 - MathUtils.smoothstep(elapsed, 0.72, 1))
-        : greetingPose;
-    const idle = motionEnabled ? Math.sin(time / 1800) * 0.003 : 0;
-    const blinkTime = (time + 2700) % 5200;
-    const blink =
-      motionEnabled && blinkTime < 160
-        ? Math.sin((blinkTime / 160) * Math.PI) ** 2
-        : 0;
-    body.rotation.y = yaw;
-    body.scale.y = 1 + idle;
-    body.position.y = -groundY * idle;
-    for (const { globe, lid } of eyes) {
-      globe.scale.y = 1 - blink * 0.94;
-      lid.visible = blink > 0.02;
-      lid.scale.y = blink;
-      lid.position.y = globe.position.y + (1 - blink) * 0.095;
+    if (motionEnabled) poseTime += delta;
+    const t = motionEnabled ? poseTime : 0;
+    const since = t - greetingStart;
+    let nod = stillGreeting ? 1 : 0;
+    if (motionEnabled && since >= 0 && since < 0.94) {
+      nod =
+        MathUtils.smoothstep(since, 0, 0.34) *
+        (1 - MathUtils.smoothstep(since, 0.43, 0.94));
     }
-    rightArm.rotation.z = greeting * 1.1;
-    rightForearm.rotation.z =
-      greeting *
-      (2.15 +
-        (motionEnabled && greeting
-          ? Math.sin(elapsed * Math.PI * 6) * 0.14
-          : 0));
-    const pitch = headX + greeting * 0.07;
-    const roll = -0.02 + greeting * 0.06;
-    head.rotation.set(
-      motionEnabled ? MathUtils.damp(head.rotation.x, pitch, 10, delta) : pitch,
-      motionEnabled ? MathUtils.damp(head.rotation.y, headY, 10, delta) : headY,
-      motionEnabled ? MathUtils.damp(head.rotation.z, roll, 10, delta) : roll,
-    );
+    const breath = Math.sin(t * 1.56);
+    const blink =
+      Math.sin(Math.PI * MathUtils.clamp(((t % 5.3) - 2.03) / 0.205, 0, 1)) **
+      2;
+    body.rotation.y = yaw;
+    head.position.y = neckHeight + breath * 0.009 - nod * 0.022;
+    const settle = motionEnabled ? 1 - Math.exp(-delta * 8) : 1;
+    head.rotation.x +=
+      (-0.025 + headX + 0.193 * nod + breath * 0.008 - head.rotation.x) *
+      settle;
+    head.rotation.y += (0.12 + headY - head.rotation.y) * settle;
+    head.rotation.z += (-0.048 - 0.023 * nod - head.rotation.z) * settle;
+    const glance = motionEnabled ? 1 - Math.exp(-delta * 17) : 1;
+    gazeX += (headY * 0.35 - gazeX) * glance;
+    gazeY += (-headX * 0.22 - nod * 0.028 - gazeY) * glance;
+    setEyes(Math.max(blink, 0.4 * nod), gazeX, gazeY);
     renderer.render(scene, camera);
   }
 
@@ -188,8 +181,9 @@ export function mountGorilla(element: HTMLElement): void {
 
   function applyMotion(enabled: boolean): void {
     motionEnabled = enabled;
-    greetingPose = 0;
+    stillGreeting = false;
     greetingStart = -Infinity;
+    if (!enabled) headX = headY = 0;
     updateMotionButton();
     syncAnimation();
   }
@@ -197,6 +191,7 @@ export function mountGorilla(element: HTMLElement): void {
   function syncAnimation() {
     cancelAnimationFrame(frame);
     frame = 0;
+    lastPoseTime = performance.now();
     draw();
     if (motionEnabled && canRender()) {
       frame = requestAnimationFrame(animate);
@@ -214,7 +209,7 @@ export function mountGorilla(element: HTMLElement): void {
   function resize() {
     const { width, height } = canvas.parentElement!.getBoundingClientRect();
     if (!width || !height) return;
-    renderer.setPixelRatio(Math.min(devicePixelRatio, width < 480 ? 1.5 : 2));
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
     renderer.setSize(width, height, false);
     const halfWidth = (camera.top * width) / height;
     camera.left = -halfWidth;
@@ -224,25 +219,20 @@ export function mountGorilla(element: HTMLElement): void {
   }
 
   function greet() {
-    clearTimeout(greetingTimeout);
-    greetingStart = performance.now();
-    if (motionEnabled) greetingPose = 0;
-    else greetingPose = greetingPose ? 0 : 1;
-    greetingStatus.textContent = '嗨，欢迎来逛逛。';
-    greetingTimeout = setTimeout(() => {
-      greetingStatus.textContent = '';
-    }, 2600);
+    if (motionEnabled && poseTime - greetingStart >= 0.94)
+      greetingStart = poseTime;
+    stillGreeting = !motionEnabled && !stillGreeting;
+    status.textContent = '猩猩向你点了点头。';
     draw();
   }
 
   function resetView() {
-    clearTimeout(greetingTimeout);
-    greetingStatus.textContent = '';
+    status.textContent = '';
     greetingStart = -Infinity;
-    yaw = -0.2;
+    yaw = defaultYaw;
     headX = 0;
     headY = 0;
-    greetingPose = 0;
+    stillGreeting = false;
     draw();
   }
 
@@ -250,6 +240,7 @@ export function mountGorilla(element: HTMLElement): void {
     if (!event.isPrimary || event.button !== 0) return;
     pointerId = event.pointerId;
     pointerX = event.clientX;
+    pointerY = event.clientY;
     dragDistance = 0;
     canvas.setPointerCapture(event.pointerId);
   });
@@ -257,9 +248,10 @@ export function mountGorilla(element: HTMLElement): void {
   canvas.addEventListener('pointermove', (event) => {
     if (pointerId === event.pointerId) {
       const distance = event.clientX - pointerX;
-      dragDistance += Math.abs(distance);
+      dragDistance += Math.hypot(distance, event.clientY - pointerY);
       yaw += distance * 0.012;
       pointerX = event.clientX;
+      pointerY = event.clientY;
       draw();
     } else if (event.pointerType === 'mouse' && motionEnabled) {
       const bounds = canvas.getBoundingClientRect();
@@ -268,13 +260,13 @@ export function mountGorilla(element: HTMLElement): void {
           (event.clientY - bounds.top) / bounds.height - 0.5,
           -0.5,
           0.5,
-        ) * 0.12;
+        ) * 0.25;
       headY =
         MathUtils.clamp(
           (event.clientX - bounds.left) / bounds.width - 0.5,
           -0.5,
           0.5,
-        ) * 0.2;
+        ) * 0.43;
     }
   });
 
@@ -350,9 +342,9 @@ export function mountGorilla(element: HTMLElement): void {
   dimensions.observe(canvas.parentElement!);
   function updateLighting() {
     const dark = document.documentElement.dataset.theme === 'dark';
-    ambient.intensity = dark ? 1.7 : 1.92;
-    rim.intensity = dark ? 3.8 : 3.4;
-    floorMaterial.opacity = dark ? 0.55 : 0.32;
+    ambient.intensity = dark ? 1.86 : 1.83;
+    rim.intensity = dark ? 2.85 : 2.05;
+    floorMaterial.opacity = dark ? 0.54 : 0.36;
     draw();
   }
   const theme = new MutationObserver(updateLighting);

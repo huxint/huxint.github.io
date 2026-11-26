@@ -8,18 +8,27 @@ import { MarchingCubes } from 'three/addons/objects/MarchingCubes.js';
 export type Point = [number, number, number];
 export type Surface = (x: number, y: number, z: number) => number;
 
-export function ellipsoid(center: Point, radii: Point, roll = 0): Surface {
+export function ellipsoid(
+  center: Point,
+  radii: Point,
+  roll = 0,
+  pitch = 0,
+): Surface {
   const [cx, cy, cz] = center;
   const [rx, ry, rz] = radii;
   const radius = Math.min(...radii);
   const cosine = Math.cos(roll);
   const sine = Math.sin(roll);
+  const tiltCos = Math.cos(pitch);
+  const tiltSin = Math.sin(pitch);
   return (x, y, z) => {
     const dx = x - cx;
     const dy = y - cy;
     const u = (dx * cosine + dy * sine) / rx;
-    const v = (dy * cosine - dx * sine) / ry;
-    const w = (z - cz) / rz;
+    const localY = dy * cosine - dx * sine;
+    const dz = z - cz;
+    const v = (localY * tiltCos + dz * tiltSin) / ry;
+    const w = (dz * tiltCos - localY * tiltSin) / rz;
     return (Math.sqrt(u * u + v * v + w * w) - 1) * radius;
   };
 }
@@ -108,32 +117,6 @@ export function sculptSurface(
   volume.geometry.dispose();
   material.dispose();
 
-  const positions = geometry.getAttribute('position');
-  const uv = new Float32Array(positions.count * 2);
-  const centerX = (minimum[0] + maximum[0]) / 2;
-  const centerZ = (minimum[2] + maximum[2]) / 2;
-  for (let vertex = 0; vertex < positions.count; vertex++) {
-    uv[vertex * 2] =
-      Math.atan2(
-        positions.getZ(vertex) - centerZ,
-        positions.getX(vertex) - centerX,
-      ) /
-        (Math.PI * 2) +
-      0.5;
-    uv[vertex * 2 + 1] = (positions.getY(vertex) - minimum[1]) / size[1];
-  }
-  // Unwrap triangles crossing the back seam instead of stretching their texture across it.
-  for (let vertex = 0; vertex < positions.count; vertex += 3) {
-    const offsets = [vertex * 2, (vertex + 1) * 2, (vertex + 2) * 2];
-    if (
-      Math.max(...offsets.map((offset) => uv[offset])) -
-        Math.min(...offsets.map((offset) => uv[offset])) >
-      0.5
-    ) {
-      for (const offset of offsets) if (uv[offset] < 0.5) uv[offset] += 1;
-    }
-  }
-  geometry.setAttribute('uv', new Float32BufferAttribute(uv, 2));
   geometry.computeBoundingSphere();
   return geometry;
 }

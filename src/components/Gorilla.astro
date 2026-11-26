@@ -4,20 +4,19 @@ import Icon from './Icon.astro';
 
 <div class="gorilla-avatar" data-gorilla>
   <div class="gorilla-stage">
-    <div class="gorilla-backdrop" aria-hidden="true"></div>
-    <span class="gorilla-greeting" role="status" data-gorilla-status></span>
+    <span class="sr-only" role="status" data-gorilla-status></span>
     <img
       class="gorilla-poster"
       src="/images/gorilla-portrait.webp"
       width="640"
       height="640"
-      alt="拿着橙色笔记本的银背猩猩"
+      alt="一只微微歪头、双手撑地的灰色小猩猩"
       fetchpriority="high"
     />
     <canvas
       class="gorilla-canvas"
       role="img"
-      aria-label="拿着橙色笔记本的 3D 银背猩猩"
+      aria-label="双手撑地的 3D 小猩猩"
       aria-describedby="gorilla-instructions"
       tabindex="-1"
       hidden></canvas>
@@ -25,7 +24,7 @@ import Icon from './Icon.astro';
   <div class="gorilla-caption">
     <div class="gorilla-controls" hidden>
       <button class="gorilla-greet" type="button" data-gorilla-greet
-        >打个招呼 <span aria-hidden="true">↗</span></button
+        >打个招呼</button
       >
       <button
         class="gorilla-tool"
@@ -47,10 +46,9 @@ import Icon from './Icon.astro';
       >
     </div>
   </div>
-  <span class="gorilla-hint" aria-hidden="true">拖动转一转，点击打招呼</span>
   <p class="sr-only" id="gorilla-instructions">
-    拖动可以旋转，点击可以打招呼。键盘左右方向键旋转，Home 键恢复视角，Enter
-    键打招呼。
+    拖动可旋转，点击会点头。键盘左右方向键旋转，Home 键恢复视角，Enter
+    或空格键打招呼。
   </p>
 </div>
 
@@ -81,19 +79,6 @@ import Icon from './Icon.astro';
     position: relative;
     width: 100%;
     aspect-ratio: 1;
-    isolation: isolate;
-  }
-  .gorilla-backdrop {
-    position: absolute;
-    z-index: -1;
-    inset: 10% 3% 0;
-    border-radius: 50%;
-    background: radial-gradient(
-      circle at 50% 40%,
-      color-mix(in srgb, var(--portrait-bg) 70%, var(--bg-raised)),
-      var(--portrait-bg) 70%
-    );
-    border: 1px solid var(--portrait-border);
   }
   .gorilla-canvas,
   .gorilla-poster {
@@ -103,7 +88,6 @@ import Icon from './Icon.astro';
     width: 100%;
     height: 100%;
     object-fit: contain;
-    border-radius: 50%;
   }
   .gorilla-canvas {
     cursor: grab;
@@ -111,30 +95,6 @@ import Icon from './Icon.astro';
   }
   .gorilla-canvas:active {
     cursor: grabbing;
-  }
-  .gorilla-greeting {
-    position: absolute;
-    top: 3%;
-    right: 0;
-    z-index: 1;
-    padding: 8px 14px;
-    border: 1px solid var(--rule-strong);
-    border-radius: var(--radius-lg) var(--radius-lg) var(--radius-lg)
-      var(--radius-xs);
-    background: var(--bg-raised);
-    color: var(--text);
-    font-size: var(--text-sm);
-    line-height: var(--leading-ui);
-    box-shadow: var(--shadow);
-    pointer-events: none;
-    opacity: 1;
-    transition:
-      opacity var(--dur-fast) ease,
-      transform var(--dur-fast) ease;
-  }
-  .gorilla-greeting:empty {
-    opacity: 0;
-    transform: translateY(4px);
   }
   .gorilla-caption {
     min-height: 40px;
@@ -144,17 +104,6 @@ import Icon from './Icon.astro';
     align-items: center;
     flex-wrap: wrap;
     gap: 0 8px;
-  }
-  .gorilla-hint {
-    display: block;
-    text-align: center;
-    font-size: var(--text-xs);
-    line-height: var(--leading-ui);
-    color: var(--faint);
-    opacity: 0;
-  }
-  [data-state='ready'] .gorilla-hint {
-    opacity: 1;
   }
   .gorilla-controls {
     display: flex;
@@ -195,9 +144,6 @@ import Icon from './Icon.astro';
     .gorilla-caption {
       margin-top: 0;
     }
-    .gorilla-hint {
-      display: none;
-    }
     .gorilla-controls button {
       min-height: 40px;
     }
@@ -207,9 +153,7 @@ import Icon from './Icon.astro';
   }
   @media print {
     .gorilla-canvas,
-    .gorilla-controls,
-    .gorilla-hint,
-    .gorilla-greeting {
+    .gorilla-controls {
       display: none !important;
     }
     .gorilla-poster {
